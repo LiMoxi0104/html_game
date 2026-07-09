@@ -691,8 +691,8 @@ function clickCell(c,r){
 }
 function showPlacePopup(c,r){
  let html=`<div class="card-panel"><h2>布置格 (列${c+1},行${r+1})</h2>
-  <div class="opt"><span>放置兵种</span><button class="small" onclick="closePopup();showUnitList(${c},${r})">选择 <span class="key-hint">1-4</span></button></div>
-  <div class="opt"><span>放置防御塔</span><button class="small" onclick="closePopup();showTowerList(${c},${r})">选择 <span class="key-hint">5-9</span></button></div>
+  <div class="opt"><span>放置兵种</span><button class="small" onclick="showUnitList(${c},${r})">选择 <span class="key-hint">1-4</span></button></div>
+  <div class="opt"><span>放置防御塔</span><button class="small" onclick="showTowerList(${c},${r})">选择 <span class="key-hint">5-9</span></button></div>
   <button class="ghost small" onclick="closePopup()">取消</button></div>`;
  $("popup").innerHTML=html;$("popup").classList.add("show");
 }
