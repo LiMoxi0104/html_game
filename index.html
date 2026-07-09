@@ -75,7 +75,8 @@
  /* lord board */
  .board{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;padding:10px;border-radius:18px;background:#fff7fbcc;}
  .cell{aspect-ratio:1/1.4;border-radius:14px;background:#fff;border:3px solid #ead9f5;display:flex;align-items:center;justify-content:center;font-size:24px;position:relative;cursor:pointer;}
- .cell.spawn{background:linear-gradient(180deg,#cdeccf,#a8e0b0);border-color:#6fb87a;}
+ .cell.gate{background:linear-gradient(180deg,#6b2020,#8b3030);border-color:#5a1515;}
+body.dominator .cell.gate{background:linear-gradient(180deg,#4a1010,#6b2020);border-color:#3a0808;}
  .cell.range{background:#ff9bbf33;}
  body.dominator .cell.range{background:#ff9bbf44;}
  .cell .tag{position:absolute;bottom:2px;font-size:9px;font-weight:bold;color:#7a6a86;}
@@ -648,7 +649,7 @@ function renderLord(){
  for(let r=0;r<3;r++){
   for(let c=1;c<10;c++){
    const cell=b[c][r];let cls="cell";let inner="";
-   if(c===9)cls+=" spawn";
+   if(c===9)cls+=" gate";
    if(cell){inner=cell.type==="unit"?"⚔️":"🗼";}
    grid+=`<div class="${cls}" onclick="clickCell(${c},${r})">${inner}${cell?`<div class="tag">${cell.type==="unit"?UNIT[cell.id].name:TOWER[cell.id].name}</div>`:""}</div>`;
   }
@@ -667,13 +668,11 @@ function renderLord(){
     <div class="badge">📅 第 ${S.week} 周目 · 领主</div>
     <div class="badge">✨ 觉醒 ${S.awakening}/${AWAKEN_CAP}</div>
     <div class="badge">🟡 布置点数 ${state.points}</div>
-    <div class="badge">⏳ 回合 ${state.turn}/${state.maxTurns}</div>
   </div>
   <div style="display:flex;gap:10px;flex:1;overflow:hidden">
     <div style="flex:1;overflow:auto">
       <div class="board">${grid}</div>
       <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
-        <button class="small ghost" ${state.turn>=state.maxTurns?"disabled":""} onclick="endTurn()">结束本回合 <span class="key-hint">Enter</span></button>
         <button onclick="startInheritorAttack()">⚔️ 开始佣兵进攻 <span class="key-hint">Space</span></button>
       </div>
       <div class="sub" style="margin-top:6px">点击空格放置，点击已放置单位可拆除。每列仅能放一个单位。键盘1-4选兵种, 5-9选防御塔。</div>
@@ -775,7 +774,7 @@ function renderDefenseBattle(){
  for(let r=0;r<3;r++){
   for(let c=1;c<10;c++){
    let cls="cell";let inner="";let tag="";
-   if(c===9){cls+=" spawn";if(r===1){inner="🚩";tag="出生点";}}
+   if(c===9){cls+=" gate";if(r===1){inner="🏰";tag="大门口";}}
    const inRange=state.board.some((col,tc)=>col.some((cell,tr)=>cell&&cell.type==="tower"&&Math.abs(tc-c)+Math.abs(tr-r)<=TOWER[cell.id].range));
    if(inRange)cls+=" range";
    if(d.c===c&&d.r===r){inner="🌱";tag="佣兵";if(d._anim)cls+=" merc-token";}
@@ -838,7 +837,6 @@ document.addEventListener("keydown",e=>{
   if(!B&&!state){const btn=$("game").querySelector("button");if(btn)btn.click();}
   return;
  }
- if(e.key==="Enter"&&state&&state.phase==="lord"&&!state.defense){e.preventDefault();endTurn();return;}
  // number keys for card casting
  if(B&&!B.busy&&e.key>="0"&&e.key<="9"){
   const idx=B.hand.findIndex(sid=>{const k=SKILLS[sid].key;return k===e.key;});
