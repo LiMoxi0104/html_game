@@ -13,9 +13,16 @@
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;height:100%;font-family:"PingFang SC","Microsoft YaHei","Comic Sans MS",sans-serif;color:var(--ink);}
   body{background:linear-gradient(135deg,var(--bg1),var(--bg2));overflow:hidden;}
-  body.dominator{background:linear-gradient(135deg,#3a2f55,#5a4a7d);color:#f3eaff;}
-  body.dominator .panel{background:#ffffff14;border-color:#b9a6e855;}
-  body.dominator .topbar,.topbar{background:#ffffff55;}
+ body.dominator{background:linear-gradient(135deg,#1a1530,#2d244d);color:#ffffff;}
+ body.dominator .panel{background:#00000088;border-color:#6b5aa0;}
+ body.dominator .topbar,.topbar{background:#000000aa;}
+ body.dominator .badge{background:#2a2045;color:#fff;border:1px solid #6b5aa0;}
+ body.dominator .sub{opacity:1;color:#e8e0ff;}
+ body.dominator .cell{background:#2a2045;border-color:#6b5aa0;}
+ body.dominator .cell .tag{color:#ffffff;}
+ body.dominator button.ghost{background:#3a3055;color:#fff;border-color:#a090d0;}
+ body.dominator .card-panel{background:#2a2045;color:#fff;border:2px solid #6b5aa0;}
+ body.dominator .opt{background:#3a3055;color:#fff;}
   #game{position:absolute;inset:0;display:flex;flex-direction:column;padding:10px;}
   .panel{background:var(--panel);border:3px solid #ffffff;box-shadow:0 6px 20px #d9b8e840;border-radius:22px;padding:14px;}
 
@@ -87,10 +94,12 @@
   /* lord board */
   .board{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;padding:10px;border-radius:18px;background:#fff7fbcc;}
   .cell{aspect-ratio:1/1.4;border-radius:14px;background:#fff;border:3px solid #ead9f5;display:flex;align-items:center;justify-content:center;font-size:24px;position:relative;cursor:pointer;}
-  .cell.throne{background:linear-gradient(180deg,#ffe9a8,#ffd25e);border-color:#e0a93a;}
-  .cell.spawn{background:linear-gradient(180deg,#cdeccf,#a8e0b0);border-color:#6fb87a;}
-  .cell .tag{position:absolute;bottom:2px;font-size:9px;font-weight:bold;color:#7a6a86;}
-  .col-label{font-size:10px;text-align:center;color:#9a8aa6;}
+ .cell.throne{background:linear-gradient(180deg,#ffe9a8,#ffd25e);border-color:#e0a93a;}
+ .cell.spawn{background:linear-gradient(180deg,#cdeccf,#a8e0b0);border-color:#6fb87a;}
+ .cell.range{background:#ff9bbf33;}
+ body.dominator .cell.range{background:#ff9bbf44;}
+ .cell .tag{position:absolute;bottom:2px;font-size:9px;font-weight:bold;color:#7a6a86;}
+ .col-label{font-size:10px;text-align:center;color:#9a8aa6;}
 
   /* voice bubble */
   .voice{position:absolute;right:10px;bottom:10px;max-width:240px;background:#ffffffdd;border-radius:18px;padding:10px 14px;font-size:13px;box-shadow:0 4px 14px #00000022;border:2px solid var(--pink);z-index:20;animation:fadein .4s;}
@@ -124,7 +133,6 @@
 <div class="menu-overlay" id="menuOverlay">
   <div class="menu-card">
     <h2>暂停</h2>
-    <button onclick="openGallery()">🗿 英灵殿</button><br><br>
     <button class="ghost" onclick="backToMenu()">返回主菜单</button><br><br>
     <button class="small ghost" onclick="closeMenu()">继续游戏</button>
   </div>
@@ -203,15 +211,19 @@ const PROPOSALS=[
 const MEMORY_SHARD="你凝视碎片：最初的你曾发誓「绝不变为暴君」。那一刻的自己，还认得现在的你吗？";
 
 /* ============================ 存档 ============================ */
-function defaultSave(){return{state:"inheritor",week:1,awakening:0,unlockedSkills:[1,2,3,4,5,6,7,8],currentLordSetup:{nodes:[]},gallery:[]};}
-function loadSave(){try{const r=localStorage.getItem(SAVE_KEY);if(!r)return null;const o=JSON.parse(r);if(!o||typeof o!=="object")return null;return Object.assign(defaultSave(),o);}catch(e){return null;}}
-function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){}}
-function clearSave(){try{localStorage.removeItem(SAVE_KEY);}catch(e){}}
+function defaultSave(){return{state:"inheritor",week:1,awakening:0,unlockedSkills:[1,2,3,4,5,6,7,8],currentLordSetup:{nodes:[]}};}
+function slotKey(i){return SAVE_KEY+"_"+i;}
+function listSlots(){const list=[];for(let i=0;i<5;i++){const raw=localStorage.getItem(slotKey(i));let s=null;if(raw){try{s=JSON.parse(raw);}catch(e){}}list.push({slot:i,exists:!!s,save:s});}return list;}
+function loadSlot(i){try{const r=localStorage.getItem(slotKey(i));if(!r)return null;const o=JSON.parse(r);if(!o||typeof o!=="object")return null;return Object.assign(defaultSave(),o);}catch(e){return null;}}
+function save(){try{localStorage.setItem(slotKey(currentSlot),JSON.stringify(S));}catch(e){}}
+function deleteSlot(i){localStorage.removeItem(slotKey(i));renderMenu();}
+function loadSave(){return loadSlot(currentSlot);}
 
 /* ============================ 全局状态 ============================ */
 let S=null;
 let B=null;       // 当前战斗
 let state=null;   // 临时状态（非持久）
+let currentSlot=0;// 当前存档槽
 const $=id=>document.getElementById(id);
 
 /* ============================ 工具 ============================ */
@@ -223,35 +235,62 @@ function gainAwakening(n){S.awakening=Math.max(0,Math.min(AWAKEN_CAP,S.awakening
 function speak(cat){const v=$("voice");if(!v)return;v.className="voice "+(cat==="lord"?"lord":"");v.style.display="block";v.innerHTML='<div class="who">'+(cat==="lord"?"领主的低语":cat==="inh"?"继承者的呐喊":"")+'</div>'+rand(DIALOGUE[cat==="inh"?"inheritorVoice":cat==="lord"?"lordVoice":"shoucheng"]);clearTimeout(v._t);v._t=setTimeout(()=>{v.style.display="none";},3500);}
 function showTopbar(show){$("topbar").style.display=show?"flex":"none";}
 
-/* ============================ 主菜单 / 英灵殿 ============================ */
+/* ============================ 音效 ============================ */
+let _audioCtx=null;
+function audioCtx(){if(!_audioCtx){_audioCtx=new(window.AudioContext||window.webkitAudioContext)();}return _audioCtx;}
+function playSound(type){
+ try{
+  const ctx=audioCtx();if(ctx.state==="suspended")ctx.resume();
+  const now=ctx.currentTime;
+  const osc=ctx.createOscillator();
+  const gain=ctx.createGain();
+  osc.connect(gain);gain.connect(ctx.destination);
+  switch(type){
+   case "click":osc.type="sine";osc.frequency.setValueAtTime(880,now);osc.frequency.exponentialRampToValueAtTime(440,now+0.08);gain.gain.setValueAtTime(0.1,now);gain.gain.exponentialRampToValueAtTime(0.01,now+0.08);osc.start(now);osc.stop(now+0.08);break;
+   case "hover":osc.type="triangle";osc.frequency.setValueAtTime(440,now);gain.gain.setValueAtTime(0.03,now);gain.gain.exponentialRampToValueAtTime(0.01,now+0.05);osc.start(now);osc.stop(now+0.05);break;
+   case "cast":osc.type="sine";osc.frequency.setValueAtTime(523,now);osc.frequency.linearRampToValueAtTime(1046,now+0.15);gain.gain.setValueAtTime(0.12,now);gain.gain.exponentialRampToValueAtTime(0.01,now+0.2);osc.start(now);osc.stop(now+0.2);break;
+   case "attack":osc.type="sawtooth";osc.frequency.setValueAtTime(200,now);osc.frequency.exponentialRampToValueAtTime(80,now+0.12);gain.gain.setValueAtTime(0.1,now);gain.gain.exponentialRampToValueAtTime(0.01,now+0.12);osc.start(now);osc.stop(now+0.12);break;
+   case "hit":osc.type="square";osc.frequency.setValueAtTime(150,now);osc.frequency.exponentialRampToValueAtTime(60,now+0.1);gain.gain.setValueAtTime(0.12,now);gain.gain.exponentialRampToValueAtTime(0.01,now+0.1);osc.start(now);osc.stop(now+0.1);break;
+   case "shield":osc.type="sine";osc.frequency.setValueAtTime(392,now);osc.frequency.linearRampToValueAtTime(784,now+0.2);gain.gain.setValueAtTime(0.1,now);gain.gain.exponentialRampToValueAtTime(0.01,now+0.25);osc.start(now);osc.stop(now+0.25);break;
+   case "heal":osc.type="sine";osc.frequency.setValueAtTime(660,now);osc.frequency.linearRampToValueAtTime(880,now+0.2);gain.gain.setValueAtTime(0.1,now);gain.gain.exponentialRampToValueAtTime(0.01,now+0.25);osc.start(now);osc.stop(now+0.25);break;
+   case "win":[523,659,784,1046].forEach((f,i)=>{const o=ctx.createOscillator();const g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type="sine";o.frequency.value=f;g.gain.setValueAtTime(0.08,now+i*0.08);g.gain.exponentialRampToValueAtTime(0.01,now+i*0.08+0.25);o.start(now+i*0.08);o.stop(now+i*0.08+0.25);});break;
+   case "lose":[440,349,294,220].forEach((f,i)=>{const o=ctx.createOscillator();const g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type="sine";o.frequency.value=f;g.gain.setValueAtTime(0.08,now+i*0.1);g.gain.exponentialRampToValueAtTime(0.01,now+i*0.1+0.25);o.start(now+i*0.1);o.stop(now+i*0.1+0.25);});break;
+  }
+ }catch(e){}
+}
+function initAudio(){try{audioCtx();}catch(e){}}
+document.addEventListener("click",e=>{initAudio();const t=e.target;if(t.tagName==="BUTTON"||t.closest("button")||t.classList.contains("cell"))playSound("click");},true);
+
+/* ============================ 主菜单 / 存档选择 ============================ */
 function renderMenu(){
  B=null;state=null;showTopbar(false);
- const ex=loadSave();
- let status="尚无存档，开始你的第一次轮回。";
- if(ex&&ex.week){status=`第 ${ex.week} 周目 · 身份 ${ex.state==="lord"?"领主":"继承者"} · 觉醒 ${ex.awakening}/${AWAKEN_CAP} · 精粹 ${ex.corruption||0}`;}
- else if(ex&&ex.gallery&&ex.gallery.length){status="上一轮回已终结，英灵殿仍存。可开启新的循环。";}
- $("game").innerHTML=`
+ const slots=listSlots();
+ const full=slots.filter(x=>x.exists).length>=5;
+ let html=`
   <div class="center-wrap">
     <div class="title-art">🌱👑</div>
     <h1>永恒回归 · 权能轮回</h1>
     <div class="sub">继承者 → 击败领主 → 成为领主 → 被击败 → 继承者……<br>唯有觉醒值≥5时，领主可「自我放逐」打碎权能，终结循环。</div>
-    <div class="badge">${status}</div>
-    <button onclick="startGame()">▶ 开始循环</button>
-    <button class="ghost" onclick="openGallery()">🗿 英灵殿</button>
-  </div>`;
+    <div style="display:flex;flex-direction:column;gap:10px;width:300px;margin-top:10px;">`;
+ slots.forEach((s,i)=>{
+  if(s.exists){
+   html+=`<div class="panel" style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+     <div style="text-align:left"><div style="font-weight:bold">存档 ${i+1}</div><div class="sub">第 ${s.save.week||1} 周目 · ${s.save.state==="lord"?"领主":"继承者"} · 觉醒 ${s.save.awakening||0}/5</div></div>
+     <div style="display:flex;gap:6px"><button class="small" onclick="startGame(${i})">继续</button><button class="small ghost" onclick="deleteSlot(${i})">删除</button></div>
+    </div>`;
+  }else{
+   html+=`<div class="panel" style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+     <div style="text-align:left"><div style="font-weight:bold;color:#999">空存档 ${i+1}</div></div>
+     <button class="small" onclick="startGame(${i})" ${full?"disabled":""}>新游戏</button>
+    </div>`;
+  }
+ });
+ html+=`</div></div>`;
+ $("game").innerHTML=html;
 }
-function openGallery(){
- const ex=loadSave()||defaultSave();
- const max=ex.gallery&&ex.gallery.length?Math.max(...ex.gallery):0;
- let html="<h2>🗿 英灵殿</h2><div class='sub'>每一位曾为领主的你，都在此留下雕像。周目越大，雕像越高。</div><div style='display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:16px;'>";
- if(max===0){html+="<div class='sub'>尚无领主记录。</div>";}
- else{for(let i=0;i<ex.gallery.length;i++){const w=ex.gallery[i];const h=40+w*10;html+=`<div style='text-align:center'><div style='font-size:${20+w}px'>👑</div><div class='sub'>第${w}周目</div></div>`;}}
- html+="</div><br><button onclick='"+(state&&state.fromMenu?"closeMenu()":"renderMenu()")+"'>返回</button>";
- if(state&&state.fromMenu){$("menuOverlay").querySelector(".menu-card").innerHTML=html;}
- else{$("game").innerHTML=`<div class="center-wrap">${html}</div>`;}
-}
-function startGame(){
- const ex=loadSave();
+function startGame(slot){
+ currentSlot=slot;
+ const ex=loadSlot(slot);
  if(!ex){S=defaultSave();save();}
  else{S=Object.assign(defaultSave(),ex);}
  window._exileMode=false;window._exileUsed=false;
@@ -260,7 +299,7 @@ function startGame(){
 }
 
 /* ============================ 菜单浮层 ============================ */
-function openMenu(){state=state||{};state.fromMenu=true;openGallery();$("menuOverlay").classList.add("show");}
+function openMenu(){$("menuOverlay").classList.add("show");}
 function closeMenu(){$("menuOverlay").classList.remove("show");}
 function backToMenu(){closeMenu();S=loadSave();renderMenu();}
 
@@ -337,7 +376,7 @@ function presentNode(){
  }else{
    const ev=rand(["你在一处残垣中发现微光，稍作休整。","风穿过空荡的回廊，你听见自己的心跳。","破碎的雕像低语着某个名字——也许是你的。"]);
    let bonus="";
-   if(Math.random()<0.5){const h=Math.min(state.maxhp-state.hp,15);state.hp+=h;bonus=`<div class="badge" style="margin:6px 0">恢复 ${h} 点决心</div>`;updateInhStats();}
+   if(Math.random()<0.5){const h=Math.min(state.maxhp-state.hp,15);state.hp+=h;bonus=`<div class="badge" style="margin:6px 0">恢复 ${h} HP</div>`;updateInhStats();}
    state.resolved=true;
    c.innerHTML=`<h2>🌿 空旷节点</h2><div class="sub">${ev}</div>${bonus}${advanceBtn()}`;
    speak("lord");
@@ -365,7 +404,7 @@ function startNodeBattle(node){
  if(state.freezeNext){const al=enemies.filter(e=>e.hp>0);if(al.length)al[Math.floor(Math.random()*al.length)].frozen=1;state.freezeNext=false;}
  const b=newBattle({hp:state.hp,maxhp:state.maxhp,mp:state.mp,maxmp:state.maxmp,mpRegen:state.mpRegen,enemies,unlocked:getUnlocked(),isLord:false});
  B=b;B.onWin=()=>{state.hp=b.player.hp;state.mp=b.player.mp;state.resolved=true;renderInheritor();$("content").innerHTML=`<h2>⚔️ 胜利！</h2><div class="sub">你清除了这个节点的守军。</div>${advanceBtn()}`;speak("inh");};
- B.onLose=()=>{finishInheritorChallenge("fail");};
+ B.onLose=()=>{playSound("lose");finishInheritorChallenge("fail");};
  renderBattle();speak("lord");
 }
 function finishInheritorChallenge(result){
@@ -413,7 +452,7 @@ function renderBattle(){
  c.innerHTML=`
   <div class="stats">
     <div class="badge">回合 ${B.turn}</div>
-    ${p.shield>0?`<div class="badge">🛡️${p.shield}</div>`:""}
+    ${p.shield>0?`<div class="badge">🛡️${p.shield}(${p.shieldTurns})</div>`:""}
   </div>
   <div class="battle-field">
     <div class="${pcls}"><div class="body"><span class="face">${p.hp<=0?"😵":(B.isLord?"😈":"😊")}</span>${B.isLord?'<div class="crown">👑</div>':'<div class="sprout">🌱</div>'}</div><div class="name">${B.isLord?"领主":"继承者"}</div></div>
@@ -433,7 +472,7 @@ function castCard(idx){
  if(B.busy)return;const sid=B.hand[idx];if(sid===undefined)return;const sk=SKILLS[sid];
  if(B.player.mp<sk.mp)return;if((B.cdMap[sid]||0)>0)return;
  B.busy=true;B.player.mp-=sk.mp;B.hand.splice(idx,1);
- applySkill(sid,B);B.log.push(`你施放「${sk.name}」`);
+ applySkill(sid,B);B.log.push(`你施放「${sk.name}」`);playSound("cast");
  if(sk.cd>0)B.cdMap[sid]=sk.cd;
  const ns=drawRefill(B);if(ns!==null)B.hand.push(ns);
  const isTW=!!sk.timewarp;
@@ -463,13 +502,14 @@ function enemyTurn(){
  B.player.mp=Math.min(B.player.maxmp,B.player.mp+(B.player.mpRegen||3));
  Object.keys(B.cdMap).forEach(k=>{if(B.cdMap[k]>0)B.cdMap[k]--;});
  if(B.player.shieldTurns>0){B.player.shieldTurns--;if(B.player.shieldTurns===0)B.player.shield=0;}
- B.player.empower=false;B.player.thorn=false;B.turn++;
+ B.player.thorn=false;B.turn++;
  B.busy=false;
  if(B.player.hp<=0){renderBattle();B.log.push("你倒下了……");B.onLose();return;}
  if(B.enemies.every(e=>e.hp<=0)){renderBattle();B.log.push("敌人全部消灭！");B.onWin();return;}
  renderBattle();
 }
 function enemyAttack(e,b){
+ playSound("attack");
  if(e.special==="heal"){
   const inj=b.enemies.filter(x=>x.hp>0).sort((a,c)=>a.hp-c.hp)[0];
   if(inj){inj.hp=Math.min(inj.maxhp,inj.hp+15);b.log.push(`${e.name}治疗${inj.name}+15`);}
@@ -486,6 +526,7 @@ function damagePlayer(b,amt,src){
  let dmg=amt;
  if(b.player.shield>0){const ab=Math.min(b.player.shield,dmg);b.player.shield-=ab;dmg-=ab;}
  b.player.hp-=dmg;
+ if(dmg>0)playSound("hit");
  if(b.player.thorn&&src){src.hp-=Math.round(amt*0.5);b.log.push(`荆棘反弹 ${Math.round(amt*0.5)}`);}
 }
 function damageEnemy(b,e,amt){
@@ -499,17 +540,17 @@ function applySkill(sid,b){
  const front=b.enemies.find(e=>e.hp>0);
  switch(sid){
   case 1:if(front)damageEnemy(b,front,Math.round(10*mult));break;
-  case 2:p.shield+=15;p.shieldTurns=2;break;
+  case 2:p.shield+=15;p.shieldTurns=2;playSound("shield");break;
   case 3:b.enemies.forEach(e=>{if(e.hp>0){e.poisonTurns=3;e.poisonDmg=5;}});break;
-  case 4:p.hp=Math.min(p.maxhp,p.hp+Math.round(20*mult));break;
+  case 4:p.hp=Math.min(p.maxhp,p.hp+Math.round(20*mult));playSound("heal");break;
   case 5:if(front)damageEnemy(b,front,Math.round(6*mult));p.mp=Math.min(p.maxmp,p.mp+4);break;
-  case 6:if(front){damageEnemy(b,front,Math.round(8*mult));front.frozen=1;}break;
+  case 6:if(front){damageEnemy(b,front,Math.round(8*mult));if(front.hp>0)front.frozen=1;}break;
   case 7:p.thorn=true;break;
   case 8:p.empower=true;break;
   case 9:if(front)damageEnemy(b,front,Math.round(18*mult));break;
-  case 10:p.shield+=20;if(front)front.frozen=1;break;
-  case 11:if(front){damageEnemy(b,front,Math.round(10*mult));p.hp=Math.min(p.maxhp,p.hp+Math.round(10*mult));}break;
-  case 12:p.poisonTurns=0;p.poisonDmg=0;p.hp=Math.min(p.maxhp,p.hp+8);break;
+  case 10:p.shield+=20;playSound("shield");if(front&&front.hp>0)front.frozen=1;break;
+  case 11:if(front){damageEnemy(b,front,Math.round(10*mult));p.hp=Math.min(p.maxhp,p.hp+Math.round(10*mult));playSound("heal");}break;
+  case 12:p.poisonTurns=0;p.poisonDmg=0;p.hp=Math.min(p.maxhp,p.hp+8);playSound("heal");break;
   case 13:{if(front)damageEnemy(b,front,Math.round((front.lastSkill||12)*mult));break;}
   case 14:/* timewarp handled in cast */break;
   case 15:if(front)damageEnemy(b,front,Math.round(35*mult));p.hp-=10;break;
@@ -523,15 +564,15 @@ function startConfront(who,inhRemainHp){
   const enemy=makeUnit("U1",S.week);enemy.name="领主";enemy.special="lord";
   enemy.hp=lordHP(S.week);enemy.maxhp=lordHP(S.week);enemy.atk=scale(10,S.week);
   const b=newBattle({hp:state.hp,maxhp:state.maxhp,mp:state.mp,maxmp:state.maxmp,mpRegen:state.mpRegen,enemies:[enemy],unlocked:getUnlocked(),isLord:false});
-  B=b;B.onWin=()=>{gainAwakening(1);S.state="lord";S.week++;if(!S.gallery.includes(S.week-1))S.gallery.push(S.week-1);save();renderVictory("你击败了领主，夺得其权能……\n你成为了新的领主。");};
-  B.onLose=()=>{save();renderVictory("你倒在了王座之前……\n领主嘲弄着你的无能，轮回继续。");};
+  B=b;B.onWin=()=>{playSound("win");gainAwakening(1);S.state="lord";S.week++;save();renderVictory("你击败了领主，夺得其权能……\n你成为了新的领主。");};
+  B.onLose=()=>{playSound("lose");save();renderVictory("你倒在了王座之前……\n领主嘲弄着你的无能，轮回继续。");};
   renderBattle();speak("lord");
  }else{
   const enemy=makeUnit("U1",S.week);enemy.name="继承者";enemy.special="inh";
   enemy.hp=inhRemainHp||boardInhHP(S.week);enemy.maxhp=enemy.hp;enemy.atk=boardInhATK(S.week);
   const b=newBattle({hp:lordHP(S.week),maxhp:lordHP(S.week),mp:lordMP(S.week),maxmp:lordMP(S.week),mpRegen:lordRegen(S.week),enemies:[enemy],unlocked:getUnlocked(true),isLord:true});
-  B=b;B.onWin=()=>{gainAwakening(1);S.state="lord";S.week++;save();renderVictory("继承者被你击溃，权能依旧在你手中。");};
-  B.onLose=()=>{S.state="inheritor";S.week++;generateNodesFromBoard();save();renderVictory("继承者攻破了你的王座……\n你坠入轮回，成为新的挑战者。");};
+  B=b;B.onWin=()=>{playSound("win");gainAwakening(1);S.state="lord";S.week++;save();renderVictory("继承者被你击溃，权能依旧在你手中。");};
+  B.onLose=()=>{playSound("lose");S.state="inheritor";S.week++;generateNodesFromBoard();save();renderVictory("继承者攻破了你的王座……\n你坠入轮回，成为新的挑战者。");};
   renderConfront();
  }
 }
@@ -583,11 +624,9 @@ function triggerTrueEnding(){
   const t=$("endingText");
   t.innerHTML="权能碎裂，世界不再有领主。<br>循环终结了。<br><br>—— 真结局 · 觉醒者 ——";
   t.classList.add("show");
-  const ex=loadSave()||defaultSave();const gal=ex.gallery||[];
-  clearSave();
   setTimeout(()=>{
    h.classList.remove("show");t.classList.remove("show");
-   S=defaultSave();S.gallery=gal;save();renderMenu();
+   S=defaultSave();save();renderMenu();
   },6000);
  },100);
 }
@@ -682,22 +721,82 @@ function viewShard(){if(state.shardSeen)return;state.shardSeen=true;gainAwakenin
 
 /* 继承者进攻模拟 */
 function startInheritorAttack(){
- const inh={hp:boardInhHP(S.week),maxhp:boardInhHP(S.week),atk:boardInhATK(S.week)};
- let result="throne";
- for(let c=9;c>=0;c--){
-  const cells=state.board[c].filter(x=>x);
-  const towers=cells.filter(x=>x.type==="tower");
-  const units=cells.filter(x=>x.type==="unit").map(x=>makeUnit(x.id,S.week));
-  // 塔伤害
-  towers.forEach(t=>{const T=TOWER[t.id];inh.hp-=T.dmg;});
-  if(inh.hp<=0){result="win";break;}
+ if(state.defense&&state.defense.running)return;
+ state.defense={
+  inh:{hp:boardInhHP(S.week),maxhp:boardInhHP(S.week),atk:boardInhATK(S.week)},
+  c:9,r:Math.floor(Math.random()*3),log:[],running:true
+ };
+ defenseStep();
+}
+function defenseStep(){
+ const d=state.defense;if(!d||!d.running)return;
+ renderDefenseBattle();
+ setTimeout(()=>{
+  const inh=d.inh;
+  // 塔射程内攻击
+  let towerHits=[];
+  state.board.forEach((col,tc)=>{
+   col.forEach((cell,tr)=>{
+    if(cell&&cell.type==="tower"){
+     const T=TOWER[cell.id];
+     const dist=Math.abs(tc-d.c)+Math.abs(tr-d.r);
+     if(dist<=T.range){inh.hp-=T.dmg;towerHits.push(`${T.name}-${T.dmg}`);}
+    }
+   });
+  });
+  if(towerHits.length)d.log.push(`塔攻击：${towerHits.join(", ")}`);
+  if(inh.hp<=0){endDefense("win");return;}
+  // 当前格守军交战
+  const units=state.board[d.c].filter(x=>x&&x.type==="unit").map(x=>makeUnit(x.id,S.week));
   if(units.length){
+   d.log.push(`遭遇守军`);
    const alive=autoBattle(inh,units);
-   if(!alive){result="win";break;}
+   if(!alive){endDefense("win");return;}
+  }
+  renderDefenseBattle();
+  if(d.c===0){setTimeout(()=>endDefense("lose"),500);return;}
+  d.c--;
+  setTimeout(defenseStep,600);
+ },500);
+}
+function endDefense(result){
+ const d=state.defense;if(d)d.running=false;
+ if(result==="win"){playSound("win");gainAwakening(1);S.state="lord";S.week++;save();renderVictory("继承者倒在你的防线之前。\n循环继续，下一任继承者将更强。");}
+ else{playSound("lose");startConfront("lord",state.defense.inh.hp);}
+}
+function renderDefenseBattle(){
+ const d=state.defense||{};const inh=d.inh||{hp:0,maxhp:1};
+ let grid="";
+ for(let r=0;r<3;r++){
+  for(let c=0;c<10;c++){
+   let cls="cell";let inner="";let tag="";
+   if(c===0){cls+=" throne";if(r===1){inner="👑";tag="王座";}}
+   if(c===9){cls+=" spawn";if(r===1){inner="🚩";tag="出生点";}}
+   const inRange=state.board.some((col,tc)=>col.some((cell,tr)=>cell&&cell.type==="tower"&&Math.abs(tc-c)+Math.abs(tr-r)<=TOWER[cell.id].range));
+   if(inRange)cls+=" range";
+   if(d.c===c&&d.r===r){inner="🌱";tag="继承者";}
+   else if(state.board[c][r]){
+    const cell=state.board[c][r];
+    inner=cell.type==="unit"?"⚔️":"🗼";
+    tag=cell.type==="unit"?UNIT[cell.id].name:TOWER[cell.id].name;
+   }
+   grid+=`<div class="${cls}">${inner}${tag?`<div class="tag">${tag}</div>`:""}</div>`;
   }
  }
- if(result==="win"){gainAwakening(1);S.state="lord";S.week++;if(!S.gallery.includes(S.week-1))S.gallery.push(S.week-1);save();renderVictory("继承者倒在你的防线之前。\n循环继续，下一任继承者将更强。");}
- else{startConfront("lord",inh.hp);}
+ const hpPct=Math.max(0,inh.hp/inh.maxhp*100);
+ const log=(d.log||[]).slice(-6).join("<br>");
+ $("game").innerHTML=`
+  <div class="stats">
+    <div class="badge">📅 第 ${S.week} 周目 · 领主</div>
+    <div class="badge">✨ 觉醒 ${S.awakening}/${AWAKEN_CAP}</div>
+    <div class="badge">🟡 点数 ${state.points}</div>
+  </div>
+  <div style="margin:8px 0">
+    <div class="badge">继承者 HP ${Math.max(0,inh.hp)}/${inh.maxhp}</div>
+    <div class="bar"><span class="hpfill" style="width:${hpPct}%"></span></div>
+  </div>
+  <div class="board">${grid}</div>
+  <div class="log" style="margin-top:8px">${log}</div>`;
 }
 function autoBattle(inh,units){
  let safety=200;
