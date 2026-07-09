@@ -463,6 +463,7 @@ function enemyTurn(){
  Object.keys(B.cdMap).forEach(k=>{if(B.cdMap[k]>0)B.cdMap[k]--;});
  if(B.player.shieldTurns>0){B.player.shieldTurns--;if(B.player.shieldTurns===0)B.player.shield=0;}
  B.player.empower=false;B.player.thorn=false;B.turn++;
+ B.busy=false;
  if(B.player.hp<=0){renderBattle();B.log.push("你倒下了……");B.onLose();return;}
  if(B.enemies.every(e=>e.hp<=0)){renderBattle();B.log.push("敌人全部消灭！");B.onWin();return;}
  renderBattle();
