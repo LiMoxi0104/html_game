@@ -20,8 +20,8 @@
   .panel{background:var(--panel);border:3px solid #ffffff;box-shadow:0 6px 20px #d9b8e840;border-radius:22px;padding:14px;}
 
   /* topbar */
-  .topbar{position:absolute;top:10px;left:10px;display:flex;gap:8px;z-index:30;}
-  .topbar button{font-size:13px;}
+ .topbar{position:absolute;bottom:10px;left:10px;display:flex;gap:8px;z-index:30;}
+ .topbar button{font-size:13px;}
   .menu-overlay{position:absolute;inset:0;background:#3a2f5588;display:none;align-items:center;justify-content:center;z-index:40;}
   .menu-overlay.show{display:flex;}
   .menu-card{background:#fff;border-radius:24px;padding:22px;width:260px;text-align:center;}
@@ -269,7 +269,7 @@ function backToMenu(){closeMenu();S=loadSave();renderMenu();}
 function inhHP(w){return 100+(w-1)*40;}
 function inhMP(w){return 10+(w-1)*5;}
 function inhRegen(w){return 3+(w-1)*2;}
-function lordHP(w){return 130+(w-1)*40;}
+function lordHP(w){return 90+(w-1)*25;}
 function lordMP(w){return 12+(w-1)*5;}
 function lordRegen(w){return 3+(w-1)*2;}
 function boardInhHP(w){return 160+(w-1)*50;}
@@ -301,8 +301,14 @@ function renderInheritor(){
  updateInhStats();renderMap();
 }
 function updateInhStats(){
- $("sHp").textContent=Math.max(0,state.hp);$("sHpBar").style.width=Math.max(0,state.hp/state.maxhp*100)+"%";
- $("sMp").textContent=state.mp;$("sMpBar").style.width=state.mp/state.maxmp*100+"%";
+ const hp=B?Math.max(0,B.player.hp):Math.max(0,state.hp);
+ const maxhp=B?B.player.maxhp:state.maxhp;
+ const mp=B?B.player.mp:state.mp;
+ const maxmp=B?B.player.maxmp:state.maxmp;
+ const sHp=$("sHp");if(sHp)sHp.textContent=hp;
+ const sHpBar=$("sHpBar");if(sHpBar)sHpBar.style.width=Math.max(0,hp/maxhp*100)+"%";
+ const sMp=$("sMp");if(sMp)sMp.textContent=mp;
+ const sMpBar=$("sMpBar");if(sMpBar)sMpBar.style.width=mp/maxmp*100+"%";
 }
 function renderMap(){
  const strip=$("mapStrip");if(!strip)return;
@@ -390,6 +396,7 @@ function drawRefill(b){
 }
 function renderBattle(){
  const c=$("content");if(!c)return;
+ updateInhStats();
  const p=B.player;
  let enemiesHtml="";
  B.enemies.forEach((e,i)=>{
@@ -405,14 +412,8 @@ function renderBattle(){
  const log=B.log.slice(-4).join("<br>");
  c.innerHTML=`
   <div class="stats">
-    <div class="badge">❤️ ${Math.max(0,p.hp)}/${p.maxhp}</div>
-    <div class="bar"><span class="hpfill" style="width:${Math.max(0,p.hp)/p.maxhp*100}%"></span></div>
-    <div class="badge">💧 ${p.mp}/${p.maxmp}</div>
-    <div class="bar"><span class="mpfill" style="width:${p.mp/p.maxmp*100}%"></span></div>
-    <div class="badge">🔁 +${p.mpRegen||3}/回合</div>
-    ${p.shield>0?`<div class="badge">🛡️${p.shield}</div>`:""}
-    <div class="badge">✨ 觉醒 ${S.awakening}/${AWAKEN_CAP}</div>
     <div class="badge">回合 ${B.turn}</div>
+    ${p.shield>0?`<div class="badge">🛡️${p.shield}</div>`:""}
   </div>
   <div class="battle-field">
     <div class="${pcls}"><div class="body"><span class="face">${p.hp<=0?"😵":(B.isLord?"😈":"😊")}</span>${B.isLord?'<div class="crown">👑</div>':'<div class="sprout">🌱</div>'}</div><div class="name">${B.isLord?"领主":"继承者"}</div></div>
@@ -520,7 +521,7 @@ function startConfront(who,inhRemainHp){
  document.body.classList.toggle("dominator",who==="lord");showTopbar(true);
  if(who==="inheritor"){
   const enemy=makeUnit("U1",S.week);enemy.name="领主";enemy.special="lord";
-  enemy.hp=lordHP(S.week);enemy.maxhp=lordHP(S.week);enemy.atk=scale(14,S.week);
+  enemy.hp=lordHP(S.week);enemy.maxhp=lordHP(S.week);enemy.atk=scale(10,S.week);
   const b=newBattle({hp:state.hp,maxhp:state.maxhp,mp:state.mp,maxmp:state.maxmp,mpRegen:state.mpRegen,enemies:[enemy],unlocked:getUnlocked(),isLord:false});
   B=b;B.onWin=()=>{gainAwakening(1);S.state="lord";S.week++;if(!S.gallery.includes(S.week-1))S.gallery.push(S.week-1);save();renderVictory("你击败了领主，夺得其权能……\n你成为了新的领主。");};
   B.onLose=()=>{save();renderVictory("你倒在了王座之前……\n领主嘲弄着你的无能，轮回继续。");};
