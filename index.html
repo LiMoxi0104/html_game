@@ -363,7 +363,7 @@ function startNodeBattle(node){
  renderBattle();speak("lord");
 }
 function finishInheritorChallenge(result){
- if(result==="fail"){S.state="lord";S.week++;if(!S.gallery.includes(S.week-1)&&S.week-1>=1)S.gallery.push(S.week-1);save();startLord();}
+ if(result==="fail"){save();renderVictory("你倒在了继承者的道路上……\n保持本心，下一轮继续挑战。");}
  else{startConfront("inheritor");}
 }
 
@@ -523,7 +523,7 @@ function startConfront(who,inhRemainHp){
   enemy.hp=lordHP(S.week);enemy.maxhp=lordHP(S.week);enemy.atk=scale(14,S.week);
   const b=newBattle({hp:state.hp,maxhp:state.maxhp,mp:state.mp,maxmp:state.maxmp,mpRegen:state.mpRegen,enemies:[enemy],unlocked:getUnlocked(),isLord:false});
   B=b;B.onWin=()=>{gainAwakening(1);S.state="lord";S.week++;if(!S.gallery.includes(S.week-1))S.gallery.push(S.week-1);save();renderVictory("你击败了领主，夺得其权能……\n你成为了新的领主。");};
-  B.onLose=()=>{S.state="lord";S.week++;save();renderVictory("你倒在了王座之前……\n世界将你推上王座，你成为了领主。");};
+  B.onLose=()=>{save();renderVictory("你倒在了王座之前……\n领主嘲弄着你的无能，轮回继续。");};
   renderBattle();speak("lord");
  }else{
   const enemy=makeUnit("U1",S.week);enemy.name="继承者";enemy.special="inh";
@@ -663,11 +663,13 @@ function showUnitList(c,r){
  let opts="";
  Object.keys(UNIT).forEach(u=>{const cost=UNIT_COST[u];opts+=`<div class="opt"><span>${UNIT[u].name} (💧${cost})</span><button class="small" ${state.points<cost?"disabled":""} onclick="placeUnit(${c},${r},'${u}')">放置</button></div>`;});
  $("popup").innerHTML=`<div class="card-panel"><h2>选择兵种</h2>${opts}<button class="ghost small" onclick="closePopup()">取消</button></div>`;
+ $("popup").classList.add("show");
 }
 function showTowerList(c,r){
  let opts="";
  Object.keys(TOWER).forEach(t=>{if((TOWER[t].unlockWeek||0)>S.week)return;const cost=TOWER_COST[t];opts+=`<div class="opt"><span>${TOWER[t].name} (💧${cost})</span><button class="small" ${state.points<cost?"disabled":""} onclick="placeTower(${c},${r},'${t}')">放置</button></div>`;});
  $("popup").innerHTML=`<div class="card-panel"><h2>选择防御塔</h2>${opts}<button class="ghost small" onclick="closePopup()">取消</button></div>`;
+ $("popup").classList.add("show");
 }
 function placeUnit(c,r,id){const cost=UNIT_COST[id];if(state.points<cost)return;state.points-=cost;state.board[c][r]={type:"unit",id};closePopup();renderLord();}
 function placeTower(c,r,id){const cost=TOWER_COST[id];if(state.points<cost)return;state.points-=cost;state.board[c][r]={type:"tower",id};closePopup();renderLord();}
