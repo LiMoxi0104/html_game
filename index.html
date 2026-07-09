@@ -132,6 +132,8 @@
  <input type="range" id="bgmSlider" min="0" max="100" value="70" oninput="setBGMVol(this.value)">
  <label>🔊 音效 <span id="sfxVal">80%</span></label>
  <input type="range" id="sfxSlider" min="0" max="100" value="80" oninput="setSFXVol(this.value)">
+ <label>🎙️ 人声 <span id="voiceVal">90%</span></label>
+ <input type="range" id="voiceSlider" min="0" max="100" value="90" oninput="setVoiceVol(this.value)">
 </div>
 
 <script>
@@ -222,7 +224,7 @@ function scale(base,week){return Math.round(base*Math.pow(1.15,week-1));}
 function skillDmgMult(w){return 1+(w-1)*0.25;}
 function getUnlocked(forceAll){if(forceAll)return [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15];let l=[1,2,3,4,5,6,7,8];if(S.week>=2)l.push(9,10);if(S.week>=3)l.push(11,12);if(S.week>=4)l.push(13,14);if(S.awakening>=3)l.push(15);return l;}
 function gainAwakening(n){S.awakening=Math.max(0,Math.min(AWAKEN_CAP,S.awakening+n));}
-function speak(cat){const v=$("voice");if(!v)return;const line=rand(DIALOGUE[cat==="inh"?"inheritorVoice":cat==="lord"?"lordVoice":"shoucheng"]);v.className="voice "+(cat==="lord"?"lord":"");v.style.display="block";v.innerHTML='<div class="who">'+(cat==="lord"?"领主的低语":cat==="inh"?"佣兵的呐喊":"")+'</div>'+line;clearTimeout(v._t);v._t=setTimeout(()=>{v.style.display="none";},5000);try{if(window.speechSynthesis){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(line);u.lang="zh-CN";const vp=Math.random()*0.08-0.04,vr=Math.random()*0.06-0.03;if(cat==="lord"){u.pitch=0.55+vp;u.rate=0.75+vr;}else if(cat==="inh"){u.pitch=1.25+vp;u.rate=1.1+vr;}else{u.pitch=0.85+vp;u.rate=0.9+vr;}speechSynthesis.speak(u);}}catch(e){}}
+function speak(cat){const v=$("voice");if(!v)return;const line=rand(DIALOGUE[cat==="inh"?"inheritorVoice":cat==="lord"?"lordVoice":"shoucheng"]);v.className="voice "+(cat==="lord"?"lord":"");v.style.display="block";v.innerHTML='<div class="who">'+(cat==="lord"?"领主的低语":cat==="inh"?"佣兵的呐喊":"")+'</div>'+line;clearTimeout(v._t);v._t=setTimeout(()=>{v.style.display="none";},5000);try{if(window.speechSynthesis){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(line);u.lang="zh-CN";u.volume=_voiceVol;const vp=Math.random()*0.08-0.04,vr=Math.random()*0.06-0.03;if(cat==="lord"){u.pitch=0.55+vp;u.rate=0.75+vr;}else if(cat==="inh"){u.pitch=1.25+vp;u.rate=1.1+vr;}else{u.pitch=0.85+vp;u.rate=0.9+vr;}speechSynthesis.speak(u);}}catch(e){}}
 function showTopbar(show){$("topbar").style.display=show?"flex":"none";}
 
 /* ============================ 音效 ============================ */
@@ -248,19 +250,30 @@ function playSound(type){
  }catch(e){}
 }
 function initAudio(){try{audioCtx().resume();}catch(e){}}
-document.addEventListener("click",e=>{initAudio();const t=e.target;if(t.tagName==="BUTTON"||t.closest("button")||t.classList.contains("cell"))playSound("click");},true);
+let _bgmBooted=false;
+document.addEventListener("click",e=>{initAudio();if(!_bgmBooted){_bgmBooted=true;setTimeout(()=>switchBGM("menu"),150);}const t=e.target;if(t.tagName==="BUTTON"||t.closest("button")||t.classList.contains("cell"))playSound("click");},true);
 
 /* ============================ BGM ============================ */
-let _bgmGain=null,_bgmInterval=null,_bgmType="menu";
-function masterGain(){if(!_bgmGain){_bgmGain=audioCtx().createGain();_bgmGain.gain.value=0.7;_bgmGain.connect(audioCtx().destination);}return _bgmGain;}
-function setBGMVol(v){masterGain().gain.value=v/100;$("bgmVal").textContent=v+"%";}
+let _bgmGain=null,_bgmInterval=null,_bgmType=null,_bgmVol=0.7,_voiceVol=0.9;
+function setVoiceVol(v){_voiceVol=v/100;$("voiceVal").textContent=v+"%";}
+function masterGain(){if(!_bgmGain){_bgmGain=audioCtx().createGain();_bgmGain.gain.value=_bgmVol;_bgmGain.connect(audioCtx().destination);}return _bgmGain;}
+function setBGMVol(v){_bgmVol=v/100;const g=masterGain();g.gain.cancelScheduledValues(audioCtx().currentTime);g.gain.setTargetAtTime(_bgmVol,audioCtx().currentTime,0.02);$("bgmVal").textContent=v+"%";}
 function toggleAudioPanel(){$("audioPanel").classList.toggle("show");}
 function playNote(ctx,freq,start,dur,type,gainVal,pan){const o=ctx.createOscillator();o.type=type||"sine";o.frequency.value=freq;const g=ctx.createGain();g.gain.setValueAtTime(gainVal||0.08,start);g.gain.exponentialRampToValueAtTime(0.001,start+dur-0.02);const p=ctx.createStereoPanner();p.pan.value=pan||0;o.connect(g);g.connect(p);p.connect(masterGain());o.start(start);o.stop(start+dur);}
 function playDrum(ctx,now,freq,decay){const o=ctx.createOscillator();o.type="triangle";o.frequency.value=freq;const g=ctx.createGain();g.gain.setValueAtTime(0.12,now);g.gain.exponentialRampToValueAtTime(0.001,now+decay);o.connect(g);g.connect(masterGain());o.start(now);o.stop(now+decay);}
-function startBGM(type){
- stopBGM();
- const mode=type||_bgmType;_bgmType=mode;
+
+function switchBGM(type){
+ if(!type||_bgmType===type)return;
  const ctx=audioCtx();if(ctx.state==="suspended")ctx.resume();
+ const g=masterGain();
+ // instantly cut all audio — zero delay
+ g.gain.cancelScheduledValues(ctx.currentTime);
+ g.gain.setValueAtTime(g.gain.value,ctx.currentTime);
+ g.gain.setValueAtTime(0,ctx.currentTime+0.001);
+ if(_bgmInterval){clearInterval(_bgmInterval);_bgmInterval=null;}
+ const mode=type;_bgmType=mode;
+ // instantly restore volume
+ g.gain.setValueAtTime(_bgmVol,ctx.currentTime+0.002);
  const bpm=mode==="menu"?90:140;
  const beat=60/bpm;
  let phrase=0;
@@ -269,41 +282,22 @@ function startBGM(type){
   try{
    if(_bgmType!==mode)return;
    const now=ctx.currentTime;phrase++;
-   // evolving bass - 15-second unique progression
    const bassRoots=Array.from({length:N},(_,i)=>110+Math.sin(i*0.3)*40+(i%8===0?0:(i%4===0?20.81:0)));
    bassRoots.forEach((f,i)=>{playNote(ctx,f,now+i*beat*0.5,beat*0.45,"triangle",mode==="menu"?0.12:0.15,0);});
-   // evolving chord pad
-   const chordSets=Array.from({length:N},(_,i)=>{
-    const root=mode==="menu"?261.63:261.63;
-    const s=[root];if(mode!=="menu"){if(i%8<6)s.push(root*1.26);if(i%4<2)s.push(root*1.5);}
-    return s;
-   });
+   const chordSets=Array.from({length:N},(_,i)=>{const root=mode==="menu"?261.63:261.63;const s=[root];if(mode!=="menu"){if(i%8<6)s.push(root*1.26);if(i%4<2)s.push(root*1.5);}return s;});
    chordSets.forEach((ch,i)=>{ch.forEach(f=>{const v=1+Math.sin(phrase+i*0.15)*0.4;playNote(ctx,f*v,now+i*beat*0.5,beat*0.5,"sawtooth",mode==="menu"?0.025:0.03,Math.random()*0.4-0.2);});});
-   // hi-hat
-   for(let i=0;i<N;i++){const vol=mode==="menu"?0.012:0.035;playNote(ctx,7000+Math.sin(phrase+i)*2000,now+i*beat*0.5,0.04,"square",vol*(0.6+Math.sin(phrase+i*0.2)*0.4),Math.random()*0.3-0.15);}
+   for(let i=0;i<N;i++){const vv=mode==="menu"?0.012:0.035;playNote(ctx,7000+Math.sin(phrase+i)*2000,now+i*beat*0.5,0.04,"square",vv*(0.6+Math.sin(phrase+i*0.2)*0.4),Math.random()*0.3-0.15);}
    if(mode!=="menu"){
     const bars=Math.ceil(N/4);
     for(let bar=0;bar<bars;bar++){playDrum(ctx,now+bar*4*beat*0.5,55+Math.sin(phrase+bar)*5,0.15);}
-    for(let bar=0;bar<bars;bar++){
-     playNote(ctx,180+Math.sin(phrase+bar*3)*40,now+(bar*4+1)*beat*0.5,0.08,"triangle",0.08*(0.7+Math.random()*0.3),0);
-     playNote(ctx,180+Math.sin(phrase+bar*3+1)*40,now+(bar*4+3)*beat*0.5,0.08,"triangle",0.08*(0.7+Math.random()*0.3),0);
-    }
-    // evolving lead
-    for(let i=0;i<N;i++){
-     if(i%4!==3){
-      const f=(523.25+Math.sin(phrase+i*0.12)*200)*(1+Math.sin(phrase+i*0.12)*0.25);
-      playNote(ctx,f,now+i*beat*0.5+beat*0.1,beat*0.25,"square",0.055,Math.random()*0.3-0.15);
-     }
-    }
+    for(let bar=0;bar<bars;bar++){playNote(ctx,180+Math.sin(phrase+bar*3)*40,now+(bar*4+1)*beat*0.5,0.08,"triangle",0.08*(0.7+Math.random()*0.3),0);playNote(ctx,180+Math.sin(phrase+bar*3+1)*40,now+(bar*4+3)*beat*0.5,0.08,"triangle",0.08*(0.7+Math.random()*0.3),0);}
+    for(let i=0;i<N;i++){if(i%4!==3){const f=(523.25+Math.sin(phrase+i*0.12)*200)*(1+Math.sin(phrase+i*0.12)*0.25);playNote(ctx,f,now+i*beat*0.5+beat*0.1,beat*0.25,"square",0.055,Math.random()*0.3-0.15);}}
    }
   }catch(e){}
  }
  loop();
  _bgmInterval=setInterval(loop,(N*beat*0.5-0.05)*1000);
 }
-function stopBGM(){if(_bgmInterval){clearInterval(_bgmInterval);_bgmInterval=null;}_bgmType=null;}
-function switchBGM(type){if(_bgmType===type)return;_bgmType=type;startBGM(type);}
-
 /* ============================ 主菜单 / 存档选择 ============================ */
 function renderMenu(){
  B=null;state=null;showTopbar(false);switchBGM("menu");
