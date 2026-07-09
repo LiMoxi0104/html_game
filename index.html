@@ -145,24 +145,23 @@
 /* ============================ 数据 ============================ */
 const SAVE_KEY="eternalReturnSave";
 const AWAKEN_CAP=5;
-const WEEKS_UNLOCK={2:[9,10],3:[11,12],4:[13,14]};
 
 const SKILLS={
- 1:{id:1,name:"光弹",mp:3,dmg:10,cd:0,desc:"造成10点伤害"},
- 2:{id:2,name:"护盾",mp:4,shield:15,cd:2,desc:"获得15护盾(2回合)"},
- 3:{id:3,name:"毒雾",mp:4,poison:5,cd:3,desc:"敌人每回合-5HP(3回合)"},
- 4:{id:4,name:"治愈",mp:5,heal:20,cd:2,desc:"恢复20HP"},
- 5:{id:5,name:"法力虹吸",mp:2,dmg:6,mpgain:4,cd:1,desc:"6伤害,回4MP"},
- 6:{id:6,name:"眩晕冲击",mp:6,dmg:8,freeze:1,cd:4,desc:"8伤害,目标眩晕1回合"},
+ 1:{id:1,name:"光弹",mp:2,dmg:14,cd:0,desc:"造成14点伤害"},
+ 2:{id:2,name:"护盾",mp:3,shield:15,cd:2,desc:"获得15护盾(2回合)"},
+ 3:{id:3,name:"毒雾",mp:3,poison:8,cd:3,desc:"敌人每回合-8HP(3回合)"},
+ 4:{id:4,name:"治愈",mp:4,heal:28,cd:2,desc:"恢复28HP"},
+ 5:{id:5,name:"法力虹吸",mp:1,dmg:9,mpgain:5,cd:1,desc:"9伤害,回5MP"},
+ 6:{id:6,name:"眩晕冲击",mp:4,dmg:12,freeze:1,cd:3,desc:"12伤害,目标眩晕1回合"},
  7:{id:7,name:"荆棘甲",mp:3,thorn:true,cd:2,desc:"本回合反弹50%伤害"},
- 8:{id:8,name:"强化",mp:3,empower:true,cd:1,desc:"下一张技能+50%"},
- 9:{id:9,name:"火球",mp:5,dmg:18,cd:1,desc:"造成18点伤害",unlockWeek:2},
- 10:{id:10,name:"冰墙",mp:5,shield:20,freeze:1,cd:4,desc:"20护盾,冻敌1回合",unlockWeek:2},
- 11:{id:11,name:"吸血之触",mp:4,dmg:10,lifesteal:true,cd:2,desc:"10伤害,回等量HP",unlockWeek:3},
- 12:{id:12,name:"净化",mp:3,cleanse:true,heal:8,cd:2,desc:"清除负面,回8HP",unlockWeek:3},
- 13:{id:13,name:"镜像",mp:6,mirror:true,cd:5,desc:"复制敌人上次技能",unlockWeek:4},
- 14:{id:14,name:"时间扭曲",mp:7,timewarp:true,cd:5,desc:"本回合可连放2技能",unlockWeek:4},
- 15:{id:15,name:"终焉审判",mp:10,dmg:35,self:10,cd:6,desc:"35伤害,自损10HP",unlockAwaken:3},
+ 8:{id:8,name:"强化",mp:2,empower:true,cd:1,desc:"下一张技能+50%"},
+ 9:{id:9,name:"火球",mp:4,dmg:24,cd:1,desc:"造成24点伤害",unlockWeek:2},
+ 10:{id:10,name:"冰墙",mp:4,shield:20,freeze:1,cd:3,desc:"20护盾,冻敌1回合",unlockWeek:2},
+ 11:{id:11,name:"吸血之触",mp:3,dmg:14,lifesteal:true,cd:2,desc:"14伤害,回等量HP",unlockWeek:3},
+ 12:{id:12,name:"净化",mp:2,cleanse:true,heal:12,cd:2,desc:"清除负面,回12HP",unlockWeek:3},
+ 13:{id:13,name:"镜像",mp:5,mirror:true,cd:4,desc:"复制敌人上次技能",unlockWeek:4},
+ 14:{id:14,name:"时间扭曲",mp:6,timewarp:true,cd:5,desc:"本回合可连放2技能",unlockWeek:4},
+ 15:{id:15,name:"终焉审判",mp:8,dmg:45,self:10,cd:5,desc:"45伤害,自损10HP",unlockAwaken:3},
 };
 
 const UNIT={
@@ -230,9 +229,10 @@ const $=id=>document.getElementById(id);
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function rand(arr){return arr[Math.floor(Math.random()*arr.length)];}
 function scale(base,week){return Math.round(base*Math.pow(1.15,week-1));}
+function skillDmgMult(w){return 1+(w-1)*0.25;}
 function getUnlocked(forceAll){if(forceAll)return [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15];let l=[1,2,3,4,5,6,7,8];if(S.week>=2)l.push(9,10);if(S.week>=3)l.push(11,12);if(S.week>=4)l.push(13,14);if(S.awakening>=3)l.push(15);return l;}
 function gainAwakening(n){S.awakening=Math.max(0,Math.min(AWAKEN_CAP,S.awakening+n));}
-function speak(cat){const v=$("voice");if(!v)return;v.className="voice "+(cat==="lord"?"lord":"");v.style.display="block";v.innerHTML='<div class="who">'+(cat==="lord"?"领主的低语":cat==="inh"?"佣兵的呐喊":"")+'</div>'+rand(DIALOGUE[cat==="inh"?"inheritorVoice":cat==="lord"?"lordVoice":"shoucheng"]);clearTimeout(v._t);v._t=setTimeout(()=>{v.style.display="none";},3500);}
+function speak(cat){const v=$("voice");if(!v)return;const line=rand(DIALOGUE[cat==="inh"?"inheritorVoice":cat==="lord"?"lordVoice":"shoucheng"]);v.className="voice "+(cat==="lord"?"lord":"");v.style.display="block";v.innerHTML='<div class="who">'+(cat==="lord"?"领主的低语":cat==="inh"?"佣兵的呐喊":"")+'</div>'+line;clearTimeout(v._t);v._t=setTimeout(()=>{v.style.display="none";},4000);try{if(window.speechSynthesis){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(line);u.lang="zh-CN";if(cat==="lord"){u.pitch=0.6;u.rate=0.8;}else if(cat==="inh"){u.pitch=1.2;u.rate=1.05;}else{u.pitch=0.9;u.rate=0.95;}speechSynthesis.speak(u);}}catch(e){}}
 function showTopbar(show){$("topbar").style.display=show?"flex":"none";}
 
 /* ============================ 音效 ============================ */
@@ -247,7 +247,6 @@ function playSound(type){
   osc.connect(gain);gain.connect(ctx.destination);
   switch(type){
    case "click":osc.type="sine";osc.frequency.setValueAtTime(880,now);osc.frequency.exponentialRampToValueAtTime(440,now+0.08);gain.gain.setValueAtTime(0.1,now);gain.gain.exponentialRampToValueAtTime(0.01,now+0.08);osc.start(now);osc.stop(now+0.08);break;
-   case "hover":osc.type="triangle";osc.frequency.setValueAtTime(440,now);gain.gain.setValueAtTime(0.03,now);gain.gain.exponentialRampToValueAtTime(0.01,now+0.05);osc.start(now);osc.stop(now+0.05);break;
    case "cast":osc.type="sine";osc.frequency.setValueAtTime(523,now);osc.frequency.linearRampToValueAtTime(1046,now+0.15);gain.gain.setValueAtTime(0.12,now);gain.gain.exponentialRampToValueAtTime(0.01,now+0.2);osc.start(now);osc.stop(now+0.2);break;
    case "attack":osc.type="sawtooth";osc.frequency.setValueAtTime(200,now);osc.frequency.exponentialRampToValueAtTime(80,now+0.12);gain.gain.setValueAtTime(0.1,now);gain.gain.exponentialRampToValueAtTime(0.01,now+0.12);osc.start(now);osc.stop(now+0.12);break;
    case "hit":osc.type="square";osc.frequency.setValueAtTime(150,now);osc.frequency.exponentialRampToValueAtTime(60,now+0.1);gain.gain.setValueAtTime(0.12,now);gain.gain.exponentialRampToValueAtTime(0.01,now+0.1);osc.start(now);osc.stop(now+0.1);break;
@@ -304,7 +303,6 @@ function closeMenu(){$("menuOverlay").classList.remove("show");}
 function backToMenu(){closeMenu();S=loadSave();renderMenu();}
 
 /* ============================ 数值 ============================ */
-/* 每结束一个轮回（周目+1），玩家该阶段的最大生命、最大法力、法力恢复速度明显提升 */
 function inhHP(w){return 100+(w-1)*40;}
 function inhMP(w){return 10+(w-1)*5;}
 function inhRegen(w){return 3+(w-1)*2;}
@@ -312,32 +310,48 @@ function lordHP(w){return 90+(w-1)*25;}
 function lordMP(w){return 12+(w-1)*5;}
 function lordRegen(w){return 3+(w-1)*2;}
 function boardInhHP(w){return 160+(w-1)*50;}
-function boardInhATK(w){return 15+(w-1)*5;}
+function boardInhATK(w){return 15*Math.pow(2,w-1);}
 
 /* ============================ 佣兵阶段 ============================ */
 function startInheritor(){
  document.body.classList.remove("dominator");showTopbar(true);
- state={phase:"inheritor",nodeIndex:0,hp:inhHP(S.week),maxhp:inhHP(S.week),mp:inhMP(S.week),maxmp:inhMP(S.week),mpRegen:inhRegen(S.week),
-   poison:0,slowNext:false,freezeNext:false,enemyAtkBonus:0,resolved:false,fromMenu:state&&state.fromMenu};
- const savedNodes=S.currentLordSetup&&S.currentLordSetup.nodes&&S.currentLordSetup.nodes.length===10?S.currentLordSetup.nodes:null;
- state.nodes=savedNodes||defaultNodes();
- renderInheritor();presentNode();
+ state={phase:"inheritor",encounterIndex:0,hp:inhHP(S.week),maxhp:inhHP(S.week),mp:inhMP(S.week),maxmp:inhMP(S.week),mpRegen:inhRegen(S.week),
+   encounters:generateMercEncounters(),fromMenu:state&&state.fromMenu};
+ renderInheritor();presentEncounter();
 }
-function defaultNodes(){const a=[];for(let i=0;i<10;i++)a.push({type:"empty"});return a;}
+function generateMercEncounters(){
+ const board=S.currentLordSetup&&S.currentLordSetup.board?S.currentLordSetup.board:null;
+ if(!board||!board.length)return [{type:"boss"}];
+ const list=[];
+ for(let c=9;c>=0;c--){
+  const cells=board[c].filter(x=>x);
+  if(!cells.length)continue;
+  const tower=cells.find(x=>x.type==="tower");
+  const units=cells.filter(x=>x.type==="unit");
+  if(tower)list.push({type:"tower",tower:tower.id});
+  else if(units.length)list.push({type:"unit",units:units.map(x=>x.id)});
+ }
+ if(!list.length)list.push({type:"boss"});
+ return list;
+}
 function renderInheritor(){
+ const total=state.encounters.length;const done=state.encounterIndex;
+ const pct=total?done/total*100:100;
  $("game").innerHTML=`
   <div class="stats">
     <div class="badge">❤️ <span id="sHp"></span>/${state.maxhp}</div>
     <div class="bar"><span class="hpfill" id="sHpBar"></span></div>
     <div class="badge">💧 <span id="sMp"></span>/${state.maxmp}</div>
     <div class="bar"><span class="mpfill" id="sMpBar"></span></div>
-    <div class="badge">🔁 回复 ${state.mpRegen}/回合</div>
-    <div class="badge">✨ 觉醒 ${S.awakening}/${AWAKEN_CAP}</div>
-    <div class="badge">📅 第 ${S.week} 周目</div>
+    <div class="badge" style="white-space:nowrap">⚡ <span id="sRegen"></span>/回合</div>
+    <div class="bar" style="min-width:0;flex:0 0 80px"><span class="mpfill" id="sRegenBar" style="width:${state.mpRegen/state.maxmp*100}%"></span></div>
   </div>
-  <div class="map-strip" id="mapStrip"></div>
+  <div style="margin:6px 0">
+    <div class="badge">会见领主 ${done}/${total}</div>
+    <div class="bar"><span class="hpfill" style="width:${pct}%"></span></div>
+  </div>
   <div class="panel" id="content" style="margin-top:8px;flex:1;overflow:auto;"></div>`;
- updateInhStats();renderMap();
+ updateInhStats();
 }
 function updateInhStats(){
  const hp=B?Math.max(0,B.player.hp):Math.max(0,state.hp);
@@ -348,68 +362,29 @@ function updateInhStats(){
  const sHpBar=$("sHpBar");if(sHpBar)sHpBar.style.width=Math.max(0,hp/maxhp*100)+"%";
  const sMp=$("sMp");if(sMp)sMp.textContent=mp;
  const sMpBar=$("sMpBar");if(sMpBar)sMpBar.style.width=mp/maxmp*100+"%";
+ const sR=$("sRegen");if(sR)sR.textContent=state.mpRegen;
+ const sRB=$("sRegenBar");if(sRB)sRB.style.width=state.mpRegen/state.maxmp*100+"%";
 }
-function renderMap(){
- const strip=$("mapStrip");if(!strip)return;
- const icons={empty:"🌿",unit:"⚔️",tower:"🗼"};
- let html="";
- for(let i=0;i<10;i++){
-   const n=state.nodes[i];const cls=["node"];
-   if(i===state.nodeIndex)cls.push("cur");else if(i<state.nodeIndex)cls.push("done");
-   if(n.type==="tower")cls.push("tower");if(n.type==="unit")cls.push("unit");
-   html+=`<div class="${cls.join(" ")}"><div class="ic">${icons[n.type]}</div><div>${i+1}</div></div>`;
- }
- strip.innerHTML=html;
- strip.scrollLeft=Math.max(0,(state.nodeIndex-2)*70);
-}
-function presentNode(){
- if(state.nodeIndex>=10){startConfront("inheritor");return;}
- const i=state.nodeIndex;const node=state.nodes[i];
- if(state.poison>0){state.hp-=4;state.poison--;updateInhStats();if(state.hp<=0){finishInheritorChallenge("fail");return;}}
+function presentEncounter(){
+ if(state.encounterIndex>=state.encounters.length){startConfront("inheritor");return;}
+ const enc=state.encounters[state.encounterIndex];
  const c=$("content");
- if(node.type==="tower"){
-   const eff=applyTower(node.tower);state.resolved=true;
-   c.innerHTML=`<h2>🗼 防御塔陷阱</h2><div class="sub">你踩中了领主布置的${TOWER[node.tower].name}。</div><div class="badge" style="margin:8px 0">${eff}</div>${advanceBtn()}`;
+ if(enc.type==="tower"){
+   const T=TOWER[enc.tower];state.hp-=T.dmg;updateInhStats();
+   const msg=`承受${T.name}，损失${T.dmg}HP`;
+   if(state.hp<=0){save();renderVictory("你倒在了佣兵的道路上……\n保持本心，下一轮继续挑战。");return;}
+   state.encounterIndex++;renderInheritor();
+   c.innerHTML=`<h2>🗼 防御塔</h2><div class="sub">领主布置的${T.name}对你造成伤害。</div><div class="badge" style="margin:8px 0">${msg}</div><button style="margin-top:10px" onclick="presentEncounter()">继续前进 →</button>`;
    speak("lord");
- }else if(node.type==="unit"){
-   startNodeBattle(node);return;
+ }else if(enc.type==="unit"){
+   const enemies=enc.units.map(id=>makeUnit(id,S.week));
+   const b=newBattle({hp:state.hp,maxhp:state.maxhp,mp:state.mp,maxmp:state.maxmp,mpRegen:state.mpRegen,enemies,unlocked:getUnlocked(),isLord:false});
+   B=b;B.onWin=()=>{state.hp=b.player.hp;state.mp=b.player.mp;state.encounterIndex++;renderInheritor();c.innerHTML=`<h2>⚔️ 胜利！</h2><div class="sub">你击败了守军。</div><button style="margin-top:10px" onclick="presentEncounter()">继续前进 →</button>`;speak("inh");};
+   B.onLose=()=>{playSound("lose");save();renderVictory("你倒在了佣兵的道路上……\n保持本心，下一轮继续挑战。");};
+   renderBattle();speak("lord");
  }else{
-   const ev=rand(["你在一处残垣中发现微光，稍作休整。","风穿过空荡的回廊，你听见自己的心跳。","破碎的雕像低语着某个名字——也许是你的。"]);
-   let bonus="";
-   if(Math.random()<0.5){const h=Math.min(state.maxhp-state.hp,15);state.hp+=h;bonus=`<div class="badge" style="margin:6px 0">恢复 ${h} HP</div>`;updateInhStats();}
-   state.resolved=true;
-   c.innerHTML=`<h2>🌿 空旷节点</h2><div class="sub">${ev}</div>${bonus}${advanceBtn()}`;
-   speak("lord");
+   state.encounterIndex++;renderInheritor();presentEncounter();
  }
-}
-function advanceBtn(){return `<button style="margin-top:10px" ${(!state.resolved)?"disabled":""} onclick="doAdvance()">前进 →</button>`;}
-function doAdvance(){
- if(!state.resolved)return;
- state.nodeIndex++;renderMap();state.resolved=false;presentNode();
-}
-function applyTower(t){
- switch(t){
-  case"T1":state.hp-=8;updateInhStats();if(state.hp<=0){finishInheritorChallenge("fail");}return"损失 8 点HP";
-  case"T2":state.slowNext=true;return"下个节点的敌人攻速减半";
-  case"T3":state.poison=3;return"中毒：之后3个节点各损失4HP";
-  case"T4":state.freezeNext=true;return"下场战斗随机一敌人被冰冻1回合";
-  case"T5":state.hp-=12;state.enemyAtkBonus+=3;updateInhStats();if(state.hp<=0){finishInheritorChallenge("fail");}return"损失12HP，下场敌人攻击+3";
- }
- return"";
-}
-function startNodeBattle(node){
- const enemies=node.units.map(id=>makeUnit(id,S.week));
- if(state.slowNext){enemies.forEach(e=>e.atkEvery*=2);state.slowNext=false;}
- if(state.enemyAtkBonus){enemies.forEach(e=>e.atk+=state.enemyAtkBonus);state.enemyAtkBonus=0;}
- if(state.freezeNext){const al=enemies.filter(e=>e.hp>0);if(al.length)al[Math.floor(Math.random()*al.length)].frozen=1;state.freezeNext=false;}
- const b=newBattle({hp:state.hp,maxhp:state.maxhp,mp:state.mp,maxmp:state.maxmp,mpRegen:state.mpRegen,enemies,unlocked:getUnlocked(),isLord:false});
- B=b;B.onWin=()=>{state.hp=b.player.hp;state.mp=b.player.mp;state.resolved=true;renderInheritor();$("content").innerHTML=`<h2>⚔️ 胜利！</h2><div class="sub">你清除了这个节点的守军。</div>${advanceBtn()}`;speak("inh");};
- B.onLose=()=>{playSound("lose");finishInheritorChallenge("fail");};
- renderBattle();speak("lord");
-}
-function finishInheritorChallenge(result){
- if(result==="fail"){save();renderVictory("你倒在了佣兵的道路上……\n保持本心，下一轮继续挑战。");}
- else{startConfront("inheritor");}
 }
 
 /* ============================ 卡牌战斗引擎 ============================ */
@@ -479,7 +454,6 @@ function castCard(idx){
  if(isTW){B.bonusCasts=(B.bonusCasts||0)+1;}
  renderBattle();
  if(B.bonusCasts>0){B.bonusCasts--;B.busy=false;renderBattle();return;}
- // 敌人行动
  flashHurt();
  setTimeout(enemyTurn,650);
 }
@@ -488,17 +462,14 @@ function flashHurt(){
  B.enemies.forEach((e,i)=>{if(e.hp>0){const el=$("e"+i);if(el)el.classList.add("hurt");setTimeout(()=>{if(el)el.classList.remove("hurt");},350);}});
 }
 function enemyTurn(){
- // 中毒结算
  B.enemies.forEach(e=>{if(e.hp>0&&e.poisonTurns>0){e.hp-=e.poisonDmg;e.poisonTurns--;B.log.push(`${e.name}中毒-${e.poisonDmg}`);}});
  B.enemies=B.enemies.filter(e=>e.hp>-999);
- // 敌人行动
  B.enemies.forEach(e=>{
   if(e.hp<=0)return;
   if(e.frozen>0){e.frozen--;return;}
   e.atkCounter++;if(e.atkCounter%e.atkEvery!==0)return;
   enemyAttack(e,B);
  });
- // 资源回复
  B.player.mp=Math.min(B.player.maxmp,B.player.mp+(B.player.mpRegen||3));
  Object.keys(B.cdMap).forEach(k=>{if(B.cdMap[k]>0)B.cdMap[k]--;});
  if(B.player.shieldTurns>0){B.player.shieldTurns--;if(B.player.shieldTurns===0)B.player.shield=0;}
@@ -536,24 +507,24 @@ function damageEnemy(b,e,amt){
  e.hp-=d;
 }
 function applySkill(sid,b){
- const p=b.player;const sk=SKILLS[sid];const mult=p.empower?1.5:1;p.empower=false;
+ const p=b.player;const sk=SKILLS[sid];const mult=(p.empower?1.5:1)*skillDmgMult(S.week);p.empower=false;
  const front=b.enemies.find(e=>e.hp>0);
  switch(sid){
-  case 1:if(front)damageEnemy(b,front,Math.round(10*mult));break;
+  case 1:if(front)damageEnemy(b,front,Math.round(14*mult));break;
   case 2:p.shield+=15;p.shieldTurns=2;playSound("shield");break;
-  case 3:b.enemies.forEach(e=>{if(e.hp>0){e.poisonTurns=3;e.poisonDmg=5;}});break;
-  case 4:p.hp=Math.min(p.maxhp,p.hp+Math.round(20*mult));playSound("heal");break;
-  case 5:if(front)damageEnemy(b,front,Math.round(6*mult));p.mp=Math.min(p.maxmp,p.mp+4);break;
-  case 6:if(front){damageEnemy(b,front,Math.round(8*mult));if(front.hp>0)front.frozen=1;}break;
+  case 3:b.enemies.forEach(e=>{if(e.hp>0){e.poisonTurns=3;e.poisonDmg=8;}});break;
+  case 4:p.hp=Math.min(p.maxhp,p.hp+Math.round(28*mult));playSound("heal");break;
+  case 5:if(front)damageEnemy(b,front,Math.round(9*mult));p.mp=Math.min(p.maxmp,p.mp+5);break;
+  case 6:if(front){damageEnemy(b,front,Math.round(12*mult));if(front.hp>0)front.frozen=1;}break;
   case 7:p.thorn=true;break;
   case 8:p.empower=true;break;
-  case 9:if(front)damageEnemy(b,front,Math.round(18*mult));break;
+  case 9:if(front)damageEnemy(b,front,Math.round(24*mult));break;
   case 10:p.shield+=20;playSound("shield");if(front&&front.hp>0)front.frozen=1;break;
-  case 11:if(front){damageEnemy(b,front,Math.round(10*mult));p.hp=Math.min(p.maxhp,p.hp+Math.round(10*mult));playSound("heal");}break;
-  case 12:p.poisonTurns=0;p.poisonDmg=0;p.hp=Math.min(p.maxhp,p.hp+8);playSound("heal");break;
-  case 13:{if(front)damageEnemy(b,front,Math.round((front.lastSkill||12)*mult));break;}
+  case 11:if(front){damageEnemy(b,front,Math.round(14*mult));p.hp=Math.min(p.maxhp,p.hp+Math.round(14*mult));playSound("heal");}break;
+  case 12:p.poisonTurns=0;p.poisonDmg=0;p.hp=Math.min(p.maxhp,p.hp+12);playSound("heal");break;
+  case 13:{if(front)damageEnemy(b,front,Math.round((front.lastSkill||14)*mult));break;}
   case 14:/* timewarp handled in cast */break;
-  case 15:if(front)damageEnemy(b,front,Math.round(35*mult));p.hp-=10;break;
+  case 15:if(front)damageEnemy(b,front,Math.round(45*mult));p.hp-=10;break;
  }
 }
 
@@ -649,8 +620,6 @@ function renderLord(){
    grid+=`<div class="${cls}" onclick="clickCell(${c},${r})">${inner}${cell?`<div class="tag">${cell.type==="unit"?UNIT[cell.id].name:TOWER[cell.id].name}</div>`:""}</div>`;
   }
  }
- const unlockedTowers=Object.keys(TOWER).filter(t=>S.week>=(TOWER[t].unlockWeek||0));
- const unlockedUnits=Object.keys(UNIT).filter(u=>S.week>=(UNIT[u]?0:99));
  let propHtml="";
  if(state.resolvedProposals<PROPOSALS.length){
   const p=PROPOSALS[state.resolvedProposals];
@@ -674,7 +643,7 @@ function renderLord(){
         <button class="small ghost" ${state.turn>=state.maxTurns?"disabled":""} onclick="endTurn()">结束本回合（点数+2）</button>
         <button onclick="startInheritorAttack()">⚔️ 开始佣兵进攻</button>
       </div>
-      <div class="sub" style="margin-top:6px">点击空格放置，点击已放置单位可拆除（返还点数）。右侧为守成者。</div>
+      <div class="sub" style="margin-top:6px">点击空格放置，点击已放置单位可拆除（返还点数）。每列仅能放一个单位。</div>
     </div>
     <div style="width:240px;overflow:auto">
       ${propHtml}
@@ -684,15 +653,13 @@ function renderLord(){
 }
 function clickCell(c,r){
  const cell=state.board[c][r];
- if(cell){ // 拆除
+ if(cell){
   const cost=cell.type==="unit"?UNIT_COST[cell.id]:TOWER_COST[cell.id];
   state.points+=cost;state.board[c][r]=null;renderLord();return;
  }
  showPlacePopup(c,r);
 }
 function showPlacePopup(c,r){
- const unlockedTowers=Object.keys(TOWER).filter(t=>(TOWER[t].unlockWeek||0)<=S.week);
- const unlockedUnits=Object.keys(UNIT);
  let html=`<div class="card-panel"><h2>布置格 (列${c+1},行${r+1})</h2>
   <div class="opt"><span>放置兵种</span><button class="small" onclick="closePopup();showUnitList(${c},${r})">选择</button></div>
   <div class="opt"><span>放置防御塔</span><button class="small" onclick="closePopup();showTowerList(${c},${r})">选择</button></div>
@@ -711,15 +678,16 @@ function showTowerList(c,r){
  $("popup").innerHTML=`<div class="card-panel"><h2>选择防御塔</h2>${opts}<button class="ghost small" onclick="closePopup()">取消</button></div>`;
  $("popup").classList.add("show");
 }
-function placeUnit(c,r,id){const cost=UNIT_COST[id];if(state.points<cost)return;state.points-=cost;state.board[c][r]={type:"unit",id};closePopup();renderLord();}
-function placeTower(c,r,id){const cost=TOWER_COST[id];if(state.points<cost)return;state.points-=cost;state.board[c][r]={type:"tower",id};closePopup();renderLord();}
+function clearColumn(c){for(let r=0;r<3;r++){if(state.board[c][r]){const cell=state.board[c][r];const ref=cell.type==="unit"?UNIT_COST[cell.id]:TOWER_COST[cell.id];state.points+=ref;state.board[c][r]=null;}}}
+function placeUnit(c,r,id){const cost=UNIT_COST[id];if(state.points<cost)return;clearColumn(c);state.points-=cost;state.board[c][r]={type:"unit",id};closePopup();renderLord();}
+function placeTower(c,r,id){const cost=TOWER_COST[id];if(state.points<cost)return;clearColumn(c);state.points-=cost;state.board[c][r]={type:"tower",id};closePopup();renderLord();}
 function closePopup(){$("popup").classList.remove("show");}
 function endTurn(){if(state.turn>=state.maxTurns)return;state.turn++;state.points+=2;renderLord();}
 function acceptProposal(){const p=PROPOSALS[state.resolvedProposals];state.points+=p.acceptVal;state.resolvedProposals++;save();renderLord();}
 function rejectProposal(){if(state.rejected<3){gainAwakening(1);state.rejected++;}state.resolvedProposals++;save();renderLord();}
 function viewShard(){if(state.shardSeen)return;state.shardSeen=true;gainAwakening(1);save();renderLord();speak("shoucheng");}
 
-/* 佣兵进攻模拟 */
+/* ============================ 佣兵进攻模拟 ============================ */
 function startInheritorAttack(){
  if(state.defense&&state.defense.running)return;
  state.defense={
@@ -733,7 +701,6 @@ function defenseStep(){
  renderDefenseBattle();
  setTimeout(()=>{
   const inh=d.inh;
-  // 塔射程内攻击
   let towerHits=[];
   state.board.forEach((col,tc)=>{
    col.forEach((cell,tr)=>{
@@ -746,23 +713,22 @@ function defenseStep(){
   });
   if(towerHits.length)d.log.push(`塔攻击：${towerHits.join(", ")}`);
   if(inh.hp<=0){endDefense("win");return;}
-  // 当前格守军交战
   const units=state.board[d.c].filter(x=>x&&x.type==="unit").map(x=>makeUnit(x.id,S.week));
   if(units.length){
    d.log.push(`遭遇守军`);
    const alive=autoBattle(inh,units);
    if(!alive){endDefense("win");return;}
   }
-  renderDefenseBattle();
-  if(d.c===0){setTimeout(()=>endDefense("lose"),500);return;}
+  if(d.c===0){endDefense("lose");return;}
   d.c--;
+  renderDefenseBattle();
   setTimeout(defenseStep,600);
  },500);
 }
 function endDefense(result){
  const d=state.defense;if(d)d.running=false;
  if(result==="win"){playSound("win");gainAwakening(1);S.state="lord";S.week++;save();renderVictory("佣兵倒在你的防线之前。\n循环继续，下一任佣兵将更强。");}
- else{playSound("lose");startConfront("lord",state.defense.inh.hp);}
+ else{playSound("lose");S.state="inheritor";S.week++;generateNodesFromBoard();save();renderVictory("佣兵攻破了你的王座……\n你坠入轮回，成为新的挑战者。");}
 }
 function renderDefenseBattle(){
  const d=state.defense||{};const inh=d.inh||{hp:0,maxhp:1};
@@ -818,6 +784,7 @@ function generateNodesFromBoard(){
   else nodes.push({type:"empty"});
  }
  S.currentLordSetup.nodes=nodes;
+ S.currentLordSetup.board=state.board.map(col=>col.map(cell=>cell?JSON.parse(JSON.stringify(cell)):null));
 }
 
 /* ============================ 启动 ============================ */
