@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -188,7 +188,7 @@ const DIALOGUE={
   "权能才是真实，软弱只是幻觉。",
   "看看你颤抖的手……你本就属于王座。",
   "继续前进？你只是在走向自己的倒影。",
-  "记住：上一个继承者，也曾如此天真。",
+  "记住：上一个佣兵，也曾如此天真。",
  ],
  inheritorVoice:[
   "我不会屈服。",
@@ -204,7 +204,7 @@ const DIALOGUE={
  ],
 };
 const PROPOSALS=[
- {text:"「释放瘟疫」让继承者开局就中毒，但史书将记载你的残暴。",accept:"points",acceptVal:3},
+ {text:"「释放瘟疫」让佣兵开局就中毒，但史书将记载你的残暴。",accept:"points",acceptVal:3},
  {text:"「屠戮信使」抹去所有求援者，换得额外布置点数。",accept:"points",acceptVal:3},
  {text:"「献祭旧民」以活人加固王座，立刻获得点数。",accept:"points",acceptVal:4},
 ];
@@ -232,7 +232,7 @@ function rand(arr){return arr[Math.floor(Math.random()*arr.length)];}
 function scale(base,week){return Math.round(base*Math.pow(1.15,week-1));}
 function getUnlocked(forceAll){if(forceAll)return [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15];let l=[1,2,3,4,5,6,7,8];if(S.week>=2)l.push(9,10);if(S.week>=3)l.push(11,12);if(S.week>=4)l.push(13,14);if(S.awakening>=3)l.push(15);return l;}
 function gainAwakening(n){S.awakening=Math.max(0,Math.min(AWAKEN_CAP,S.awakening+n));}
-function speak(cat){const v=$("voice");if(!v)return;v.className="voice "+(cat==="lord"?"lord":"");v.style.display="block";v.innerHTML='<div class="who">'+(cat==="lord"?"领主的低语":cat==="inh"?"继承者的呐喊":"")+'</div>'+rand(DIALOGUE[cat==="inh"?"inheritorVoice":cat==="lord"?"lordVoice":"shoucheng"]);clearTimeout(v._t);v._t=setTimeout(()=>{v.style.display="none";},3500);}
+function speak(cat){const v=$("voice");if(!v)return;v.className="voice "+(cat==="lord"?"lord":"");v.style.display="block";v.innerHTML='<div class="who">'+(cat==="lord"?"领主的低语":cat==="inh"?"佣兵的呐喊":"")+'</div>'+rand(DIALOGUE[cat==="inh"?"inheritorVoice":cat==="lord"?"lordVoice":"shoucheng"]);clearTimeout(v._t);v._t=setTimeout(()=>{v.style.display="none";},3500);}
 function showTopbar(show){$("topbar").style.display=show?"flex":"none";}
 
 /* ============================ 音效 ============================ */
@@ -270,12 +270,12 @@ function renderMenu(){
   <div class="center-wrap">
     <div class="title-art">🌱👑</div>
     <h1>永恒回归 · 权能轮回</h1>
-    <div class="sub">继承者 → 击败领主 → 成为领主 → 被击败 → 继承者……<br>唯有觉醒值≥5时，领主可「自我放逐」打碎权能，终结循环。</div>
+    <div class="sub">佣兵 → 击败领主 → 成为领主 → 被击败 → 佣兵……<br>唯有觉醒值≥5时，领主可「自我放逐」打碎权能，终结循环。</div>
     <div style="display:flex;flex-direction:column;gap:10px;width:300px;margin-top:10px;">`;
  slots.forEach((s,i)=>{
   if(s.exists){
    html+=`<div class="panel" style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
-     <div style="text-align:left"><div style="font-weight:bold">存档 ${i+1}</div><div class="sub">第 ${s.save.week||1} 周目 · ${s.save.state==="lord"?"领主":"继承者"} · 觉醒 ${s.save.awakening||0}/5</div></div>
+     <div style="text-align:left"><div style="font-weight:bold">存档 ${i+1}</div><div class="sub">第 ${s.save.week||1} 周目 · ${s.save.state==="lord"?"领主":"佣兵"} · 觉醒 ${s.save.awakening||0}/5</div></div>
      <div style="display:flex;gap:6px"><button class="small" onclick="startGame(${i})">继续</button><button class="small ghost" onclick="deleteSlot(${i})">删除</button></div>
     </div>`;
   }else{
@@ -314,7 +314,7 @@ function lordRegen(w){return 3+(w-1)*2;}
 function boardInhHP(w){return 160+(w-1)*50;}
 function boardInhATK(w){return 15+(w-1)*5;}
 
-/* ============================ 继承者阶段 ============================ */
+/* ============================ 佣兵阶段 ============================ */
 function startInheritor(){
  document.body.classList.remove("dominator");showTopbar(true);
  state={phase:"inheritor",nodeIndex:0,hp:inhHP(S.week),maxhp:inhHP(S.week),mp:inhMP(S.week),maxmp:inhMP(S.week),mpRegen:inhRegen(S.week),
@@ -408,7 +408,7 @@ function startNodeBattle(node){
  renderBattle();speak("lord");
 }
 function finishInheritorChallenge(result){
- if(result==="fail"){save();renderVictory("你倒在了继承者的道路上……\n保持本心，下一轮继续挑战。");}
+ if(result==="fail"){save();renderVictory("你倒在了佣兵的道路上……\n保持本心，下一轮继续挑战。");}
  else{startConfront("inheritor");}
 }
 
@@ -455,7 +455,7 @@ function renderBattle(){
     ${p.shield>0?`<div class="badge">🛡️${p.shield}(${p.shieldTurns})</div>`:""}
   </div>
   <div class="battle-field">
-    <div class="${pcls}"><div class="body"><span class="face">${p.hp<=0?"😵":(B.isLord?"😈":"😊")}</span>${B.isLord?'<div class="crown">👑</div>':'<div class="sprout">🌱</div>'}</div><div class="name">${B.isLord?"领主":"继承者"}</div></div>
+    <div class="${pcls}"><div class="body"><span class="face">${p.hp<=0?"😵":(B.isLord?"😈":"😊")}</span>${B.isLord?'<div class="crown">👑</div>':'<div class="sprout">🌱</div>'}</div><div class="name">${B.isLord?"领主":"佣兵"}</div></div>
     <div style="font-size:30px;opacity:.5">⚔️</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">${enemiesHtml}</div>
   </div>
@@ -568,11 +568,11 @@ function startConfront(who,inhRemainHp){
   B.onLose=()=>{playSound("lose");save();renderVictory("你倒在了王座之前……\n领主嘲弄着你的无能，轮回继续。");};
   renderBattle();speak("lord");
  }else{
-  const enemy=makeUnit("U1",S.week);enemy.name="继承者";enemy.special="inh";
+  const enemy=makeUnit("U1",S.week);enemy.name="佣兵";enemy.special="inh";
   enemy.hp=inhRemainHp||boardInhHP(S.week);enemy.maxhp=enemy.hp;enemy.atk=boardInhATK(S.week);
   const b=newBattle({hp:lordHP(S.week),maxhp:lordHP(S.week),mp:lordMP(S.week),maxmp:lordMP(S.week),mpRegen:lordRegen(S.week),enemies:[enemy],unlocked:getUnlocked(true),isLord:true});
-  B=b;B.onWin=()=>{playSound("win");gainAwakening(1);S.state="lord";S.week++;save();renderVictory("继承者被你击溃，权能依旧在你手中。");};
-  B.onLose=()=>{playSound("lose");S.state="inheritor";S.week++;generateNodesFromBoard();save();renderVictory("继承者攻破了你的王座……\n你坠入轮回，成为新的挑战者。");};
+  B=b;B.onWin=()=>{playSound("win");gainAwakening(1);S.state="lord";S.week++;save();renderVictory("佣兵被你击溃，权能依旧在你手中。");};
+  B.onLose=()=>{playSound("lose");S.state="inheritor";S.week++;generateNodesFromBoard();save();renderVictory("佣兵攻破了你的王座……\n你坠入轮回，成为新的挑战者。");};
   renderConfront();
  }
 }
@@ -672,7 +672,7 @@ function renderLord(){
       <div class="board">${grid}</div>
       <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
         <button class="small ghost" ${state.turn>=state.maxTurns?"disabled":""} onclick="endTurn()">结束本回合（点数+2）</button>
-        <button onclick="startInheritorAttack()">⚔️ 开始继承者进攻</button>
+        <button onclick="startInheritorAttack()">⚔️ 开始佣兵进攻</button>
       </div>
       <div class="sub" style="margin-top:6px">点击空格放置，点击已放置单位可拆除（返还点数）。右侧为守成者。</div>
     </div>
@@ -719,7 +719,7 @@ function acceptProposal(){const p=PROPOSALS[state.resolvedProposals];state.point
 function rejectProposal(){if(state.rejected<3){gainAwakening(1);state.rejected++;}state.resolvedProposals++;save();renderLord();}
 function viewShard(){if(state.shardSeen)return;state.shardSeen=true;gainAwakening(1);save();renderLord();speak("shoucheng");}
 
-/* 继承者进攻模拟 */
+/* 佣兵进攻模拟 */
 function startInheritorAttack(){
  if(state.defense&&state.defense.running)return;
  state.defense={
@@ -761,7 +761,7 @@ function defenseStep(){
 }
 function endDefense(result){
  const d=state.defense;if(d)d.running=false;
- if(result==="win"){playSound("win");gainAwakening(1);S.state="lord";S.week++;save();renderVictory("继承者倒在你的防线之前。\n循环继续，下一任继承者将更强。");}
+ if(result==="win"){playSound("win");gainAwakening(1);S.state="lord";S.week++;save();renderVictory("佣兵倒在你的防线之前。\n循环继续，下一任佣兵将更强。");}
  else{playSound("lose");startConfront("lord",state.defense.inh.hp);}
 }
 function renderDefenseBattle(){
@@ -774,7 +774,7 @@ function renderDefenseBattle(){
    if(c===9){cls+=" spawn";if(r===1){inner="🚩";tag="出生点";}}
    const inRange=state.board.some((col,tc)=>col.some((cell,tr)=>cell&&cell.type==="tower"&&Math.abs(tc-c)+Math.abs(tr-r)<=TOWER[cell.id].range));
    if(inRange)cls+=" range";
-   if(d.c===c&&d.r===r){inner="🌱";tag="继承者";}
+   if(d.c===c&&d.r===r){inner="🌱";tag="佣兵";}
    else if(state.board[c][r]){
     const cell=state.board[c][r];
     inner=cell.type==="unit"?"⚔️":"🗼";
@@ -792,7 +792,7 @@ function renderDefenseBattle(){
     <div class="badge">🟡 点数 ${state.points}</div>
   </div>
   <div style="margin:8px 0">
-    <div class="badge">继承者 HP ${Math.max(0,inh.hp)}/${inh.maxhp}</div>
+    <div class="badge">佣兵 HP ${Math.max(0,inh.hp)}/${inh.maxhp}</div>
     <div class="bar"><span class="hpfill" style="width:${hpPct}%"></span></div>
   </div>
   <div class="board">${grid}</div>
