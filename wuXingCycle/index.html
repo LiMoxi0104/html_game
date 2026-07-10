@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=960" />
+  <title>五行轮回 · 烛龙囚笼</title>
+  <link rel="stylesheet" href="css/reset.css" />
+  <link rel="stylesheet" href="css/game-ui.css" />
+  <link rel="stylesheet" href="css/animation.css" />
+</head>
+<body>
+  <div class="wx-stage">
+    <canvas id="game" width="960" height="540"></canvas>
+
+    <!-- 操作说明 / 提示弹窗（DOM 层，半透明水墨边框） -->
+    <div id="wx-dialog" class="wx-dialog">
+      <div class="wx-dialog-box">
+        <div class="wx-dialog-title"></div>
+        <div class="wx-dialog-body"></div>
+        <button class="wx-dialog-close">开始探索</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 工具 -->
+  <script src="js/utils/MathTool.js"></script>
+  <script src="js/utils/StorageUtil.js"></script>
+  <script src="js/utils/FrameAnim.js"></script>
+  <!-- 核心引擎 -->
+  <script src="js/core/Collision.js"></script>
+  <script src="js/core/AssetManager.js"></script>
+  <script src="js/core/GameData.js"></script>
+  <script src="js/core/InputManager.js"></script>
+  <script src="js/core/Renderer.js"></script>
+  <script src="js/core/GameMain.js"></script>
+  <!-- 角色 -->
+  <script src="js/player/Player.js"></script>
+  <script src="js/player/SkillSystem.js"></script>
+  <script src="js/player/ParrySystem.js"></script>
+  <!-- 地图与陷阱 -->
+  <script src="js/map/MapLoader.js"></script>
+  <script src="js/map/trap/TrapBase.js"></script>
+  <script src="js/map/trap/SpikeTrap.js"></script>
+  <script src="js/map/trap/PoisonTrap.js"></script>
+  <script src="js/map/TrapSystem.js"></script>
+  <!-- 敌人 -->
+  <script src="js/enemy/EnemyBase.js"></script>
+  <!-- 特效 -->
+  <script src="js/effect/EffectPool.js"></script>
+  <script src="js/effect/ShockWave.js"></script>
+  <!-- UI -->
+  <script src="js/ui/StatusBar.js"></script>
+  <script src="js/ui/DialogBox.js"></script>
+  <script src="js/ui/UIManager.js"></script>
+  <!-- 音频 -->
+  <script src="js/audio/AudioList.js"></script>
+  <script src="js/audio/AudioManager.js"></script>
+</body>
+</html>

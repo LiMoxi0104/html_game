@@ -1,0 +1,11 @@
+/* reset.css：全局样式重置（桌面固定布局） */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; }
+body {
+  background: #14110d;
+  color: #f5f0e6;
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+  overflow: hidden;
+}
+canvas { display: block; }
+button { font-family: inherit; cursor: pointer; }

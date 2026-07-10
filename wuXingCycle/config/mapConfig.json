@@ -1,0 +1,35 @@
+{
+  "woodValley": {
+    "name": "木幽谷",
+    "width": 2400,
+    "height": 540,
+    "groundY": 472,
+    "spawn": { "x": 120, "y": 410 },
+    "enemies": [
+      { "id": "dummy_1", "type": "dummy", "x": 560, "y": 410, "w": 40, "h": 62, "hp": 80 }
+    ],
+    "traps": [
+      {
+        "id": "spike_1",
+        "type": "spike",
+        "x": 820,
+        "y": 442,
+        "width": 46,
+        "height": 30,
+        "damage": 12,
+        "intervalMs": 1600,
+        "activeMs": 520
+      },
+      {
+        "id": "poison_1",
+        "type": "poison",
+        "x": 1180,
+        "y": 432,
+        "width": 120,
+        "height": 40,
+        "damage": 4,
+        "tickMs": 500
+      }
+    ]
+  }
+}

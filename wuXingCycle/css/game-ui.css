@@ -1,0 +1,69 @@
+/* game-ui.css：状态栏/弹窗样式（暗红+墨黑国风，桌面固定布局） */
+
+.wx-stage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 960px;
+  height: 540px;
+  box-shadow: 0 0 0 2px #8b0000, 0 0 40px rgba(0,0,0,0.7);
+  background: #f5f0e6;
+}
+
+#game {
+  width: 960px;
+  height: 540px;
+  display: block;
+}
+
+/* 弹窗：半透明水墨边框 */
+.wx-dialog {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20,17,13,0.55);
+  z-index: 10;
+}
+.wx-dialog.show { display: flex; }
+
+.wx-dialog-box {
+  width: 520px;
+  padding: 28px 32px;
+  background: rgba(26,26,26,0.92);
+  border: 2px solid #8b0000;
+  border-radius: 6px;
+  box-shadow: 0 0 30px rgba(0,0,0,0.6), inset 0 0 24px rgba(139,0,0,0.15);
+  color: #f5f0e6;
+  text-align: center;
+}
+
+.wx-dialog-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #c0392b;
+  letter-spacing: 2px;
+  margin-bottom: 16px;
+}
+
+.wx-dialog-body {
+  font-size: 14px;
+  line-height: 1.9;
+  white-space: pre-line;
+  color: #e8e2d0;
+  margin-bottom: 22px;
+}
+
+.wx-dialog-close {
+  padding: 10px 28px;
+  font-size: 15px;
+  color: #f5f0e6;
+  background: #8b0000;
+  border: 1px solid #c0392b;
+  border-radius: 4px;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+.wx-dialog-close:hover { background: #a31515; }
+.wx-dialog-close:active { transform: scale(0.97); }

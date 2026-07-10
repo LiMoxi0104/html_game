@@ -1,0 +1,31 @@
+{
+  "canvas": { "width": 960, "height": 540 },
+  "world": { "groundY": 472, "boundaryPadding": 24 },
+  "player": {
+    "width": 40,
+    "height": 62,
+    "moveSpeed": 3.4,
+    "jumpForce": 12,
+    "gravity": 0.62,
+    "maxFallSpeed": 16,
+    "invulnMs": 600,
+    "attackMoveLock": true
+  },
+  "timeScale": { "normal": 1, "hitFreeze": 0.1, "parryFreeze": 0.2 },
+  "freeze": { "hitMs": 100, "parryMs": 67 },
+  "camera": { "lerp": 0.12 },
+  "colors": {
+    "paper": "#f5f0e6",
+    "ink": "#1a1a1a",
+    "darkRed": "#8b0000",
+    "player": "#33352f",
+    "playerFace": "#e8e2d0",
+    "enemy": "#5a2a2a",
+    "trap": "#7a1f1f",
+    "mountain": "#9aa3a0",
+    "mountainFar": "#c3c8c3",
+    "hp": "#c0392b",
+    "mp": "#2e6f9e",
+    "exp": "#caa64a"
+  }
+}

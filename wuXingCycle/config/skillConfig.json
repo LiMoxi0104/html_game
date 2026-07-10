@@ -1,0 +1,86 @@
+{
+  "skills": {
+    "water_slash": {
+      "id": "water_slash",
+      "name": "水行轻击",
+      "element": "water",
+      "type": "light",
+      "mpCost": 0,
+      "cooldownMs": 280,
+      "phases": [
+        {
+          "id": "windup",
+          "name": "起手",
+          "sheet": "player_attack",
+          "frameStart": 0,
+          "frameCount": 4,
+          "durationMs": 150,
+          "hit": false
+        },
+        {
+          "id": "active",
+          "name": "挥击命中",
+          "sheet": "skill_water_light",
+          "frameStart": 4,
+          "frameCount": 5,
+          "durationMs": 190,
+          "hit": true,
+          "hitFrames": [4, 5, 6, 7],
+          "hitbox": { "offsetX": 22, "offsetY": -14, "width": 50, "height": 58 },
+          "damage": 14,
+          "knockback": 6
+        },
+        {
+          "id": "recovery",
+          "name": "收招",
+          "sheet": "player_attack",
+          "frameStart": 9,
+          "frameCount": 4,
+          "durationMs": 150,
+          "hit": false
+        }
+      ]
+    },
+    "wood_slash": {
+      "id": "wood_slash",
+      "name": "木行重击",
+      "element": "wood",
+      "type": "heavy",
+      "mpCost": 8,
+      "cooldownMs": 620,
+      "phases": [
+        {
+          "id": "windup",
+          "name": "起手",
+          "sheet": "player_attack",
+          "frameStart": 0,
+          "frameCount": 6,
+          "durationMs": 260,
+          "hit": false
+        },
+        {
+          "id": "active",
+          "name": "挥击命中",
+          "sheet": "skill_wood_light",
+          "frameStart": 6,
+          "frameCount": 6,
+          "durationMs": 240,
+          "hit": true,
+          "hitFrames": [6, 7, 8, 9, 10],
+          "hitbox": { "offsetX": 26, "offsetY": -18, "width": 64, "height": 66 },
+          "damage": 30,
+          "knockback": 12
+        },
+        {
+          "id": "recovery",
+          "name": "收招",
+          "sheet": "player_attack",
+          "frameStart": 12,
+          "frameCount": 5,
+          "durationMs": 200,
+          "hit": false
+        }
+      ]
+    }
+  }
+}

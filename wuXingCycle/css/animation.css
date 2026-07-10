@@ -1,0 +1,28 @@
+/* animation.css：屏幕震动 / 雾气 / 淡入淡出 @keyframes（无 @media，仅桌面） */
+
+/* 弹窗淡入 */
+@keyframes wx-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.wx-dialog.show .wx-dialog-box {
+  animation: wx-fade-in 0.25s ease both;
+}
+
+/* 宣纸雾气：缓慢漂浮的半透明墨雾（装饰，减轻 Canvas 负担） */
+@keyframes wx-mist {
+  0%   { opacity: 0.05; transform: translateX(0); }
+  50%  { opacity: 0.12; transform: translateX(20px); }
+  100% { opacity: 0.05; transform: translateX(0); }
+}
+
+/* 受击/重击屏幕震动（由 JS 触发 class 时启用，此处定义关键帧） */
+@keyframes wx-shake {
+  0%   { transform: translate(0, 0); }
+  20%  { transform: translate(-4px, 2px); }
+  40%  { transform: translate(4px, -2px); }
+  60%  { transform: translate(-3px, 1px); }
+  80%  { transform: translate(3px, -1px); }
+  100% { transform: translate(0, 0); }
+}
+.wx-shake { animation: wx-shake 0.18s linear; }
