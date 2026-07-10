@@ -25,6 +25,16 @@ class TrapSystem {
     }
   }
 
+  // 检测指定矩形区域是否被任何陷阱命中（完美闪避用）
+  // 返回第一个命中的陷阱结果，无命中返回 null
+  checkAtPosition(rect) {
+    for (const t of this.traps) {
+      const hit = t.checkAtPosition(rect);
+      if (hit) return hit;
+    }
+    return null;
+  }
+
   draw(ctx) {
     for (const t of this.traps) t.draw(ctx);
   }

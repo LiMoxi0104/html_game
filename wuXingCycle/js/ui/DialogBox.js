@@ -16,7 +16,7 @@ class DialogBox {
   // 首次进入操作说明
   static showIntro() {
     DialogBox.show("五行轮回 · 烛龙囚笼",
-      "WASD / 方向键：移动　空格：跳跃\nJ：水行轻击　K：木行重击　L：匕首弹反（预留）\n移动至尖刺/毒沼触发陷阱，攻击木桩验证三阶段伤害判定。");
+      "WASD / 方向键：移动\n空格：跳跃（空中再按=二段跳，按住=蓄力高跳，短按=矮跳）\n\n【动态招式】\nJ：轻击槽1　S+J：轻击槽2　W+J：轻击槽3\nW+K：重击槽1　A/D+K：重击槽2　S+K：重击槽3\nL：匕首弹反（200ms窗口，成功后1s无敌+处决标记）\nShift：闪避（向后瞬移，残留箱可触发完美闪避）\n\n点击状态栏右侧「招」字可管理技能装配");
     const el = DialogBox.el();
     if (el) {
       const btn = el.querySelector(".wx-dialog-close");

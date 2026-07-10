@@ -18,7 +18,8 @@
         "height": 30,
         "damage": 12,
         "intervalMs": 1600,
-        "activeMs": 520
+        "activeMs": 520,
+        "knockback": 16
       },
       {
         "id": "poison_1",
@@ -28,7 +29,9 @@
         "width": 120,
         "height": 40,
         "damage": 4,
-        "tickMs": 500
+        "tickMs": 500,
+        "knockbackX": 6,
+        "knockbackY": -3
       }
     ]
   }

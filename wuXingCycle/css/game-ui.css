@@ -5,15 +5,27 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 960px;
-  height: 540px;
+  /*
+   * 响应式尺寸设计：
+   *   - 宽度以 vmin 为基准（100vmin = 视口较短边的100%）
+   *   - 高度由 width * 9/16 自动计算，确保严格 16:9
+   *   - aspect-ratio: 16/9 作为兜底保障
+   *   - 最大不超过设计稿 960×540，最小不低于可读阈值 640×360
+   */
+  width: min(100vmin, 960px);
+  height: auto;                          /* 由 aspect-ratio 自动推导 */
+  aspect-ratio: 16 / 9;                 /* ★ v5 强制锁定 16:9 比例 */
+  max-width: 960px;
+  max-height: 540px;                    /* 当 width 被 max-width 限制时生效 */
+  min-width: 640px;
+  min-height: 360px;                    /* 当 width 被 min-width 限制时生效 */
   box-shadow: 0 0 0 2px #8b0000, 0 0 40px rgba(0,0,0,0.7);
   background: #f5f0e6;
 }
 
 #game {
-  width: 960px;
-  height: 540px;
+  width: 100%;
+  height: 100%;
   display: block;
 }
 

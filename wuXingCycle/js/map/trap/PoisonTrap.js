@@ -22,8 +22,8 @@ class PoisonTrap extends TrapBase {
     this.tickTimer += dt; // 按真实帧间隔累加，到 tickMs 触发一次伤害
     if (this.tickTimer >= this.tickMs) {
       this.tickTimer = 0;
-      player.takeDamage(this.damage);
-      return { type: "poison", damage: this.damage };
+      // 走父类 onTrigger，自动继承 knockback 击退逻辑
+      return super.onTrigger(player);
     }
     return null;
   }

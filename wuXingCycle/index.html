@@ -28,10 +28,18 @@
   <script src="js/utils/FrameAnim.js"></script>
   <!-- 核心引擎 -->
   <script src="js/core/Collision.js"></script>
+  <!-- ★ v5 实体碰撞系统 -->
+  <script src="js/core/Entity.js"></script>
+  <script src="js/core/CollisionManager.js"></script>
   <script src="js/core/AssetManager.js"></script>
   <script src="js/core/GameData.js"></script>
+  <script src="js/core/SaveManager.js"></script>
+  <!-- 核心：输入 -->
   <script src="js/core/InputManager.js"></script>
   <script src="js/core/Renderer.js"></script>
+  <!-- ★ v4 战斗系统（在 GameMain 和 SkillSystem 之前加载） -->
+  <script src="js/combat/HitboxSystem.js"></script>
+  <script src="js/combat/SkillVFXRenderer.js"></script>
   <script src="js/core/GameMain.js"></script>
   <!-- 角色 -->
   <script src="js/player/Player.js"></script>
@@ -51,6 +59,7 @@
   <!-- UI -->
   <script src="js/ui/StatusBar.js"></script>
   <script src="js/ui/DialogBox.js"></script>
+  <script src="js/ui/SkillPanel.js"></script>
   <script src="js/ui/UIManager.js"></script>
   <!-- 音频 -->
   <script src="js/audio/AudioList.js"></script>
