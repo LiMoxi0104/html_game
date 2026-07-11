@@ -33,7 +33,7 @@ class PoisonTrap extends TrapBase {
     ctx.fillStyle = "rgba(46,139,87,0.30)";
     ctx.fillRect(this.x, this.y, this.w, this.h);
     // 冒泡装饰
-    ctx.fillStyle = "rgba(46,139,87,0.6)";
+    ctx.fillStyle = "rgba(42, 230, 123, 0.6)";
     const t = performance.now() / 400;
     for (let i = 0; i < 4; i++) {
       const bx = this.x + 12 + i * (this.w / 4);

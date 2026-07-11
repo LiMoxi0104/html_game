@@ -10,9 +10,19 @@ class TrapSystem {
   // 按 type 工厂创建陷阱实例（预留扩展点）
   static create(cfg) {
     switch (cfg.type) {
-      case "spike": return new SpikeTrap(cfg);
-      case "poison": return new PoisonTrap(cfg);
-      default: return new TrapBase(cfg);   // 未知类型回退基类
+      case "spike":          return new SpikeTrap(cfg);
+      case "poison":         return new PoisonTrap(cfg);
+      // 电击网：复用 SpikeTrap 的周期性 on/off 逻辑
+      case "electricGrid":   return new SpikeTrap(cfg);
+      // 碎裂类：继承 TrapBase（碰撞 + 伤害）
+      case "crackedBridge":
+      case "crackedGlass":
+      case "crackedPlatform": return new TrapBase(cfg);
+      // 飞镖口 / 锯片 / 磁力区
+      case "dartLauncher":   return new TrapBase(cfg);
+      case "ceilingSaw":     return new TrapBase(cfg);
+      case "magnetField":    return new TrapBase(cfg);
+      default:               return new TrapBase(cfg);   // 未知类型回退
     }
   }
 

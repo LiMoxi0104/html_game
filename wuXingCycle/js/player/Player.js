@@ -206,9 +206,24 @@ class Player {
       this.vy *= 0.85;
     }
 
-    // —— 地面与边界 ——
-    const groundY = map.groundY - this.h;
-    if (this.y >= groundY) {
+    // —— 地面与边界（★ v3 多平台碰撞）——
+    const groundY = map.groundY - this.h;  // 底部地面（坠落线）
+
+    // 先检测平台碰撞（优先级高于地面）
+    const platformResult = MapLoader.checkPlatformCollision(this, map);
+
+    if (platformResult.onPlatform) {
+      // 站在平台上
+      this.y = platformResult.platformY - this.h;  // 脚底贴平台表面
+      this.vy = 0;
+      if (!this.onGround) {
+        this.jumpCount = 0;
+        this.isJumpHolding = false;
+        this.jumpHoldTimer = 0;
+      }
+      this.onGround = true;
+    } else if (this.y >= groundY) {
+      // 无平台 → 落到底层地面
       this.y = groundY;
       this.vy = 0;
       if (!this.onGround) {
@@ -220,11 +235,28 @@ class Player {
     } else {
       this.onGround = false;
     }
+
+    // ★ 跳跃时头部碰撞平台底部（穿顶修正）
+    if (this.vy < 0) {
+      const ceilY = MapLoader.checkPlatformCeiling(this, map);
+      if (ceilY !== null) {
+        this.y = ceilY;
+        this.vy = 0;
+      }
+    }
+
+    // 顶部边界
     if (this.y < 0) { this.y = 0; this.vy = 0; }
 
     const pad = c.world.boundaryPadding;
     if (this.x < pad) this.x = pad;
     if (this.x > map.width - this.w - pad) this.x = map.width - this.w - pad;
+
+    // ★ 坠落死亡检测：掉出所有平台 + 超过底部地面
+    if (this.y > map.height) {
+      this.hp = 0;
+      this.state = "dead";
+    }
 
     // —— 状态机 ——
     if (!casting && this.state !== "hurt" && this.state !== "dodge" && this.state !== "parry") {

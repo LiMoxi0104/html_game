@@ -26,8 +26,15 @@ class GameMain {
 
     // —— 浮动提示文字系统 ——
     // 数组：[{text, x, y, color, timer, duration}]
-    // UIManager.render() 中统一绘制
     this.floatTexts = [];
+
+    // ★ v4 传送门 / 转场系统
+    this.transitionState = null;    // null | "fadeOut" | "switching" | "fadeIn"
+    this.transitionAlpha = 0;       // 0=透明 1=全黑
+    this.transitionTimer = 0;
+    this.portalCooldown = 0;        // 传送冷却 ms（防重复触发）
+    this.transitionTarget = null;   // { mapId, targetX, targetY }
+    this._mapConfigs = null;        // 缓存地图配置 JSON
   }
 
   async start() {
@@ -51,6 +58,7 @@ class GameMain {
 
     // 地图加载
     const mapConfigs = await fetch("config/mapConfig.json").then(r => r.json());
+    this._mapConfigs = mapConfigs;  // ★ v4 缓存用于转场
     const mapCfg = mapConfigs[this.data.currentMap] || mapConfigs.woodValley;
     this.map = MapLoader.load(this.data.currentMap, consts, mapCfg, this.asset);
 
@@ -119,6 +127,12 @@ class GameMain {
   }
 
   update(dt) {
+    // ==================== ★ v4 转场状态处理 ====================
+    if (this.transitionState) {
+      this._updateTransition(dt);
+      return;  // 转场期间暂停游戏逻辑
+    }
+
     // ==================== 0. 调试模式切换（H 键） ====================
     if (this.input && this.input._wasHPressed === undefined) this.input._wasHDown = false;
     const hDown = !!(this.input.down && this.input.down["h"]);
@@ -235,6 +249,17 @@ class GameMain {
     // ==================== 8. 存档节流 ====================
     this.saveTimer += dt;
     if (this.saveTimer >= 1000) { this.saveTimer = 0; GameData.save(window.__WX_SAVE__); }
+
+    // ==================== 9. ★ v4 传送门检测 ====================
+    if (this.portalCooldown > 0) {
+      this.portalCooldown -= dt;
+    }
+    if (this.portalCooldown <= 0 && this.map.portal &&
+        this.player.state !== "dead") {
+      if (MapLoader.checkPortalCollision(this.player, this.map)) {
+        this._triggerPortal(this.map.portal);
+      }
+    }
   }
 
   render() {
@@ -246,6 +271,8 @@ class GameMain {
     this.renderer.beginWorld(this.cameraX);
     this.map.drawBackground(ctx, this.cameraX);
     this.map.drawGround(ctx);
+    this.map.drawPlatforms(ctx);       // ★ v3 多平台渲染
+    this.map.drawPortal(ctx);          // ★ v4 传送门渲染
     this.trap.draw(ctx);
     for (const e of this.map.enemies) e.draw(ctx);
     this.player.draw(ctx);
@@ -255,6 +282,9 @@ class GameMain {
 
     // —— UI 层（屏幕空间）：状态栏 + 技能面板 + 浮动文字 ——
     this.ui.render(ctx);              // 含 StatusBar / SkillPanel / FloatTexts
+
+    // ★ v4 转场遮罩层
+    this._drawTransitionOverlay(ctx);
   }
 
   // ==================== 浮动文字管理 ====================
@@ -282,6 +312,124 @@ class GameMain {
       ft.y = ft.startY - ((ft.duration - ft.timer) / ft.duration) * 40;
       if (ft.timer <= 0) this.floatTexts.splice(i, 1);
     }
+  }
+
+  // ==================== ★ v4 传送门/转场系统 ====================
+
+  // 触发传送门
+  _triggerPortal(portalCfg) {
+    console.log(`[GameMain] 进入传送门 → ${portalCfg.targetMap}`);
+    this.portalCooldown = 1500;               // 1.5 秒冷却
+    this.transitionTarget = {
+      mapId:   portalCfg.targetMap,
+      targetX: portalCfg.targetX,
+      targetY: portalCfg.targetY
+    };
+    this.transitionState = "fadeOut";
+    this.transitionAlpha = 0;
+    this.transitionTimer = 0;
+
+    // 暂停玩家输入
+    this.player.vx = 0;
+    this.player.vy = 0;
+  }
+
+  // 转场动画更新
+  _updateTransition(dt) {
+    const FADE_DURATION = 350;   // 单次渐隐/渐现 ms
+
+    this.transitionTimer += dt;
+
+    if (this.transitionState === "fadeOut") {
+      this.transitionAlpha = Math.min(1, this.transitionTimer / FADE_DURATION);
+      if (this.transitionAlpha >= 1) {
+        this.transitionState = "switching";
+        this.transitionTimer = 0;
+        this._doMapSwitch();   // 即时切换地图
+      }
+    } else if (this.transitionState === "switching") {
+      // 等待一帧让新场景准备好，然后渐入
+      this.transitionState = "fadeIn";
+      this.transitionAlpha = 1;
+      this.transitionTimer = 0;
+    } else if (this.transitionState === "fadeIn") {
+      this.transitionAlpha = Math.max(0, 1 - this.transitionTimer / FADE_DURATION);
+      if (this.transitionAlpha <= 0) {
+        // 转场完成
+        this.transitionState = null;
+        this.transitionAlpha = 0;
+        this.transitionTarget = null;
+        console.log("[GameMain] 转场完成");
+      }
+    }
+  }
+
+  // 执行地图切换
+  _doMapSwitch() {
+    const t = this.transitionTarget;
+    if (!t || !this._mapConfigs) return;
+
+    const newCfg = this._mapConfigs[t.mapId];
+    if (!newCfg) {
+      console.warn(`[GameMain] 地图 ${t.mapId} 不存在`);
+      this.transitionState = null;
+      return;
+    }
+
+    console.log(`[GameMain] 切换至地图: ${newCfg.name}`, `坐标:(${t.targetX},${t.targetY})`);
+
+    // 1. 保存当前地图到存档
+    this.data.currentMap = t.mapId;
+    if (!this.data.mapExplore[t.mapId]) {
+      this.data.mapExplore[t.mapId] = { unlock: true, box: [] };
+    }
+    GameData.save(this.data);
+
+    // 2. 重新载入新地图
+    this.map = MapLoader.load(t.mapId, this.consts, newCfg, this.asset);
+
+    // 3. 重设玩家位置（传送至目标坐标）
+    this.player.x = t.targetX;
+    this.player.y = t.targetY;
+    this.player.vx = 0;
+    this.player.vy = 0;
+    this.player.onGround = false;
+    this.player.jumpCount = 0;
+    this.player.isJumpHolding = false;
+    this.player.jumpHoldTimer = 0;
+    this.player.clearCombatMarks();
+
+    // 4. 重建陷阱系统（绑定新地图的陷阱配置）
+    this.trap = new TrapSystem(newCfg, Collision);
+
+    // 5. 重置相机，立切到玩家位置
+    const halfW = this.consts.canvas.width / 2;
+    this.cameraX = Math.max(0,
+      Math.min(t.targetX + this.player.w / 2 - halfW,
+        this.map.width - this.consts.canvas.width));
+    this.cameraX = Math.max(0, this.cameraX);
+
+    // 6. 浮动提示
+    this.floatTexts.push({
+      text: `进入 ${newCfg.name}`,
+      x: this.consts.canvas.width / 2,
+      y: 100,
+      startY: 100,
+      color: "#caa64a",
+      timer: 1800,
+      duration: 1800
+    });
+
+    console.log("[GameMain] 地图 + 陷阱 + 玩家位置已重置");
+  }
+
+  // 转场遮罩层绘制（屏幕空间）
+  _drawTransitionOverlay(ctx) {
+    if (!this.transitionState) return;
+    const W = this.consts.canvas.width;
+    const H = this.consts.canvas.height;
+    ctx.fillStyle = `rgba(0,0,0,${this.transitionAlpha})`;
+    ctx.fillRect(0, 0, W, H);
   }
 }
 

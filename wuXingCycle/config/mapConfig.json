@@ -33,6 +33,72 @@
         "knockbackX": 6,
         "knockbackY": -3
       }
-    ]
+    ],
+    "portal": {
+      "x": 2250,
+      "y": 412,
+      "w": 50,
+      "h": 60,
+      "targetMap": "jinDomain",
+      "targetX": 120,
+      "targetY": 436
+    }
+  },
+
+  "jinDomain": {
+    "name": "金之域·钢铁要塞",
+    "width": 2000,
+    "height": 540,
+    "groundY": 520,
+    "spawn": { "x": 100, "y": 436 },
+    "enemies": [],
+    "background": "金属立柱、齿轮、蒸汽管道",
+    "traps": [
+      { "id":"electric_0","type":"electricGrid","x":80,"y":480,"width":80,"height":20,"damage":15,"intervalMs":1800,"activeMs":600,"knockback":10 },
+      { "id":"bridge_break_1","type":"crackedBridge","x":404,"y":500,"width":30,"height":10,"damage":999,"knockback":0 },
+      { "id":"bridge_break_2","type":"crackedBridge","x":436,"y":500,"width":30,"height":10,"damage":999,"knockback":0 },
+      { "id":"dart_1","type":"dartLauncher","x":680,"y":440,"width":40,"height":30,"damage":12,"knockbackX":10 },
+      { "id":"saw_1","type":"ceilingSaw","x":1110,"y":380,"width":30,"height":30,"damage":25,"knockback":20 },
+      { "id":"saw_2","type":"ceilingSaw","x":1120,"y":380,"width":30,"height":30,"damage":25,"knockback":20 },
+      { "id":"platform_break_3","type":"crackedPlatform","x":1260,"y":420,"width":30,"height":15,"damage":15,"knockback":6 },
+      { "id":"glass_break_1","type":"crackedGlass","x":1430,"y":440,"width":40,"height":10,"damage":12,"knockback":0 },
+      { "id":"magnet_1","type":"magnetField","x":1850,"y":480,"width":60,"height":20,"damage":8,"tickMs":500,"knockbackX":0,"knockbackY":-3 },
+      { "id":"electric_1","type":"electricGrid","x":1780,"y":420,"width":60,"height":20,"damage":15,"intervalMs":1800,"activeMs":600,"knockback":10 },
+      { "id":"dart_2","type":"dartLauncher","x":830,"y":450,"width":30,"height":30,"damage":12,"knockbackX":10 }
+    ],
+    "platforms": [
+      { "x": 0, "y": 500, "w": 300, "h": 20, "type": "metal_floor" },
+      { "x": 340, "y": 500, "w": 30, "h": 10, "type": "bridge" },
+      { "x": 372, "y": 500, "w": 30, "h": 10, "type": "bridge" },
+      { "x": 468, "y": 500, "w": 30, "h": 10, "type": "bridge" },
+      { "x": 510, "y": 500, "w": 190, "h": 20, "type": "metal_floor" },
+      { "x": 700, "y": 480, "w": 60, "h": 20, "type": "metal_step" },
+      { "x": 770, "y": 450, "w": 60, "h": 20, "type": "metal_step" },
+      { "x": 840, "y": 420, "w": 60, "h": 20, "type": "metal_step" },
+      { "x": 900, "y": 420, "w": 66, "h": 20, "type": "gear_floor" },
+      { "x": 967, "y": 415, "w": 66, "h": 20, "type": "gear_floor" },
+      { "x": 1034, "y": 420, "w": 66, "h": 20, "type": "gear_floor" },
+      { "x": 1130, "y": 440, "w": 70, "h": 20, "type": "metal_floor" },
+      { "x": 1200, "y": 440, "w": 30, "h": 15, "type": "floating_platform" },
+      { "x": 1320, "y": 440, "w": 30, "h": 15, "type": "floating_platform" },
+      { "x": 1380, "y": 440, "w": 120, "h": 10, "type": "glass_floor" },
+      { "x": 1520, "y": 460, "w": 20, "h": 20, "type": "small_block" },
+      { "x": 1550, "y": 440, "w": 20, "h": 20, "type": "small_block" },
+      { "x": 1580, "y": 420, "w": 20, "h": 20, "type": "small_block" },
+      { "x": 1610, "y": 400, "w": 20, "h": 20, "type": "small_block" },
+      { "x": 1640, "y": 420, "w": 20, "h": 20, "type": "small_block" },
+      { "x": 1670, "y": 440, "w": 20, "h": 20, "type": "small_block" },
+      { "x": 1700, "y": 440, "w": 150, "h": 20, "type": "pipe_floor" },
+      { "x": 1850, "y": 500, "w": 150, "h": 20, "type": "metal_floor" }
+    ],
+    "portal": {
+      "x": 10,
+      "y": 438,
+      "w": 50,
+      "h": 60,
+      "targetMap": "woodValley",
+      "targetX": 200,
+      "targetY": 410
+    }
   }
 }

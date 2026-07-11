@@ -135,6 +135,10 @@ class GameData {
         data.equippedSkills = Object.assign({}, DEFAULT_SAVE.equippedSkills, data.equippedSkills);
         data.skillMastery = Object.assign({}, DEFAULT_SAVE.skillMastery, data.skillMastery);
       }
+      // 补全 mapExplore 中缺失的条目
+      if (!data.mapExplore) data.mapExplore = {};
+      if (!data.mapExplore.woodValley) data.mapExplore.woodValley = { unlock: true, box: [false, false] };
+      if (!data.mapExplore.jinDomain) data.mapExplore.jinDomain = { unlock: true, box: [] };
       return data;
     } catch (e) {
       console.warn("[GameData] 存档解析失败，重建空白存档", e);
