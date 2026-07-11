@@ -639,8 +639,8 @@ class SkillVFXRenderer {
         );
         ctx.lineTo(
           mx + Math.cos(cAngle) * cLen * 0.66 + jitter(),
-          impy + Math.abs(Math.sin(cAngle)) * cLen * 0.66 + jitter()
-        );  // 注意：impY 变量名保持一致
+          impY + Math.abs(Math.sin(cAngle)) * cLen * 0.66 + jitter()
+        );
         ctx.lineTo(
           mx + Math.cos(cAngle) * cLen + jitter(),
           impY + Math.abs(Math.sin(cAngle)) * cLen + jitter()

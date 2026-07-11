@@ -405,6 +405,14 @@ class SkillManager {
       return false;
     }
 
+    // ★ 防重复装备：如果该技能已在其他槽位，先从旧槽位卸下
+    for (const otherSlot in this.data.equippedSkills) {
+      if (otherSlot !== slotKey && this.data.equippedSkills[otherSlot] === skillId) {
+        this.data.equippedSkills[otherSlot] = null;
+        console.log(`[SkillManager] 自动从 ${otherSlot} 卸下重复技能: ${s.name}`);
+      }
+    }
+
     this.data.equippedSkills[slotKey] = skillId;
     GameData.save(this.data);
     return true;
@@ -545,13 +553,13 @@ class SkillManager {
     ctx.beginPath();
     ctx.moveTo(x + r, y);
     ctx.lineTo(x + w - r, y);
-    ctx.arcTo(x + w, y, x + w, y + r, r);
+    ctx.arcTo(x + w, y, x + w, y + r, r);          // 右上角
     ctx.lineTo(x + w, y + h - r);
-    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x + w, y + h, x + w - r, y + h, r);    // 右下角
     ctx.lineTo(x + r, y + h);
-    ctx.arcTo(x, y + h, x, y + h - r, r);
+    ctx.arcTo(x, y + h, x, y + h - r, r);            // 左下角
     ctx.lineTo(x, y + r);
-    ctx.arcTo(x, y, x + r, y, r);
+    ctx.arcTo(x, y, x + r, y, r);                    // 左上角
     ctx.closePath();
   }
 }
