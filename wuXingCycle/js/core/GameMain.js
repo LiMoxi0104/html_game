@@ -141,6 +141,12 @@ class GameMain {
     }
     if (this.input) this.input._wasHDown = hDown;
 
+    // ★ DEBUG 飞行模式（Q 键切换，后续整块可删除）——
+    if (this.player && this.input.flyTogglePressed()) {
+      this.player.toggleFly();
+      this.addFloatText(this.player.isFlying ? "飞行 ON" : "飞行 OFF", "#88ddff");
+    }
+
     // ★ v5 调试：U 键解锁全部技能
     if (this.input && this.input._wasUDown === undefined) this.input._wasUDown = false;
     const uDown = !!(this.input.down && this.input.down["u"]);

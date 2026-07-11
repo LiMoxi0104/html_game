@@ -54,6 +54,15 @@ class Player {
 
     // —— 弹反系统引用（由 GameMain 注入）——
     this.parrySystem = null;
+
+    // ★ DEBUG 飞行模式（Tab 切换，后续可整块删除）——
+    this.isFlying = false;
+    this.flySpeed = 300;               // 飞行速度 px/s
+
+    // 状态效果计时器
+    this.slowTimer = 0;               // 减速剩余 ms
+    this.blindTimer = 0;              // 致盲剩余 ms
+    this.speedMultiplier = 1;         // 速度倍率，默认 1
   }
 
   // ═══════ 依赖注入 ═══════
@@ -63,6 +72,19 @@ class Player {
   setParrySystem(ps) { this.parrySystem = ps; }
 
   setAssetManager(asset) { this.asset = asset; }
+
+  // ★ DEBUG 飞行模式切换
+  toggleFly() {
+    this.isFlying = !this.isFlying;
+    if (this.isFlying) {
+      this.vy = 0;
+      this.vx = 0;
+      this.onGround = false;
+      this.jumpCount = 0;
+      this.state = "idle";
+    }
+    console.log(`[Player] 飞行模式: ${this.isFlying ? "ON" : "OFF"}`);
+  }
 
   getRect() { return { x: this.x, y: this.y, w: this.w, h: this.h }; }
 
@@ -130,11 +152,45 @@ class Player {
     const c = this.consts;
     if (this.state === "dead") return;
 
+    // ★ DEBUG 飞行模式（Tab 切换，后续可整块删除）——
+    if (this.isFlying) {
+      const ds = this.flySpeed * (dt / 1000);   // 本帧位移
+      this.vx = 0;
+      this.vy = 0;
+      if (input.moveLeft())  { this.vx = -ds; this.facing = "left"; }
+      if (input.moveRight()) { this.vx =  ds; this.facing = "right"; }
+      if (input.moveUp())    { this.vy = -ds; }
+      if (input.moveDown())  { this.vy =  ds; }
+      // 同时按相邻方向时归一化（斜飞不加速）
+      if (this.vx !== 0 && this.vy !== 0) {
+        this.vx *= 0.7071;
+        this.vy *= 0.7071;
+      }
+      this.x += this.vx;
+      this.y += this.vy;
+      // 限制在地图边界内
+      const pad = c.world.boundaryPadding;
+      this.x = Math.max(pad, Math.min(this.x, map.width - this.w - pad));
+      this.y = Math.max(0, Math.min(this.y, map.height - this.h));
+      this.state = "idle";
+      this.onGround = false;
+      return;  // 跳过所有正常物理逻辑
+    }
+
     // —— 计时器递减 ——
     if (this.invuln > 0)        this.invuln -= dt;
     if (this.dodgeCooldown > 0) this.dodgeCooldown -= dt;
     if (this.ghostTimer > 0)    this.ghostTimer -= dt;
     else this.ghostRect = null;
+
+    // —— 状态效果计时器 ——
+    if (this.slowTimer > 0) {
+      this.slowTimer -= dt;
+      this.speedMultiplier = 0.4;   // 减速至 40%
+    } else {
+      this.speedMultiplier = 1;
+    }
+    if (this.blindTimer > 0) this.blindTimer -= dt;
 
     // —— 奔跑动画帧推进 ——
     if (this.state === "walk") this.walkAnim.advance(dt);
@@ -175,7 +231,7 @@ class Player {
       if (mx > 0)      this.facing = "right";
       else if (mx < 0) this.facing = "left";
     }
-    this.vx = (casting || hurt || dodging || parrying) ? 0 : mx * c.player.moveSpeed;
+    this.vx = (casting || hurt || dodging || parrying) ? 0 : mx * c.player.moveSpeed * this.speedMultiplier;
 
     // —— 跳跃 ——
     if (input.jumpPressed()) {
@@ -313,6 +369,16 @@ class Player {
     return true;
   }
 
+  // ==================== 特殊状态效果 ====================
+
+  applySlow(ms) {
+    this.slowTimer = Math.max(this.slowTimer, ms);
+  }
+
+  applyBlind(ms) {
+    this.blindTimer = Math.max(this.blindTimer, ms);
+  }
+
   // ==================== 渲染 ====================
 
   draw(ctx) {
@@ -345,6 +411,22 @@ class Player {
       ctx.fillRect(this.x, this.y, this.w, this.h);
     }
 
+    // ★ DEBUG 飞行模式视觉标识（蓝色辉光环）——
+    if (this.isFlying) {
+      ctx.globalAlpha = 0.25 + Math.sin(performance.now() / 200) * 0.1;
+      ctx.strokeStyle = "#66ccff";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(this.x - 1, this.y - 1, this.w + 2, this.h + 2);
+      // 头顶小三角
+      ctx.fillStyle = "#66ccff";
+      ctx.beginPath();
+      ctx.moveTo(this.x + this.w / 2, this.y - 12);
+      ctx.lineTo(this.x + this.w / 2 - 6, this.y - 2);
+      ctx.lineTo(this.x + this.w / 2 + 6, this.y - 2);
+      ctx.closePath();
+      ctx.fill();
+    }
+
     // —— 残留碰撞箱 ——
     if (this.ghostRect && this.ghostTimer > 0) {
       ctx.globalAlpha = 0.12 + Math.sin(performance.now() / 60) * 0.08;
@@ -353,6 +435,13 @@ class Player {
       ctx.strokeStyle = "#caa64a";
       ctx.lineWidth = 1;
       ctx.strokeRect(this.ghostRect.x, this.ghostRect.y, this.ghostRect.w, this.ghostRect.h);
+    }
+
+    // —— 致盲效果：视野遮罩 ——
+    if (this.blindTimer > 0) {
+      ctx.globalAlpha = 0.45 + Math.sin(performance.now() / 120) * 0.15;
+      ctx.fillStyle = "#000022";
+      ctx.fillRect(this.x - 300, this.y - 200, this.w + 600, this.h + 400);
     }
 
     ctx.globalAlpha = 1;
