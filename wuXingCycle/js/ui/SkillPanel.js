@@ -158,9 +158,11 @@ class SkillPanel {
 
     // —— 右侧槽位区域点击检测 ——
     const slotStartX = ox + this.backpackW + this.gap * 2;
-    const slots = ["light1", "light2", "heavy1", "heavy2", "heavy3", "parry"];
+    const slots = ["light1", "light2", "light3", "heavy1", "heavy2", "heavy3", "parry"];
     for (let i = 0; i < slots.length; i++) {
       const sk = slots[i];
+      // 跳过不可更改的锁定槽位（如"L"键弹反槽），避免误点击
+      if (this.sm.slots[sk]?.locked) continue;
       const sx = slotStartX;
       const sy = oy + i * (this.itemH + 10);
       if (mx >= sx && mx <= sx + this.slotAreaW && my >= sy && my <= sy + this.itemH) {
@@ -559,7 +561,7 @@ class SkillPanel {
   // ==================== 右侧：槽位区 ====================
 
   _drawSlots(ctx, x, y) {
-    const slots = ["light1", "light2", "heavy1", "heavy2", "heavy3", "parry"];
+    const slots = ["light1", "light2", "light3", "heavy1", "heavy2", "heavy3", "parry"];
     const slotMeta = this.sm.slots;
 
     // 槽位标题
@@ -572,6 +574,8 @@ class SkillPanel {
     for (let i = 0; i < slots.length; i++) {
       const sk = slots[i];
       const meta = slotMeta[sk] || {};
+      // 隐藏不可更改的锁定槽位（如"L"键弹反槽），保留代码逻辑不动
+      if (meta.locked) continue;
       const eqId = this.sm.getSlotSkillId(sk);
       const eqSkill = eqId ? this.sm.skills[eqId] : null;
       const selected = this.selectSlot === sk;
