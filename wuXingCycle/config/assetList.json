@@ -1,7 +1,6 @@
 {
   "images": {
     "player_idle": "assets/img/player/idle.png",
-    "player_lightstep": "assets/img/player/lightstep.png",
     "player_walk": "assets/img/player/walk.png",
     "player_attack": "assets/img/player/attack.png",
     "skill_water_light": "assets/img/skill_effect/water_light.png",

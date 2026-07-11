@@ -1,9 +1,9 @@
-// Player：五行传人。v6 轻功重构 —— 以单帧精灵 + 代码动画驱动三种核心状态：
-//   idle:       待机微动呼吸（idle.png 单帧 + 正弦 y 偏移模拟呼吸）
-//   lightstep:  轻功腾空移动（lightstep.png 单帧 + 悬空浮动 + 足下粒子轨迹）
-//   facing:     面向右时水平翻转左侧精灵图，实现对称动作
+// Player：五行传人。
+//   idle:       待机静态站立（idle.png 单帧）
+//   walk:       地面上用腿奔跑（walk.png 5帧循环，朝右时水平翻转）
+//   state:      idle / walk / jump / attack / hurt / dodge / parry / dead
 //
-// 状态优先级：dead > hurt > parry > dodge > attack > jump > lightstep > idle
+// 状态优先级：dead > hurt > parry > dodge > attack > jump > walk > idle
 //
 // 攻击/受伤/闪避/弹反/跳跃/碰撞系统完整保留。
 
@@ -19,7 +19,7 @@ class Player {
     this.onGround = false;
     this.facing = "right";     // right / left
     this.facingLock = false;   // 攻击期间锁定朝向
-    this.state = "idle";       // idle | lightstep | jump | attack | hurt | dodge | parry | dead
+    this.state = "idle";       // idle | walk | jump | attack | hurt | dodge | parry | dead
     this.hp = 100;
     this.maxHp = 100;
     this.mp = 50;
@@ -28,23 +28,8 @@ class Player {
     this.skill = null;         // SkillSystem，由外部注入
     this.asset = null;         // AssetManager，由外部注入
 
-    // ═══════ 代码动画驱动（全局累积时间）═══════
-    this.animTime = 0;                     // 累计动画时间 ms
-
-    // —— 待机呼吸参数 ——
-    this.idleBreathAmp  = 2.0;             // 呼吸微动幅值 px
-    this.idleBreathFreq = 0.002;           // 频率（≈4.2s 一呼一吸完整周期）
-
-    // —— 轻功系统参数 ——
-    this.lightSpeed         = 5.4;         // 轻功水平移速 px/frame
-    this.lightHoverBase    = 10;           // 悬空基准高度 px（高于地面）
-    this.lightFloatAmp     = 5.0;          // 垂直浮动幅值 px
-    this.lightFloatFreq    = 0.010;        // 浮动频率（≈1s 完整上下周期）
-    this.lightTransition    = 0;            // 过渡因子 0(贴地) → 1(完全悬空)
-    this.lightTransitionRate = 0.08;        // 每帧过渡速率
-
-    // —— 轻功粒子轨迹 ——
-    this.trailParticles = [];               // [{x, y, life, maxLife, size, alpha}]
+    // —— 5帧奔跑序列帧动画 ——
+    this.walkAnim = new FrameAnim(5, 70);  // 5帧，每帧70ms（≈14fps奔跑节奏）
 
     // —— 多段跳系统 ——
     this.jumpCount     = 0;
@@ -91,63 +76,7 @@ class Player {
     this.canExecute = false;
   }
 
-  // ═══════ 代码动画：Y 偏移计算 ═══════
-
-  // 根据当前状态返回正弦驱动的 y 偏移量
-  _computeYOffset() {
-    switch (this.state) {
-      case "idle":
-        // 待机呼吸：缓慢的正弦微动
-        return Math.sin(this.animTime * this.idleBreathFreq) * this.idleBreathAmp;
-
-      case "lightstep": {
-        // 轻功悬空：过渡悬空高度 + 正弦浮动
-        const hover = MathTool.lerp(0, this.lightHoverBase, this.lightTransition);
-        const wave  = Math.sin(this.animTime * this.lightFloatFreq) * this.lightFloatAmp;
-        return hover + wave;
-      }
-
-      default:
-        return 0;
-    }
-  }
-
-  // 根据当前状态返回应使用的精灵素材 key
-  _spriteKeyForState() {
-    switch (this.state) {
-      case "idle":      return "player_idle";
-      case "lightstep": return "player_lightstep";
-      default:          return null;   // 攻击/受伤/闪避等用回退矩形
-    }
-  }
-
-  // ═══════ 轻功粒子轨迹 ═══════
-
-  _spawnTrailParticle() {
-    const cx = this.x + this.w / 2;
-    const baseY = this.y + this.h + 2;
-    this.trailParticles.push({
-      x: cx + (Math.random() - 0.5) * this.w * 0.6,
-      y: baseY,
-      life: 350 + Math.random() * 250,
-      maxLife: 350 + Math.random() * 250,
-      size: 2 + Math.random() * 5,
-      alpha: 0.4 + Math.random() * 0.4
-    });
-    if (this.trailParticles.length > 24) this.trailParticles.shift();
-  }
-
-  _updateTrail(dt) {
-    for (let i = this.trailParticles.length - 1; i >= 0; i--) {
-      const p = this.trailParticles[i];
-      p.life -= dt;
-      p.y    -= 0.35;                    // 粒子缓缓上升飘散
-      p.size += 0.012;                   // 粒子膨胀消散
-      if (p.life <= 0) this.trailParticles.splice(i, 1);
-    }
-  }
-
-  // ═══════ 跳跃系统 ═══════
+  // ==================== 跳跃系统 ====================
 
   startJump() {
     if (this.state === "dead" || this.state === "hurt" || this.state === "attack") return false;
@@ -168,7 +97,7 @@ class Player {
     return true;
   }
 
-  // ═══════ 闪避系统 ═══════
+  // ==================== 闪避 ====================
 
   startDodge() {
     if (this.state === "dead" || this.state === "hurt" || this.state === "attack" || this.state === "parry") return false;
@@ -195,20 +124,20 @@ class Player {
     return true;
   }
 
-  // ═══════ 主更新循环 ═══════
+  // ==================== 主更新循环 ====================
 
   update(dt, input, map) {
     const c = this.consts;
     if (this.state === "dead") return;
-
-    // —— 全局动画计时累积 ——
-    this.animTime += dt;
 
     // —— 计时器递减 ——
     if (this.invuln > 0)        this.invuln -= dt;
     if (this.dodgeCooldown > 0) this.dodgeCooldown -= dt;
     if (this.ghostTimer > 0)    this.ghostTimer -= dt;
     else this.ghostRect = null;
+
+    // —— 奔跑动画帧推进 ——
+    if (this.state === "walk") this.walkAnim.advance(dt);
 
     // —— 受伤恢复 ——
     if (this.state === "hurt" && this.invuln <= 0) {
@@ -238,7 +167,7 @@ class Player {
     const dodging  = this.state === "dodge";
     const parrying = this.state === "parry";
 
-    // ═══════ 水平移动（轻功替代行走）═══════
+    // —— 水平移动（地面上用腿奔跑）——
     let mx = 0;
     if (!casting && !hurt && !dodging && !parrying) {
       if (input.moveLeft())  mx -= 1;
@@ -246,18 +175,9 @@ class Player {
       if (mx > 0)      this.facing = "right";
       else if (mx < 0) this.facing = "left";
     }
-    this.vx = (casting || hurt || dodging || parrying) ? 0 : mx * this.lightSpeed;
+    this.vx = (casting || hurt || dodging || parrying) ? 0 : mx * c.player.moveSpeed;
 
-    // ═══════ 轻功过渡：平滑进入/退出悬空 ═══════
-    if (mx !== 0 && this.onGround && !casting && !hurt && !dodging && !parrying) {
-      // 移动中 → 逐渐升空
-      this.lightTransition = Math.min(1, this.lightTransition + this.lightTransitionRate);
-    } else {
-      // 停止移动 → 逐渐回落
-      this.lightTransition = Math.max(0, this.lightTransition - this.lightTransitionRate);
-    }
-
-    // —— 跳跃触发 ——
+    // —— 跳跃 ——
     if (input.jumpPressed()) {
       if (this.jumpCount < this.maxJumps && !casting && !hurt && !dodging && !parrying) {
         this.startJump();
@@ -306,24 +226,18 @@ class Player {
     if (this.x < pad) this.x = pad;
     if (this.x > map.width - this.w - pad) this.x = map.width - this.w - pad;
 
-    // ═══════ 状态机（非动作锁定时的默认状态）═══════
+    // —— 状态机 ——
     if (!casting && this.state !== "hurt" && this.state !== "dodge" && this.state !== "parry") {
       if (!this.onGround) {
         this.state = "jump";
       } else if (mx !== 0) {
-        this.state = "lightstep";
+        this.state = "walk";
       } else {
         this.state = "idle";
       }
     }
 
-    // ═══════ 轻功粒子轨迹生成 ═══════
-    if (this.state === "lightstep" && this.lightTransition > 0.3) {
-      if (Math.random() < 0.45) this._spawnTrailParticle();
-    }
-    this._updateTrail(dt);
-
-    // ═══════ 攻击推进 + 命中判定 ═══════
+    // —— 攻击推进 + 命中判定 ——
     if (this.skill) {
       this.skill.update(dt);
       const hb = this.skill.getActiveHitbox();
@@ -334,7 +248,6 @@ class Player {
     }
   }
 
-  // 将攻击判定盒与敌人矩形对接，命中结算伤害与击退
   applyHit(hb, enemies) {
     for (const e of enemies) {
       if (!e.alive) continue;
@@ -368,7 +281,7 @@ class Player {
     return true;
   }
 
-  // ═══════ 渲染 ═══════
+  // ==================== 渲染 ====================
 
   draw(ctx) {
     const c = this.consts;
@@ -385,34 +298,22 @@ class Player {
 
     ctx.globalAlpha = alpha;
 
-    // —— 代码动画 y 偏移 ——
-    const yOffset = this._computeYOffset();
-    const drawX = this.x;
-    const drawY = this.y + yOffset;
-
-    // —— 轻功粒子轨迹（先绘，在角色脚下）——
-    if (this.state === "lightstep" && this.trailParticles.length > 0) {
-      this._drawTrail(ctx);
-    }
-
-    // —— 获取精灵图 ——
-    const key    = this._spriteKeyForState();
-    const sprite = key && this.asset ? this.asset.getImage(key) : null;
-
+    // —— 精灵图渲染 ——
+    const sprite = this._getCurrentSprite();
     if (sprite) {
-      this._drawSprite(ctx, sprite, drawX, drawY);
+      this._drawSprite(ctx, sprite);
     } else {
-      this._drawFallback(ctx, c, drawX, drawY, yOffset);
+      this._drawFallback(ctx, c);
     }
 
     // —— 受伤红色叠加 ——
     if (this.state === "hurt" && Math.floor(performance.now() / 80) % 2 === 0) {
       ctx.globalAlpha = 0.35;
       ctx.fillStyle = "#a83232";
-      ctx.fillRect(drawX, drawY, this.w, this.h);
+      ctx.fillRect(this.x, this.y, this.w, this.h);
     }
 
-    // —— 残留碰撞箱绘制 ——
+    // —— 残留碰撞箱 ——
     if (this.ghostRect && this.ghostTimer > 0) {
       ctx.globalAlpha = 0.12 + Math.sin(performance.now() / 60) * 0.08;
       ctx.fillStyle = "#caa64a";
@@ -426,71 +327,60 @@ class Player {
     ctx.restore();
   }
 
-  // ═══════ 绘制辅助 ═══════
+  // ═══════ 渲染辅助 ═══════
 
-  // 绘制精灵图，处理朝向翻转
-  _drawSprite(ctx, img, dx, dy) {
-    // lightstep.png 和 idle.png 均为面向左的参考帧
-    // 朝右时水平翻转以保持对称动作
-    const needFlip = this.facing === "right";
+  // 根据当前状态获取精灵图与源裁剪区域
+  // 返回 { img, sx, sy, sw, sh } 或 null
+  _getCurrentSprite() {
+    if (!this.asset) return null;
 
-    if (needFlip) {
-      ctx.translate(dx + this.w, dy);
-      ctx.scale(-1, 1);
-      ctx.drawImage(img, 0, 0, this.w, this.h);
-    } else {
-      ctx.drawImage(img, dx, dy, this.w, this.h);
+    switch (this.state) {
+      case "idle": {
+        const img = this.asset.getImage("player_idle");
+        if (!img) return null;
+        return { img, sx: 0, sy: 0, sw: img.width, sh: img.height };
+      }
+      case "walk": {
+        const img = this.asset.getImage("player_walk");
+        if (!img) return null;
+        const fw = img.width / 5;   // 5帧水平排列
+        const fi = this.walkAnim.current();
+        return { img, sx: fi * fw, sy: 0, sw: fw, sh: img.height };
+      }
+      default:
+        return null;
     }
   }
 
-  // 绘制轻功粒子轨迹（水墨风微尘）
-  _drawTrail(ctx) {
-    for (const p of this.trailParticles) {
-      const progress = p.life / p.maxLife;
-      const alpha = progress * p.alpha;
-      const size  = p.size * (0.8 + progress * 0.2);
+  // 绘制精灵图，朝左时水平翻转（原图面向右）
+  _drawSprite(ctx, { img, sx, sy, sw, sh }) {
+    const needFlip = this.facing === "left";
 
-      const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, size);
-      grad.addColorStop(0,   `rgba(210,200,170,${(alpha * 0.8).toFixed(2)})`);
-      grad.addColorStop(0.5, `rgba(170,160,130,${(alpha * 0.4).toFixed(2)})`);
-      grad.addColorStop(1,    "rgba(140,130,100,0)");
-
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
-      ctx.fill();
+    if (needFlip) {
+      ctx.translate(this.x + this.w, this.y);
+      ctx.scale(-1, 1);
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, this.w, this.h);
+    } else {
+      ctx.drawImage(img, sx, sy, sw, sh, this.x, this.y, this.w, this.h);
     }
   }
 
   // 回退：无精灵图时用程序化矩形绘制
-  _drawFallback(ctx, c, dx, dy, yOffset) {
+  _drawFallback(ctx, c) {
     let body = c.colors.player;
 
     if (this.state === "hurt" && Math.floor(performance.now() / 80) % 2 === 0) {
       body = "#a83232";
     } else if (this.state === "parry") {
       body = "#c8d4e8";
-    } else if (this.state === "lightstep") {
-      body = "#4a5a6a";
     }
 
     ctx.fillStyle = body;
-    ctx.fillRect(dx, dy, this.w, this.h);
-
-    // 轻功状态：绘制悬空标线
-    if (this.state === "lightstep" && yOffset > 3) {
-      ctx.strokeStyle = "rgba(200,180,150,0.35)";
-      ctx.setLineDash([4, 5]);
-      ctx.beginPath();
-      ctx.moveTo(dx + 6, dy + this.h);
-      ctx.lineTo(dx + this.w - 6, dy + this.h);
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
+    ctx.fillRect(this.x, this.y, this.w, this.h);
 
     // 面部朝向标识
     ctx.fillStyle = c.colors.playerFace;
-    const eyeX = this.facing === "right" ? dx + this.w - 10 : dx + 4;
-    ctx.fillRect(eyeX, dy + 12, 6, 6);
+    const eyeX = this.facing === "right" ? this.x + this.w - 10 : this.x + 4;
+    ctx.fillRect(eyeX, this.y + 12, 6, 6);
   }
 }
