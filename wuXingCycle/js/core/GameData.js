@@ -135,10 +135,19 @@ class GameData {
         data.equippedSkills = Object.assign({}, DEFAULT_SAVE.equippedSkills, data.equippedSkills);
         data.skillMastery = Object.assign({}, DEFAULT_SAVE.skillMastery, data.skillMastery);
       }
-      // 补全 mapExplore 中缺失的条目
+      // 补全 mapExplore 中缺失的条目（全部五行地图）
       if (!data.mapExplore) data.mapExplore = {};
       if (!data.mapExplore.woodValley) data.mapExplore.woodValley = { unlock: true, box: [false, false] };
-      if (!data.mapExplore.jinDomain) data.mapExplore.jinDomain = { unlock: true, box: [] };
+      const allMaps = ["jinDomain","muDomain","shuiDomain","huoDomain","tuDomain"];
+      for (const m of allMaps) {
+        if (!data.mapExplore[m]) data.mapExplore[m] = { unlock: true, box: [] };
+      }
+      // ★ 确保始终从木幽谷（最原始地图）开始
+      if (data.currentMap !== "woodValley") {
+        data.currentMap = "woodValley";
+        this.save(data);
+        console.log("[GameData] currentMap 已修正为木幽谷");
+      }
       return data;
     } catch (e) {
       console.warn("[GameData] 存档解析失败，重建空白存档", e);

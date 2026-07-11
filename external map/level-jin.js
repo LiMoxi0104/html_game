@@ -57,6 +57,15 @@ const levelJin = {
   ],
   // 关卡总长
   length: 2000,
+  // 出生点坐标
+  spawn: { x: 150, y: 436 },
+  // 底层地面 Y（死亡线）
+  groundY: 520,
+  // 双传送门：出生点入口（回前图）、终点出口（去下张图）
+  portals: [
+    { x: 10, y: 438, w: 50, h: 60, targetMap: 'woodValley', targetX: 2000, targetY: 410, label: '返回·木幽谷' },
+    { x: 1930, y: 438, w: 50, h: 60, targetMap: 'muDomain',   targetX: 150,  targetY: 438,  label: '木之域' }
+  ],
   // 背景风格提示
   background: '金属立柱、齿轮、蒸汽管道'
 };

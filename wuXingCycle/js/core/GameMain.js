@@ -250,14 +250,14 @@ class GameMain {
     this.saveTimer += dt;
     if (this.saveTimer >= 1000) { this.saveTimer = 0; GameData.save(window.__WX_SAVE__); }
 
-    // ==================== 9. ★ v4 传送门检测 ====================
+    // ==================== 9. ★ v4 多传送门检测 ====================
     if (this.portalCooldown > 0) {
       this.portalCooldown -= dt;
     }
-    if (this.portalCooldown <= 0 && this.map.portal &&
-        this.player.state !== "dead") {
-      if (MapLoader.checkPortalCollision(this.player, this.map)) {
-        this._triggerPortal(this.map.portal);
+    if (this.portalCooldown <= 0 && this.player.state !== "dead") {
+      const hitPortal = MapLoader.checkPortalCollision(this.player, this.map);
+      if (hitPortal) {
+        this._triggerPortal(hitPortal);
       }
     }
   }
@@ -272,7 +272,7 @@ class GameMain {
     this.map.drawBackground(ctx, this.cameraX);
     this.map.drawGround(ctx);
     this.map.drawPlatforms(ctx);       // ★ v3 多平台渲染
-    this.map.drawPortal(ctx);          // ★ v4 传送门渲染
+    this.map.drawPortals(ctx);          // ★ v4 多传送门渲染
     this.trap.draw(ctx);
     for (const e of this.map.enemies) e.draw(ctx);
     this.player.draw(ctx);

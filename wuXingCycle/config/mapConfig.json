@@ -10,39 +10,19 @@
     ],
     "traps": [
       {
-        "id": "spike_1",
-        "type": "spike",
-        "x": 820,
-        "y": 442,
-        "width": 46,
-        "height": 30,
-        "damage": 12,
-        "intervalMs": 1600,
-        "activeMs": 520,
-        "knockback": 16
+        "id": "spike_1", "type": "spike",
+        "x": 820, "y": 442, "width": 46, "height": 30,
+        "damage": 12, "intervalMs": 1600, "activeMs": 520, "knockback": 16
       },
       {
-        "id": "poison_1",
-        "type": "poison",
-        "x": 1180,
-        "y": 432,
-        "width": 120,
-        "height": 40,
-        "damage": 4,
-        "tickMs": 500,
-        "knockbackX": 6,
-        "knockbackY": -3
+        "id": "poison_1", "type": "poison",
+        "x": 1180, "y": 432, "width": 120, "height": 40,
+        "damage": 4, "tickMs": 500, "knockbackX": 6, "knockbackY": -3
       }
     ],
-    "portal": {
-      "x": 2250,
-      "y": 412,
-      "w": 50,
-      "h": 60,
-      "targetMap": "jinDomain",
-      "targetX": 120,
-      "targetY": 436
-    }
+    "portals": [
+      { "x": 2250, "y": 412, "w": 50, "h": 60, "targetMap": "jinDomain", "targetX": 150, "targetY": 436, "label": "金之域" }
+    ]
   },
 
   "jinDomain": {
@@ -50,9 +30,8 @@
     "width": 2000,
     "height": 540,
     "groundY": 520,
-    "spawn": { "x": 100, "y": 436 },
+    "spawn": { "x": 150, "y": 436 },
     "enemies": [],
-    "background": "金属立柱、齿轮、蒸汽管道",
     "traps": [
       { "id":"electric_0","type":"electricGrid","x":80,"y":480,"width":80,"height":20,"damage":15,"intervalMs":1800,"activeMs":600,"knockback":10 },
       { "id":"bridge_break_1","type":"crackedBridge","x":404,"y":500,"width":30,"height":10,"damage":999,"knockback":0 },
@@ -69,7 +48,9 @@
     "platforms": [
       { "x": 0, "y": 500, "w": 300, "h": 20, "type": "metal_floor" },
       { "x": 340, "y": 500, "w": 30, "h": 10, "type": "bridge" },
-      { "x": 372, "y": 500, "w": 30, "h": 10, "type": "bridge" },
+      { "x": 372, "y": 500, "w": 30, "h": 10, "type": "bridge_break", "id": 1 },
+      { "x": 404, "y": 500, "w": 30, "h": 10, "type": "bridge_break", "id": 2 },
+      { "x": 436, "y": 500, "w": 30, "h": 10, "type": "bridge" },
       { "x": 468, "y": 500, "w": 30, "h": 10, "type": "bridge" },
       { "x": 510, "y": 500, "w": 190, "h": 20, "type": "metal_floor" },
       { "x": 700, "y": 480, "w": 60, "h": 20, "type": "metal_step" },
@@ -80,6 +61,7 @@
       { "x": 1034, "y": 420, "w": 66, "h": 20, "type": "gear_floor" },
       { "x": 1130, "y": 440, "w": 70, "h": 20, "type": "metal_floor" },
       { "x": 1200, "y": 440, "w": 30, "h": 15, "type": "floating_platform" },
+      { "x": 1260, "y": 420, "w": 30, "h": 15, "type": "floating_platform_break", "id": 3 },
       { "x": 1320, "y": 440, "w": 30, "h": 15, "type": "floating_platform" },
       { "x": 1380, "y": 440, "w": 120, "h": 10, "type": "glass_floor" },
       { "x": 1520, "y": 460, "w": 20, "h": 20, "type": "small_block" },
@@ -91,14 +73,221 @@
       { "x": 1700, "y": 440, "w": 150, "h": 20, "type": "pipe_floor" },
       { "x": 1850, "y": 500, "w": 150, "h": 20, "type": "metal_floor" }
     ],
-    "portal": {
-      "x": 10,
-      "y": 438,
-      "w": 50,
-      "h": 60,
-      "targetMap": "woodValley",
-      "targetX": 200,
-      "targetY": 410
-    }
+    "portals": [
+      { "x": 10, "y": 438, "w": 50, "h": 60, "targetMap": "woodValley", "targetX": 2000, "targetY": 410, "label": "返回·木幽谷" },
+      { "x": 1930, "y": 438, "w": 50, "h": 60, "targetMap": "muDomain", "targetX": 150, "targetY": 436, "label": "木之域" }
+    ]
+  },
+
+  "muDomain": {
+    "name": "木之域·苍翠密林",
+    "width": 2000,
+    "height": 540,
+    "groundY": 520,
+    "spawn": { "x": 150, "y": 436 },
+    "enemies": [],
+    "traps": [
+      { "id":"thorn_1","type":"spike","x":120,"y":480,"width":60,"height":20,"damage":12,"intervalMs":2000,"activeMs":800,"knockback":12 },
+      { "id":"thorn_2","type":"spike","x":220,"y":480,"width":60,"height":20,"damage":12,"intervalMs":2000,"activeMs":800,"knockback":12 },
+      { "id":"thorn_3","type":"spike","x":320,"y":480,"width":60,"height":20,"damage":12,"intervalMs":2000,"activeMs":800,"knockback":12 },
+      { "id":"spike_ball_1","type":"ceilingSaw","x":420,"y":430,"width":30,"height":30,"damage":22,"knockback":18 },
+      { "id":"spike_ball_2","type":"ceilingSaw","x":500,"y":430,"width":30,"height":30,"damage":22,"knockback":18 },
+      { "id":"flytrap_1","type":"spike","x":770,"y":450,"width":40,"height":30,"damage":18,"intervalMs":2200,"activeMs":600,"knockback":14 },
+      { "id":"vine_break_1","type":"crackedBridge","x":890,"y":500,"width":30,"height":8,"damage":999,"knockback":0 },
+      { "id":"vine_break_2","type":"crackedBridge","x":930,"y":500,"width":30,"height":8,"damage":999,"knockback":0 },
+      { "id":"spore_mush","type":"poison","x":1120,"y":440,"width":60,"height":20,"damage":3,"tickMs":600,"knockbackX":4,"knockbackY":-2 },
+      { "id":"spore_blind","type":"poison","x":1580,"y":400,"width":60,"height":20,"damage":3,"tickMs":600,"knockbackX":4,"knockbackY":-2 },
+      { "id":"thorn_4","type":"spike","x":1670,"y":450,"width":50,"height":20,"damage":12,"intervalMs":2000,"activeMs":800,"knockback":12 },
+      { "id":"log_break","type":"crackedBridge","x":1900,"y":500,"width":40,"height":15,"damage":15,"knockback":4 },
+      { "id":"thorn_vine","type":"spike","x":1980,"y":480,"width":20,"height":20,"damage":14,"intervalMs":1800,"activeMs":500,"knockback":10 }
+    ],
+    "platforms": [
+      { "x": 0, "y": 500, "w": 350, "h": 20, "type": "wood_floor" },
+      { "x": 380, "y": 500, "w": 180, "h": 25, "type": "log_bridge" },
+      { "x": 580, "y": 480, "w": 40, "h": 15, "type": "leaf_platform" },
+      { "x": 630, "y": 480, "w": 40, "h": 15, "type": "leaf_platform" },
+      { "x": 680, "y": 480, "w": 40, "h": 15, "type": "leaf_platform" },
+      { "x": 730, "y": 480, "w": 40, "h": 15, "type": "leaf_platform" },
+      { "x": 780, "y": 480, "w": 40, "h": 15, "type": "leaf_platform" },
+      { "x": 850, "y": 500, "w": 30, "h": 8, "type": "vine_bridge" },
+      { "x": 890, "y": 500, "w": 30, "h": 8, "type": "vine_bridge_break", "id": 1 },
+      { "x": 930, "y": 500, "w": 30, "h": 8, "type": "vine_bridge_break", "id": 2 },
+      { "x": 970, "y": 500, "w": 30, "h": 8, "type": "vine_bridge" },
+      { "x": 1010, "y": 500, "w": 30, "h": 8, "type": "vine_bridge" },
+      { "x": 1050, "y": 500, "w": 30, "h": 8, "type": "vine_bridge" },
+      { "x": 1080, "y": 460, "w": 120, "h": 20, "type": "root_floor" },
+      { "x": 1220, "y": 460, "w": 180, "h": 20, "type": "hollow_log_floor" },
+      { "x": 1420, "y": 480, "w": 50, "h": 20, "type": "mushroom_platform" },
+      { "x": 1480, "y": 440, "w": 40, "h": 20, "type": "mushroom_platform" },
+      { "x": 1530, "y": 400, "w": 60, "h": 20, "type": "mushroom_platform" },
+      { "x": 1590, "y": 440, "w": 40, "h": 20, "type": "mushroom_platform" },
+      { "x": 1640, "y": 460, "w": 50, "h": 20, "type": "root_step" },
+      { "x": 1695, "y": 440, "w": 50, "h": 20, "type": "root_step" },
+      { "x": 1750, "y": 420, "w": 50, "h": 20, "type": "root_step" },
+      { "x": 1820, "y": 500, "w": 130, "h": 15, "type": "thin_log_bridge" },
+      { "x": 1970, "y": 500, "w": 30, "h": 20, "type": "wood_floor" }
+    ],
+    "portals": [
+      { "x": 10, "y": 438, "w": 50, "h": 60, "targetMap": "jinDomain", "targetX": 1800, "targetY": 438, "label": "返回·金之域" },
+      { "x": 1940, "y": 438, "w": 50, "h": 60, "targetMap": "shuiDomain", "targetX": 150, "targetY": 436, "label": "水之域" }
+    ]
+  },
+
+  "shuiDomain": {
+    "name": "水之域·冰晶深湖",
+    "width": 2000,
+    "height": 540,
+    "groundY": 520,
+    "spawn": { "x": 150, "y": 436 },
+    "enemies": [],
+    "traps": [
+      { "id":"water_jet_1","type":"poison","x":200,"y":480,"width":40,"height":30,"damage":5,"tickMs":400,"knockbackX":8,"knockbackY":-5 },
+      { "id":"electric_orb_1","type":"electricGrid","x":380,"y":470,"width":20,"height":20,"damage":12,"intervalMs":1500,"activeMs":500,"knockback":8 },
+      { "id":"electric_orb_2","type":"electricGrid","x":480,"y":470,"width":20,"height":20,"damage":12,"intervalMs":1500,"activeMs":500,"knockback":8 },
+      { "id":"falling_icicle","type":"ceilingSaw","x":620,"y":420,"width":80,"height":35,"damage":22,"knockback":16 },
+      { "id":"ice_gate_1","type":"spike","x":710,"y":480,"width":40,"height":30,"damage":20,"intervalMs":2500,"activeMs":700,"knockback":18 },
+      { "id":"underwater_1","type":"ceilingSaw","x":960,"y":420,"width":40,"height":40,"damage":22,"knockback":16 },
+      { "id":"electric_orb_3","type":"electricGrid","x":1180,"y":475,"width":20,"height":20,"damage":12,"intervalMs":1500,"activeMs":500,"knockback":8 },
+      { "id":"ice_gate_2","type":"spike","x":1440,"y":480,"width":40,"height":30,"damage":20,"intervalMs":2500,"activeMs":700,"knockback":18 },
+      { "id":"underwater_2","type":"ceilingSaw","x":1680,"y":420,"width":40,"height":40,"damage":22,"knockback":16 },
+      { "id":"ice_crack","type":"crackedPlatform","x":1920,"y":480,"width":50,"height":20,"damage":14,"knockback":6 }
+    ],
+    "platforms": [
+      { "x": 0, "y": 500, "w": 280, "h": 15, "type": "ice_floor" },
+      { "x": 300, "y": 490, "w": 30, "h": 15, "type": "ice_floe" },
+      { "x": 340, "y": 480, "w": 25, "h": 15, "type": "ice_floe" },
+      { "x": 375, "y": 495, "w": 35, "h": 15, "type": "ice_floe" },
+      { "x": 420, "y": 485, "w": 30, "h": 15, "type": "ice_floe" },
+      { "x": 460, "y": 490, "w": 25, "h": 15, "type": "ice_floe" },
+      { "x": 495, "y": 480, "w": 35, "h": 15, "type": "ice_floe" },
+      { "x": 540, "y": 495, "w": 30, "h": 15, "type": "ice_floe" },
+      { "x": 580, "y": 500, "w": 120, "h": 15, "type": "ice_floor" },
+      { "x": 720, "y": 480, "w": 30, "h": 20, "type": "ice_pillar" },
+      { "x": 760, "y": 440, "w": 30, "h": 20, "type": "ice_pillar" },
+      { "x": 800, "y": 400, "w": 30, "h": 20, "type": "ice_pillar" },
+      { "x": 840, "y": 440, "w": 30, "h": 20, "type": "ice_pillar" },
+      { "x": 880, "y": 480, "w": 30, "h": 20, "type": "ice_pillar" },
+      { "x": 920, "y": 460, "w": 160, "h": 20, "type": "pipe_floor" },
+      { "x": 1100, "y": 490, "w": 40, "h": 15, "type": "ice_floe" },
+      { "x": 1150, "y": 495, "w": 40, "h": 15, "type": "ice_floe" },
+      { "x": 1200, "y": 490, "w": 40, "h": 15, "type": "ice_floe" },
+      { "x": 1270, "y": 480, "w": 30, "h": 20, "type": "stalagmite" },
+      { "x": 1320, "y": 450, "w": 25, "h": 20, "type": "stalagmite" },
+      { "x": 1360, "y": 470, "w": 30, "h": 20, "type": "stalagmite" },
+      { "x": 1410, "y": 440, "w": 25, "h": 20, "type": "stalagmite" },
+      { "x": 1450, "y": 500, "w": 130, "h": 15, "type": "ice_floor" },
+      { "x": 1600, "y": 460, "w": 180, "h": 20, "type": "pipe_floor" },
+      { "x": 1800, "y": 500, "w": 200, "h": 15, "type": "ice_floor" }
+    ],
+    "portals": [
+      { "x": 10, "y": 438, "w": 50, "h": 60, "targetMap": "muDomain", "targetX": 1800, "targetY": 438, "label": "返回·木之域" },
+      { "x": 1940, "y": 438, "w": 50, "h": 60, "targetMap": "huoDomain", "targetX": 150, "targetY": 436, "label": "火之域" }
+    ]
+  },
+
+  "huoDomain": {
+    "name": "火之域·熔岩深渊",
+    "width": 2000,
+    "height": 540,
+    "groundY": 520,
+    "spawn": { "x": 150, "y": 436 },
+    "enemies": [],
+    "traps": [
+      { "id":"crack_floor_1","type":"crackedPlatform","x":180,"y":480,"width":60,"height":20,"damage":14,"knockback":6 },
+      { "id":"lava_1","type":"spike","x":350,"y":460,"width":30,"height":30,"damage":25,"intervalMs":2400,"activeMs":900,"knockback":20 },
+      { "id":"updraft_1","type":"poison","x":570,"y":430,"width":40,"height":50,"damage":4,"tickMs":500,"knockbackX":4,"knockbackY":-8 },
+      { "id":"wood_break_1","type":"crackedBridge","x":720,"y":500,"width":40,"height":12,"damage":999,"knockback":0 },
+      { "id":"wood_break_2","type":"crackedBridge","x":820,"y":500,"width":40,"height":12,"damage":999,"knockback":0 },
+      { "id":"fire_dragon_1","type":"spike","x":920,"y":470,"width":40,"height":30,"damage":25,"intervalMs":2000,"activeMs":700,"knockback":18 },
+      { "id":"lava_2","type":"spike","x":1060,"y":460,"width":25,"height":30,"damage":25,"intervalMs":2200,"activeMs":800,"knockback":20 },
+      { "id":"lava_3","type":"spike","x":1140,"y":460,"width":25,"height":30,"damage":25,"intervalMs":2200,"activeMs":800,"knockback":20 },
+      { "id":"updraft_2","type":"poison","x":1340,"y":430,"width":40,"height":50,"damage":4,"tickMs":500,"knockbackX":4,"knockbackY":-8 },
+      { "id":"grate_heat","type":"poison","x":1480,"y":480,"width":30,"height":20,"damage":5,"tickMs":400,"knockbackX":4,"knockbackY":-2 },
+      { "id":"fire_dragon_2","type":"spike","x":1640,"y":460,"width":40,"height":30,"damage":25,"intervalMs":2000,"activeMs":700,"knockback":18 },
+      { "id":"fire_wall","type":"spike","x":1800,"y":460,"width":80,"height":40,"damage":35,"intervalMs":3000,"activeMs":1200,"knockback":24 }
+    ],
+    "platforms": [
+      { "x": 0, "y": 500, "w": 250, "h": 20, "type": "basalt_floor" },
+      { "x": 280, "y": 480, "w": 25, "h": 15, "type": "firebrick" },
+      { "x": 330, "y": 480, "w": 25, "h": 15, "type": "firebrick" },
+      { "x": 380, "y": 480, "w": 25, "h": 15, "type": "firebrick" },
+      { "x": 430, "y": 480, "w": 25, "h": 15, "type": "firebrick" },
+      { "x": 480, "y": 480, "w": 25, "h": 15, "type": "firebrick" },
+      { "x": 500, "y": 500, "w": 150, "h": 10, "type": "obsidian_ridge" },
+      { "x": 670, "y": 500, "w": 40, "h": 12, "type": "charred_wood" },
+      { "x": 720, "y": 500, "w": 40, "h": 12, "type": "charred_wood_break", "id": 1 },
+      { "x": 770, "y": 500, "w": 40, "h": 12, "type": "charred_wood" },
+      { "x": 820, "y": 500, "w": 40, "h": 12, "type": "charred_wood_break", "id": 2 },
+      { "x": 880, "y": 480, "w": 120, "h": 15, "type": "sliding_slope" },
+      { "x": 1020, "y": 480, "w": 25, "h": 15, "type": "firebrick" },
+      { "x": 1060, "y": 480, "w": 25, "h": 15, "type": "firebrick" },
+      { "x": 1100, "y": 480, "w": 25, "h": 15, "type": "firebrick" },
+      { "x": 1140, "y": 480, "w": 25, "h": 15, "type": "firebrick" },
+      { "x": 1180, "y": 480, "w": 25, "h": 15, "type": "firebrick" },
+      { "x": 1220, "y": 480, "w": 25, "h": 15, "type": "firebrick" },
+      { "x": 1260, "y": 480, "w": 25, "h": 15, "type": "firebrick" },
+      { "x": 1280, "y": 500, "w": 120, "h": 15, "type": "basalt_floor" },
+      { "x": 1420, "y": 500, "w": 130, "h": 10, "type": "metal_grate" },
+      { "x": 1570, "y": 480, "w": 40, "h": 20, "type": "volcanic_step" },
+      { "x": 1620, "y": 450, "w": 40, "h": 20, "type": "volcanic_step" },
+      { "x": 1670, "y": 420, "w": 40, "h": 20, "type": "volcanic_step" },
+      { "x": 1720, "y": 500, "w": 280, "h": 20, "type": "basalt_floor" }
+    ],
+    "portals": [
+      { "x": 10, "y": 438, "w": 50, "h": 60, "targetMap": "shuiDomain", "targetX": 1800, "targetY": 438, "label": "返回·水之域" },
+      { "x": 1940, "y": 438, "w": 50, "h": 60, "targetMap": "tuDomain", "targetX": 200, "targetY": 436, "label": "土之域" }
+    ]
+  },
+
+  "tuDomain": {
+    "name": "土之域·荒芜峡谷",
+    "width": 2000,
+    "height": 540,
+    "groundY": 520,
+    "spawn": { "x": 200, "y": 436 },
+    "enemies": [],
+    "traps": [
+      { "id":"quicksand_1","type":"poison","x":120,"y":480,"width":80,"height":20,"damage":4,"tickMs":500,"knockbackX":2,"knockbackY":-1 },
+      { "id":"pillar_col_1","type":"spike","x":420,"y":400,"width":30,"height":40,"damage":22,"intervalMs":2800,"activeMs":1000,"knockback":20 },
+      { "id":"boulder_1","type":"spike","x":630,"y":420,"width":40,"height":40,"damage":30,"intervalMs":3000,"activeMs":800,"knockback":24 },
+      { "id":"quake_crack_1","type":"poison","x":780,"y":370,"width":40,"height":20,"damage":5,"tickMs":500,"knockbackX":6,"knockbackY":-2 },
+      { "id":"quicksand_2","type":"poison","x":920,"y":400,"width":90,"height":15,"damage":4,"tickMs":500,"knockbackX":2,"knockbackY":-1 },
+      { "id":"crack_plat","type":"crackedPlatform","x":1120,"y":400,"width":30,"height":15,"damage":14,"knockback":6 },
+      { "id":"boulder_2","type":"spike","x":1220,"y":360,"width":40,"height":40,"damage":30,"intervalMs":3000,"activeMs":800,"knockback":24 },
+      { "id":"pillar_col_2","type":"spike","x":1400,"y":380,"width":25,"height":40,"damage":22,"intervalMs":2800,"activeMs":1000,"knockback":20 },
+      { "id":"sand_tornado","type":"poison","x":1600,"y":360,"width":40,"height":50,"damage":3,"tickMs":400,"knockbackX":6,"knockbackY":-4 },
+      { "id":"quake_crack_2","type":"poison","x":1880,"y":430,"width":80,"height":20,"damage":5,"tickMs":500,"knockbackX":6,"knockbackY":-2 },
+      { "id":"end_break","type":"crackedPlatform","x":1950,"y":450,"width":50,"height":20,"damage":15,"knockback":8 }
+    ],
+    "platforms": [
+      { "x": 0, "y": 500, "w": 300, "h": 20, "type": "sand_floor" },
+      { "x": 320, "y": 480, "w": 30, "h": 40, "type": "sandstone_pillar" },
+      { "x": 370, "y": 450, "w": 30, "h": 70, "type": "sandstone_pillar" },
+      { "x": 420, "y": 420, "w": 30, "h": 100, "type": "sandstone_pillar_break", "id": 1 },
+      { "x": 470, "y": 460, "w": 30, "h": 60, "type": "sandstone_pillar" },
+      { "x": 520, "y": 490, "w": 30, "h": 30, "type": "sandstone_pillar" },
+      { "x": 540, "y": 480, "w": 40, "h": 20, "type": "ruin_step" },
+      { "x": 585, "y": 450, "w": 40, "h": 20, "type": "ruin_step" },
+      { "x": 630, "y": 420, "w": 40, "h": 20, "type": "ruin_step" },
+      { "x": 675, "y": 390, "w": 40, "h": 20, "type": "ruin_step" },
+      { "x": 720, "y": 390, "w": 130, "h": 20, "type": "clay_floor" },
+      { "x": 870, "y": 400, "w": 130, "h": 15, "type": "buried_floor" },
+      { "x": 1020, "y": 400, "w": 30, "h": 15, "type": "crack_platform" },
+      { "x": 1070, "y": 400, "w": 30, "h": 15, "type": "crack_platform" },
+      { "x": 1120, "y": 400, "w": 30, "h": 15, "type": "crack_platform_break", "id": 3 },
+      { "x": 1170, "y": 400, "w": 30, "h": 15, "type": "crack_platform" },
+      { "x": 1200, "y": 380, "w": 120, "h": 15, "type": "sandstone_slope" },
+      { "x": 1340, "y": 420, "w": 25, "h": 100, "type": "sandstone_pillar" },
+      { "x": 1400, "y": 380, "w": 25, "h": 140, "type": "sandstone_pillar_break", "id": 2 },
+      { "x": 1460, "y": 430, "w": 25, "h": 90, "type": "sandstone_pillar" },
+      { "x": 1520, "y": 420, "w": 50, "h": 15, "type": "stone_slab" },
+      { "x": 1580, "y": 390, "w": 50, "h": 15, "type": "stone_slab" },
+      { "x": 1640, "y": 420, "w": 50, "h": 15, "type": "stone_slab" },
+      { "x": 1700, "y": 450, "w": 300, "h": 20, "type": "earth_platform" }
+    ],
+    "portals": [
+      { "x": 10, "y": 438, "w": 50, "h": 60, "targetMap": "huoDomain", "targetX": 1800, "targetY": 438, "label": "返回·火之域" },
+      { "x": 1940, "y": 388, "w": 50, "h": 60, "targetMap": "woodValley", "targetX": 400, "targetY": 410, "label": "轮回·木幽谷" }
+    ]
   }
 }
