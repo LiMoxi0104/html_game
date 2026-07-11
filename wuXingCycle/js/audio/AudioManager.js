@@ -1,14 +1,19 @@
-// AudioManager：全局音频管理（动态创建、首次用户交互后加载、失败容错）。
-// 规避浏览器自动播放静音拦截：首次点击/按键后才初始化 AudioContext。
-// 无素材时不阻塞，play() 静默失败。
+// AudioManager：全局音频管理。
+// - 首次用户交互（点击/按键）后才初始化 AudioContext，规避浏览器自动播放拦截
+// - play() 在音频文件缺失或未初始化时静默失败，不阻塞游戏
 class AudioManager {
+
+  // ---------- 初始化 ----------
+
   static initOnGesture() {
     if (AudioManager._inited) return;
     const start = () => {
       try {
         AudioManager.ctx = new (window.AudioContext || window.webkitAudioContext)();
         AudioManager._inited = true;
-      } catch (e) { /* 不支持 Web Audio 时静默 */ }
+      } catch (e) {
+        // 不支持 Web Audio 时静默
+      }
       window.removeEventListener("pointerdown", start);
       window.removeEventListener("keydown", start);
     };
@@ -16,18 +21,34 @@ class AudioManager {
     window.addEventListener("keydown", start);
   }
 
-  // 播放短音效；无音频文件/未初始化时静默跳过
+  // ---------- 播放 ----------
+
   static play(name) {
     if (!AudioManager._inited || !AudioManager.ctx) return;
+
     const path = (AUDIO_LIST.sfx && AUDIO_LIST.sfx[name]) || null;
     if (!path) return;
+
     try {
       const a = new Audio(path);
       a.volume = 0.4;
       a.play().catch(() => {});
-    } catch (e) { /* 文件缺失容错 */ }
+    } catch (e) {
+      // 音频文件缺失容错，静默跳过
+    }
   }
 
-  static pauseAll() { if (AudioManager.ctx && AudioManager.ctx.suspend) AudioManager.ctx.suspend(); }
-  static resumeAll() { if (AudioManager.ctx && AudioManager.ctx.resume) AudioManager.ctx.resume(); }
+  // ---------- 全局控制 ----------
+
+  static pauseAll() {
+    if (AudioManager.ctx && AudioManager.ctx.suspend) {
+      AudioManager.ctx.suspend();
+    }
+  }
+
+  static resumeAll() {
+    if (AudioManager.ctx && AudioManager.ctx.resume) {
+      AudioManager.ctx.resume();
+    }
+  }
 }
