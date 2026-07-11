@@ -213,19 +213,21 @@ class SkillPanel {
   // ★ v5 元素筛选按钮点击检测
   _hitTestFilterButtons(mx, my, x, y) {
     const btnW = 44;   // 每个筛选按钮宽度
-    const totalWidth = this.elemList.length * btnW + (this.elemList.length - 1) * this.filterBtnGap;
-    let cx = x + (this.backpackW - totalWidth) / 2;   // 居中起始X
+    // ★ 修复：totalWidth 必须与 _drawFilterButtons 保持一致（含「全部」按钮）
+    const btnCount = 1 + this.elemList.length;   // 「全部」+ 金木水火土 = 6 个按钮
+    const totalWidth = btnCount * btnW + (btnCount - 1) * this.filterBtnGap;
+    let cx = x + (this.backpackW - totalWidth) / 2;   // ★ 居中起始 X（与渲染一致）
 
-    // 「全部」按钮（在元素按钮左侧或单独一行）
+    // 「全部」按钮
     const allBtnW = 44;
     const allBtnX = cx;
     cx += allBtnW + this.filterBtnGap;
 
-    // 检测「全部」按钮
+    // 检测「全部」按钮 — 直接设为 null，显示全部技能
     if (mx >= allBtnX && mx <= allBtnX + allBtnW && my >= y && my <= y + this.filterBtnH) {
-      this.filterElement = this.filterElement === null ? "all" : null;   // toggle
-      if (this.filterElement === null) this.scrollY = 0;                // 取消筛选时重置滚动
-      this._filterDirty = true;   // ★ v5 标记缓存失效
+      this.filterElement = null;
+      this.scrollY = 0;
+      this._filterDirty = true;
       return true;
     }
 
@@ -240,7 +242,7 @@ class SkillPanel {
           this.filterElement = el;
         }
         this.scrollY = 0;              // 切换筛选时重置滚动位置
-        this._filterDirty = true;       // ★ v5 标记缓存失效
+        this._filterDirty = true;       // 标记缓存失效
         return true;
       }
       cx += btnW + this.filterBtnGap;
@@ -351,7 +353,9 @@ class SkillPanel {
     const btnW = 44;
     const btnH = this.filterBtnH;
     const gap = this.filterBtnGap;
-    const totalWidth = this.elemList.length * btnW + (this.elemList.length - 1) * gap + 44 + gap;  // 含「全部」按钮
+    // ★ 修复：统一使用 btnCount 公式，含「全部」+ 5 元素 = 6 按钮
+    const btnCount = 1 + this.elemList.length;
+    const totalWidth = btnCount * btnW + (btnCount - 1) * gap;
     let cx = x + (this.backpackW - totalWidth) / 2;
 
     // 「全部」按钮
