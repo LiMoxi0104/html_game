@@ -37,6 +37,8 @@ class Player {
     this.invuln = 0;           // 受击无敌剩余 ms
     this.skill = null;         // SkillSystem，由外部注入
     this.animTimer = 0;        // 行走动画计时
+    this.asset = null;         // AssetManager，由外部注入
+    this.walkAnim = new FrameAnim(8, 80); // 8帧行走序列帧，每帧80ms
 
     // —— 多段跳系统 ——
     this.jumpCount = 0;               // 已使用跳跃次数（0=未跳，1=一段跳中，2=二段跳已用）
@@ -66,6 +68,8 @@ class Player {
   setSkillSystem(ss) { this.skill = ss; }
 
   setParrySystem(ps) { this.parrySystem = ps; }
+
+  setAssetManager(asset) { this.asset = asset; }
 
   getRect() { return { x: this.x, y: this.y, w: this.w, h: this.h }; }
 
@@ -150,6 +154,9 @@ class Player {
 
     // 闪避冷却递减
     if (this.dodgeCooldown > 0) this.dodgeCooldown -= dt;
+
+    // 行走动画帧推进
+    if (this.state === "walk") this.walkAnim.advance(dt);
 
     // 残留箱计时
     if (this.ghostTimer > 0) this.ghostTimer -= dt;
@@ -325,8 +332,28 @@ class Player {
     }
 
     ctx.globalAlpha = alpha;
-    ctx.fillStyle = body;
-    ctx.fillRect(this.x, this.y, this.w, this.h);
+
+    const walkImg = this.asset && this.asset.getImage("player_walk");
+    if (walkImg && this.state === "walk") {
+      const frameIdx = this.walkAnim.current();
+      const fw = walkImg.width / 8;
+      const fh = walkImg.height;
+      if (this.facing === "right") {
+        // 原图朝左，向右移动时水平翻转
+        ctx.translate(this.x + this.w, this.y);
+        ctx.scale(-1, 1);
+        ctx.drawImage(walkImg, frameIdx * fw, 0, fw, fh, 0, 0, this.w, this.h);
+      } else {
+        ctx.drawImage(walkImg, frameIdx * fw, 0, fw, fh, this.x, this.y, this.w, this.h);
+      }
+    } else {
+      ctx.fillStyle = body;
+      ctx.fillRect(this.x, this.y, this.w, this.h);
+
+      ctx.fillStyle = c.colors.playerFace;
+      const eyeX = this.facing === "right" ? this.x + this.w - 10 : this.x + 4;
+      ctx.fillRect(eyeX, this.y + 12, 6, 6);
+    }
 
     // 残留碰撞箱绘制（调试可视化，可后续移除或改为配置开关）
     if (this.ghostRect && this.ghostTimer > 0) {
@@ -340,10 +367,6 @@ class Player {
 
     ctx.globalAlpha = 1;
 
-    // 面部朝向标识
-    ctx.fillStyle = c.colors.playerFace;
-    const eyeX = this.facing === "right" ? this.x + this.w - 10 : this.x + 4;
-    ctx.fillRect(eyeX, this.y + 12, 6, 6);
     // 武器/攻击提示由 SkillSystem 绘制
 
     ctx.restore();

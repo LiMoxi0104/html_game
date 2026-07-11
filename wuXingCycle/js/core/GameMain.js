@@ -56,6 +56,7 @@ class GameMain {
 
     // 玩家
     this.player = new Player(mapCfg.spawn.x, mapCfg.spawn.y, consts);
+    this.player.setAssetManager(this.asset);
 
     // —— 动态招式管理器（v2）——
     this.skill = new SkillManager(this.player, this.asset, this.data);
