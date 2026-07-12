@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=960" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>五行轮回 · 烛龙囚笼</title>
   <link rel="stylesheet" href="css/reset.css" />
   <link rel="stylesheet" href="css/game-ui.css" />
@@ -10,14 +10,17 @@
 </head>
 <body>
   <div class="wx-stage">
-    <canvas id="game" width="960" height="540"></canvas>
+    <!-- 游戏画面容器：16:9 等比缩放定位层 -->
+    <div id="game-container">
+      <canvas id="game"></canvas>
 
-    <!-- 操作说明 / 提示弹窗（DOM 层，半透明水墨边框） -->
-    <div id="wx-dialog" class="wx-dialog">
-      <div class="wx-dialog-box">
-        <div class="wx-dialog-title"></div>
-        <div class="wx-dialog-body"></div>
-        <button class="wx-dialog-close">开始探索</button>
+      <!-- 操作说明 / 提示弹窗（DOM 层，基于 #game-container 绝对定位，随画面缩放） -->
+      <div id="wx-dialog" class="wx-dialog">
+        <div class="wx-dialog-box">
+          <div class="wx-dialog-title"></div>
+          <div class="wx-dialog-body"></div>
+          <button class="wx-dialog-close">开始探索</button>
+        </div>
       </div>
     </div>
   </div>
@@ -42,6 +45,7 @@
   <script src="js/combat/SkillVFXRenderer.js"></script>
   <script src="js/core/GameMain.js"></script>
   <!-- 角色 -->
+  <script src="js/player/PlayerAnimFSM.js"></script>
   <script src="js/player/Player.js"></script>
   <script src="js/player/SkillSystem.js"></script>
   <script src="js/player/ParrySystem.js"></script>

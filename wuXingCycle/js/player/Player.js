@@ -28,8 +28,8 @@ class Player {
     this.skill = null;         // SkillSystem，由外部注入
     this.asset = null;         // AssetManager，由外部注入
 
-    // —— 5帧奔跑序列帧动画 ——
-    this.walkAnim = new FrameAnim(5, 70);  // 5帧，每帧70ms（≈14fps奔跑节奏）
+    // —— 序列帧动画 FSM ——
+    this.animFSM = new PlayerAnimFSM();
 
     // —— 多段跳系统 ——
     this.jumpCount     = 0;
@@ -85,6 +85,8 @@ class Player {
     }
     console.log(`[Player] 飞行模式: ${this.isFlying ? "ON" : "OFF"}`);
   }
+
+  setAnimFrames(frames) { this.animFSM.setFrames(frames); }
 
   getRect() { return { x: this.x, y: this.y, w: this.w, h: this.h }; }
 
@@ -192,8 +194,10 @@ class Player {
     }
     if (this.blindTimer > 0) this.blindTimer -= dt;
 
-    // —— 奔跑动画帧推进 ——
-    if (this.state === "walk") this.walkAnim.advance(dt);
+    // —— FSM 动画更新 ——
+    if (this.state === "idle" || this.state === "walk") {
+      this.animFSM.update(dt, input);
+    }
 
     // —— 受伤恢复 ——
     if (this.state === "hurt" && this.invuln <= 0) {
@@ -230,6 +234,11 @@ class Player {
       if (input.moveRight()) mx += 1;
       if (mx > 0)      this.facing = "right";
       else if (mx < 0) this.facing = "left";
+    }
+    // 同步 FSM 朝向
+    if (this.animFSM.hasFrames) {
+      const f = this.animFSM.getFacing();
+      if (f) this.facing = f;
     }
     this.vx = (casting || hurt || dodging || parrying) ? 0 : mx * c.player.moveSpeed * this.speedMultiplier;
 
@@ -397,11 +406,13 @@ class Player {
     ctx.globalAlpha = alpha;
 
     // —— 精灵图渲染 ——
-    const sprite = this._getCurrentSprite();
-    if (sprite) {
-      this._drawSprite(ctx, sprite);
+    // idle/walk 优先用 FSM 序列帧；其余状态回退旧 sprite/占位
+    if (this.animFSM.hasFrames && (this.state === "idle" || this.state === "walk")) {
+      this.animFSM.draw(ctx, this.x, this.y, this.w, this.h);
     } else {
-      this._drawFallback(ctx, c);
+      const sprite = this._getCurrentSprite();
+      if (sprite) this._drawSprite(ctx, sprite);
+      else this._drawFallback(ctx, c);
     }
 
     // —— 受伤红色叠加 ——
@@ -461,13 +472,7 @@ class Player {
         if (!img) return null;
         return { img, sx: 0, sy: 0, sw: img.width, sh: img.height };
       }
-      case "walk": {
-        const img = this.asset.getImage("player_walk");
-        if (!img) return null;
-        const fw = img.width / 5;   // 5帧水平排列
-        const fi = this.walkAnim.current();
-        return { img, sx: fi * fw, sy: 0, sw: fw, sh: img.height };
-      }
+      case "walk": return null;  // 已由 FSM 渲染
       default:
         return null;
     }

@@ -19,6 +19,7 @@ class GameMain {
     this.running = false;
     this.paused = false;
     this.lastTime = 0;
+    this.accumulator = 0;       // 60fps 固定步长累加器
     this.cameraX = 0;
     this.timeScale = 1;
     this.freezeTimer = 0;
@@ -39,11 +40,18 @@ class GameMain {
 
   async start() {
     this.canvas = document.getElementById("game");
+    this._container = document.getElementById("game-container");
 
     // 配置加载
     const consts = await this.loadConsts();
     this.consts = consts;
+
+    // ■ 动态设置 canvas 物理分辨率（CSS 尺寸 × devicePixelRatio）
+    // 游戏逻辑坐标保持 960×540 不变，Renderer 内做 DPR 缩放变换
+    const containerW = this._container.clientWidth;
+    const containerH = this._container.clientHeight;
     this.renderer = new Renderer(this.canvas, consts);
+    this.renderer.applyDPR(containerW, containerH);
 
     // 存档加载（含 v1→v2 自动迁移）
     this.data = GameData.load();
@@ -52,6 +60,11 @@ class GameMain {
     // 资源预加载
     this.asset = new AssetManager(consts);
     await this.asset.preload();
+
+    // ■ 加载角色序列帧
+    const seqFrames = await this.asset.loadFrameSequence(
+      "assets/img/player/move_frames", "frame_", 120, "_nobg.png"
+    );
 
     // 输入系统
     this.input = new InputManager();
@@ -65,6 +78,7 @@ class GameMain {
     // 玩家
     this.player = new Player(mapCfg.spawn.x, mapCfg.spawn.y, consts);
     this.player.setAssetManager(this.asset);
+    this.player.setAnimFrames(seqFrames);
 
     // —— 动态招式管理器（v2）——
     this.skill = new SkillManager(this.player, this.asset, this.data);
@@ -117,11 +131,21 @@ class GameMain {
 
   loop(now) {
     if (!this.running) return;
-    let dt = now - this.lastTime;
-    this.lastTime = now;
-    if (dt > 50) dt = 50;
 
-    if (!this.paused) this.update(dt);
+    const FIXED_DT = 1000 / 60;
+    let rawDt = now - this.lastTime;
+    this.lastTime = now;
+    if (rawDt > 200) rawDt = 200;
+
+    this.accumulator += rawDt;
+    let steps = 0;
+    while (this.accumulator >= FIXED_DT && steps < 5) {
+      if (!this.paused) this.update(FIXED_DT);
+      this.accumulator -= FIXED_DT;
+      steps++;
+    }
+    if (this.accumulator > FIXED_DT * 5) this.accumulator = 0;
+
     this.render();
     requestAnimationFrame(this.loop.bind(this));
   }

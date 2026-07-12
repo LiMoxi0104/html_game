@@ -33,4 +33,30 @@ class AssetManager {
 
   getImage(key) { return this.images[key] || null; }
   hasImage(key) { return !!this.images[key]; }
+
+  // ═════════════ 序列帧加载 ═════════════
+
+  /** 按文件名顺序加载编号序列帧，返回 HTMLImageElement[]。
+   *  例：loadFrameSequence("dir","frame_",120,"_nobg.png") → dir/frame_000000_nobg.png .. frame_000120_nobg.png */
+  async loadFrameSequence(folder, prefix, count, ext = ".png") {
+    const frames = [];
+    for (let i = 0; i <= count; i++) {
+      const idx = String(i).padStart(6, "0");
+      const path = `${folder}/${prefix}${idx}${ext}`;
+      const img = await this._loadImageAsync(path);
+      if (img) frames.push(img);
+      else console.warn(`[AssetManager] 帧缺失: ${path}`);
+    }
+    console.log(`[AssetManager] 序列帧加载完成: ${frames.length}/${count + 1}`);
+    return frames;
+  }
+
+  _loadImageAsync(path) {
+    return new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null);
+      img.src = path;
+    });
+  }
 }
