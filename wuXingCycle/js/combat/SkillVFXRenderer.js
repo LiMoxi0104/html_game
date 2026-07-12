@@ -430,7 +430,7 @@ class SkillVFXRenderer {
     for (let s = 0; s < segCount; s++) {
       const st = s / segCount;
       // 龙身各节位置：从头到尾依次排布
-      const headX = dashX + player.w * 0.5 + dir * 20;
+      const headX = dashX + player.w * 0.5 + dir * 40;
       const segX = headX - dir * st * segLen;
       const segY = pc.cy + Math.sin(st * Math.PI * 3 + this._globalTime * 0.005) * (6 + s * 1.5);
 
@@ -459,7 +459,7 @@ class SkillVFXRenderer {
     }
 
     // ★ 龙头：三角龙角
-    const headX = dashX + player.w * 0.5 + dir * 20;
+    const headX = dashX + player.w * 0.5 + dir * 40;
     const headY = pc.cy + Math.sin(this._globalTime * 0.006) * 5;
     const hornSize = 14;
 

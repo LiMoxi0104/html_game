@@ -1,25 +1,122 @@
 // SpikeTrap：尖刺陷阱 + 周期性伤害陷阱（含 electricGrid）。
 // variant 子形态：thorn / lava / boulder / icegate / dragon / firewall / flytrap / thorn_vine / pillar
+// thorn/lava 变体支持图片帧动画模式，具体时序与伤害表见各 imgCfg
 // electricGrid 也使用本类的周期性 on/off 逻辑，但独立绘制形态
 class SpikeTrap extends TrapBase {
+
+  // ──── 静态：图片缓存 & 加载 ────
+  static _thornImages = null;
+  static _lavaImages = null;
+
+  static async _loadImages(folder, key) {
+    const paths = [1, 2, 3, 4].map(i => `assets/img/trap/${folder}/${i}.png`);
+    const results = await Promise.all(paths.map(p =>
+      new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => { console.warn("[SpikeTrap] 加载失败:", p); resolve(null); };
+        img.src = p;
+      })
+    ));
+    SpikeTrap[key] = results.filter(Boolean);
+    console.log(`[SpikeTrap] ${key} 图片加载: ${SpikeTrap[key].length}/4`);
+  }
+
+  static loadThornImages() { return SpikeTrap._loadImages("1", "_thornImages"); }
+  static loadLavaImages()  { return SpikeTrap._loadImages("2", "_lavaImages");  }
+
+  // ──── 实例 ────
+
   constructor(cfg) {
     super(cfg);
-    this.intervalMs = cfg.intervalMs || 1600;  // 一个完整周期
-    this.activeMs = cfg.activeMs || 500;        // 伸出/激活持续时长
-    this.extended = false;
-    this.cycleTimer = 0;
+    this._baseDamage = this.damage;   // 保存原始伤害（图片模式会按帧缩放）
     this.variant = cfg.variant || (this.type === "electricGrid" ? null : "thorn");
+    this.cycleTimer = 0;
+    this.extended = false;
+    this._currentFrame = 0;
+
+    // ── 图片帧动画模式检测 ──
+    this._imgMode = null;        // null | "thorn" | "lava"
+    this._imgCfg = null;         // { frameDurations[], pauseDuration, totalCycle, animFrames, damageTable }
+
+    if (this.type === "spike") {
+      const modeDefs = {
+        thorn: { key: "_thornImages", cfg: {
+          frameDurations: [700, 100, 100, 100],
+          pauseDuration: 0,
+          damageTable: [0, 1, 1, 1]     // 帧 2/3/4 全伤，帧 1 无伤
+        }},
+        lava:  { key: "_lavaImages", cfg: {
+          frameDurations: [100, 100, 100, 100],
+          pauseDuration: 500,
+          damageTable: [0, 0.5, 1, 0]  // 帧1/4 无伤，帧2 半伤，帧3 全伤
+        }}
+      };
+
+      const def = modeDefs[this.variant];
+      if (def) {
+        const imgs = SpikeTrap[def.key];
+        if (imgs && imgs.length >= 4) {
+          this._imgMode = this.variant;
+          const c = def.cfg;
+          const animSum = c.frameDurations.reduce((a, b) => a + b, 0);
+          this._imgCfg = {
+            ...c,
+            animFrames: c.frameDurations.length,
+            animDuration: animSum,
+            totalCycle: animSum + c.pauseDuration
+          };
+        }
+      }
+    }
+
+    // 非图片模式：旧版周期参数
+    if (!this._imgMode) {
+      this.intervalMs = cfg.intervalMs || 1600;
+      this.activeMs = cfg.activeMs || 500;
+    }
   }
 
   update(dt) {
     this.cycleTimer += dt;
-    const m = this.cycleTimer % this.intervalMs;
-    this.extended = m < this.activeMs;          // 周期前段为伸出窗口
+
+    if (this._imgMode) {
+      // ── 图片帧动画模式 ──
+      const c = this._imgCfg;
+      const cycleTime = this.cycleTimer % c.totalCycle;
+
+      if (cycleTime < c.animDuration) {
+        // 动画播放中
+        let elapsed = 0;
+        for (let i = 0; i < c.animFrames; i++) {
+          elapsed += c.frameDurations[i];
+          if (cycleTime < elapsed) { this._currentFrame = i; break; }
+        }
+      } else {
+        // 休眠阶段
+        this._currentFrame = -1;
+      }
+
+      // 伤害帧：damageTable[index] > 0
+      this.extended = this._currentFrame >= 0 && c.damageTable[this._currentFrame] > 0;
+    } else {
+      // ── 旧版周期模式 ──
+      const m = this.cycleTimer % this.intervalMs;
+      this.extended = m < this.activeMs;
+    }
   }
 
-  // 仅在尖刺伸出 / 电击激活时才检测玩家
+  // 仅在伤害窗口（extended）才触发
   check(player, dt) {
     if (!this.extended) return null;
+    // lava 图片模式：按帧比例缩放伤害
+    if (this._imgMode === "lava") {
+      const mult = this._imgCfg.damageTable[this._currentFrame];
+      this.damage = Math.round(this._baseDamage * mult);
+      const result = super.check(player, dt);
+      this.damage = this._baseDamage;
+      return result;
+    }
     return super.check(player, dt);
   }
 
@@ -28,6 +125,10 @@ class SpikeTrap extends TrapBase {
     ctx.save();
     if (this.type === "electricGrid") {
       this._drawElectricGrid(ctx);
+    } else if (this._imgMode === "thorn") {
+      this._drawThornImg(ctx);
+    } else if (this._imgMode === "lava") {
+      this._drawLavaImg(ctx);
     } else {
       // spike 系列：按 variant 分发
       switch (this.variant) {
@@ -43,6 +144,37 @@ class SpikeTrap extends TrapBase {
       }
     }
     ctx.restore();
+  }
+
+  // ———— ★ 图片帧动画绘制：4 帧循环（逐帧独立时长，无暂停）————
+  _drawThornImg(ctx) {
+    const images = SpikeTrap._thornImages;
+    if (!images || images.length < 4) {
+      this._drawThorn(ctx);
+      return;
+    }
+
+    const img = images[this._currentFrame] || images[0];
+    if (img) {
+      ctx.drawImage(img, this.x, this.y, this.w, this.h);
+    }
+  }
+
+  // ———— ★ 熔岩喷柱图片帧动画：休眠阶段保持最后一帧 ————
+  _drawLavaImg(ctx) {
+    const images = SpikeTrap._lavaImages;
+    if (!images || images.length < 4) {
+      this._drawLavaEruption(ctx);
+      return;
+    }
+
+    if (this._currentFrame >= 0) {
+      const img = images[this._currentFrame];
+      if (img) { ctx.drawImage(img, this.x, this.y, this.w, this.h); return; }
+    }
+    // 休眠阶段：保持第 4 帧（喷发峰值）静止
+    const img = images[3];
+    if (img) ctx.drawImage(img, this.x, this.y, this.w, this.h);
   }
 
   // ———— 默认 variant：荆棘尖刺（三角刺从地面伸出）————

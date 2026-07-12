@@ -42,7 +42,7 @@ class Player {
     // —— 闪避系统 ——
     this.dodgeTimer        = 0;
     this.dodgeCooldown     = 0;
-    this.dodgeDistance     = 70;
+    this.dodgeDistance     = 140;
     this.dodgeDuration     = 150;
     this.dodgeCooldownMax  = 800;
     this.ghostRect         = null;
@@ -547,7 +547,7 @@ class Player {
 
     // 面部朝向标识
     ctx.fillStyle = c.colors.playerFace;
-    const eyeX = this.facing === "right" ? this.x + this.w - 10 : this.x + 4;
+    const eyeX = this.facing === "right" ? this.x + this.w - 10 : this.x + 8;
     ctx.fillRect(eyeX, this.y + 12, 6, 6);
   }
 }

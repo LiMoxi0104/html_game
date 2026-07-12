@@ -307,15 +307,16 @@ class MapLoader {
     }
   }
 
-  // ★ v4 传送门碰撞检测：遍历所有传送门，返回第一个碰撞到的
+  // ★ v4 传送门碰撞检测：圆形碰撞体（圆心=视觉中心，半径=min(w,h)/2）
   // 返回 portal 对象 {x,y,w,h,targetMap,targetX,targetY,label} 或 null
   static checkPortalCollision(player, map) {
     if (!map.portals || map.portals.length === 0) return null;
+    const pr = player.getRect();
     for (const p of map.portals) {
-      if (player.x < p.x + p.w &&
-          player.x + player.w > p.x &&
-          player.y < p.y + p.h &&
-          player.y + player.h > p.y) {
+      const cx = p.x + p.w / 2;
+      const cy = p.y + p.h / 2;
+      const r  = Math.min(p.w, p.h) / 2;
+      if (Collision.circleRect(cx, cy, r, pr)) {
         return p;
       }
     }
