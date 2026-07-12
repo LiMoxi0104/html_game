@@ -12,6 +12,8 @@ class TrapSystem {
     switch (cfg.type) {
       case "spike":          return new SpikeTrap(cfg);
       case "poison":         return new PoisonTrap(cfg);
+      // 滚石：帧动画 + 水平往复移动
+      case "boulder":        return new BoulderTrap(cfg);
       // 电击网：复用 SpikeTrap 的周期性 on/off 逻辑
       case "electricGrid":   return new SpikeTrap(cfg);
       // 碎裂类：继承 TrapBase（碰撞 + 伤害）
