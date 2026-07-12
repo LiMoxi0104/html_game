@@ -47,6 +47,7 @@ class Player {
     this.dodgeCooldownMax  = 800;
     this.ghostRect         = null;
     this.ghostTimer        = 0;
+    this.ghostImage        = null;      // 闪避残留帧快照（HTMLCanvasElement）
 
     // —— 战斗标记 ——
     this.canCounter = false;
@@ -123,17 +124,30 @@ class Player {
 
   // ==================== 闪避 ====================
 
-  startDodge() {
+  startDodge(input, mapWidth) {
     if (this.state === "dead" || this.state === "hurt" || this.state === "attack" || this.state === "parry") return false;
     if (this.dodgeCooldown > 0) return false;
+
+    // ■ 闪避方向判定
+    //   D+Shift → 向右闪避；A+Shift → 向左闪避；原地站立 → 向朝向反方向闪避
+    let dir;
+    if (input.moveRight()) {
+      dir = 1;   // 按 D → 右闪
+    } else if (input.moveLeft()) {
+      dir = -1;  // 按 A → 左闪
+    } else {
+      dir = this.facing === "right" ? -1 : 1;  // 朝向反方向
+    }
+
+    // ■ 生成残留帧快照（淡化半透明图像）
+    this.ghostImage = this._captureGhostSnapshot();
 
     this.ghostRect  = { x: this.x, y: this.y, w: this.w, h: this.h };
     this.ghostTimer = this.dodgeDuration;
 
-    const dir = this.facing === "right" ? -1 : 1;
     let newX = this.x + dir * this.dodgeDistance;
     const pad = this.consts.world.boundaryPadding || 24;
-    newX = Math.max(pad, Math.min(newX, 2000 - this.w - pad));
+    newX = Math.max(pad, Math.min(newX, mapWidth - this.w - pad));
 
     this.x  = newX;
     this.vx = 0;
@@ -146,6 +160,25 @@ class Player {
 
     console.log(`[Player] 闪避！方向:${dir > 0 ? "右" : "左"}`);
     return true;
+  }
+
+  /** 捕获当前角色精灵帧到离屏 canvas，作为闪避残留快照 */
+  _captureGhostSnapshot() {
+    const frame = this.animFSM.hasFrames ? this.animFSM.getCurrentFrame() : null;
+    if (!frame) return null;
+
+    const canvas = document.createElement("canvas");
+    canvas.width  = this.w;
+    canvas.height = this.h;
+    const ctx = canvas.getContext("2d");
+
+    // 原图朝左；快照需按当前 facing 翻转到正确方向
+    if (this.facing === "right") {
+      ctx.translate(this.w, 0);
+      ctx.scale(-1, 1);
+    }
+    ctx.drawImage(frame, 0, 0, this.w, this.h);
+    return canvas;
   }
 
   // ==================== 主更新循环 ====================
@@ -406,9 +439,21 @@ class Player {
     ctx.globalAlpha = alpha;
 
     // —— 精灵图渲染 ——
-    // idle/walk 优先用 FSM 序列帧；其余状态回退旧 sprite/占位
     if (this.animFSM.hasFrames && (this.state === "idle" || this.state === "walk")) {
+      // idle/walk：FSM 按自身状态翻转
       this.animFSM.draw(ctx, this.x, this.y, this.w, this.h);
+    } else if (this.state === "dodge" && this.animFSM.hasFrames) {
+      // 闪避：冻结当前帧，按 Player.facing 翻转
+      const frame = this.animFSM.getCurrentFrame();
+      if (frame) {
+        if (this.facing === "right") {
+          ctx.translate(this.x + this.w, this.y);
+          ctx.scale(-1, 1);
+          ctx.drawImage(frame, 0, 0, this.w, this.h);
+        } else {
+          ctx.drawImage(frame, this.x, this.y, this.w, this.h);
+        }
+      }
     } else {
       const sprite = this._getCurrentSprite();
       if (sprite) this._drawSprite(ctx, sprite);
@@ -438,14 +483,10 @@ class Player {
       ctx.fill();
     }
 
-    // —— 残留碰撞箱 ——
-    if (this.ghostRect && this.ghostTimer > 0) {
-      ctx.globalAlpha = 0.12 + Math.sin(performance.now() / 60) * 0.08;
-      ctx.fillStyle = "#caa64a";
-      ctx.fillRect(this.ghostRect.x, this.ghostRect.y, this.ghostRect.w, this.ghostRect.h);
-      ctx.strokeStyle = "#caa64a";
-      ctx.lineWidth = 1;
-      ctx.strokeRect(this.ghostRect.x, this.ghostRect.y, this.ghostRect.w, this.ghostRect.h);
+    // —— 残留帧快照（半透明淡化） ——
+    if (this.ghostImage && this.ghostTimer > 0 && this.ghostRect) {
+      ctx.globalAlpha = this.ghostTimer / this.dodgeDuration;
+      ctx.drawImage(this.ghostImage, this.ghostRect.x, this.ghostRect.y, this.w, this.h);
     }
 
     // —— 致盲效果：视野遮罩 ——

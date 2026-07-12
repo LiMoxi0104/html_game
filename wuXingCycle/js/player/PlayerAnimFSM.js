@@ -90,5 +90,8 @@ class PlayerAnimFSM {
     return null;
   }
 
+  /** 返回当前帧 Image，供外部快照/手动绘制 */
+  getCurrentFrame() { return this._currentFrame(); }
+
   get hasFrames() { return this.frames.length > 0; }
 }

@@ -198,7 +198,7 @@ class GameMain {
 
     // ==================== 0.1 闪避触发（Shift，优先于攻击）====================
     if (this.input.dodgePressed()) {
-      if (this.player.startDodge()) {
+      if (this.player.startDodge(this.input, this.map.width)) {
         AudioManager.play && AudioManager.play("dodge");   // 闪避音效（如有）
       }
     }
