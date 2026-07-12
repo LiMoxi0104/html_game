@@ -18,6 +18,8 @@ class TrapSystem {
       case "dragon":         return new DragonTrap(cfg);
       // 荆棘尖刺：4帧精灵动画，帧1/3半伤，帧2满伤
       case "thorn":          return new ThornTrap(cfg);
+      // 冰闸：3帧精灵动画，帧1半伤，帧2满伤
+      case "icegate":        return new IceGateTrap(cfg);
       // 电击网：复用 SpikeTrap 的周期性 on/off 逻辑
       case "electricGrid":   return new SpikeTrap(cfg);
       // 碎裂类：继承 TrapBase（碰撞 + 伤害）
