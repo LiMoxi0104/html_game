@@ -14,6 +14,10 @@ class TrapSystem {
       case "poison":         return new PoisonTrap(cfg);
       // 滚石：帧动画 + 水平往复移动
       case "boulder":        return new BoulderTrap(cfg);
+      // 龙首喷火：4帧精灵动画，仅帧3产生伤害
+      case "dragon":         return new DragonTrap(cfg);
+      // 荆棘尖刺：4帧精灵动画，帧1/3半伤，帧2满伤
+      case "thorn":          return new ThornTrap(cfg);
       // 电击网：复用 SpikeTrap 的周期性 on/off 逻辑
       case "electricGrid":   return new SpikeTrap(cfg);
       // 碎裂类：继承 TrapBase（碰撞 + 伤害）
