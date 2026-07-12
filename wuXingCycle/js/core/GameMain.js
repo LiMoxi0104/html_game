@@ -430,7 +430,12 @@ class GameMain {
     this.player.clearCombatMarks();
 
     // 4. 重建陷阱系统（绑定新地图的陷阱配置）
-    this.trap = new TrapSystem(newCfg, Collision);
+    try {
+      this.trap = new TrapSystem(newCfg, Collision);
+    } catch (e) {
+      console.error("[GameMain] 陷阱系统初始化失败:", e);
+      this.trap = new TrapSystem({ traps: [] }, Collision);
+    }
 
     // 5. 重置相机，立切到玩家位置
     const halfW = this.consts.canvas.width / 2;
