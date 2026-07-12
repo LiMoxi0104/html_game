@@ -204,7 +204,7 @@
       { "id":"up_2","type":"poison","variant":"updraft","x":1340,"y":480,"width":40,"height":30,"damage":4,"tickMs":500,"knockbackX":4,"knockbackY":-8 },
       { "id":"gh_1","type":"poison","variant":"grate","x":1480,"y":500,"width":30,"height":10,"damage":5,"tickMs":400,"knockbackX":4,"knockbackY":-2 },
       { "id":"fd_2","type":"dragon","x":1640,"y":480,"width":40,"height":30,"damage":25,"knockback":18,"renderScale":3.0,"frame3WidthExtra":2.0,"frame3OffsetX":0,"frame3OffsetY":0 },
-      { "id":"fw_1","type":"spike","variant":"firewall","x":1800,"y":500,"width":80,"height":40,"damage":35,"intervalMs":3000,"activeMs":1200,"knockback":24 }
+      { "id":"fw_1","type":"firewall","x":1800,"y":440,"width":80,"height":80,"damage":35,"knockback":24 }
     ],
     "platforms": [
       { "x": 0, "y": 500, "w": 250, "h": 20, "type": "basalt_floor" },
