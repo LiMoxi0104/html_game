@@ -14,8 +14,9 @@
 //   土 earth → 不规则陨石多层径向渐变，表面暗色坑洼墨点，落地冲击波+震荡圆环+地裂线
 
 class SkillVFXRenderer {
-  constructor(hitboxSystem) {
+  constructor(hitboxSystem, assetManager) {
     this.hb = hitboxSystem;           // HitboxSystem 引用（共享帧数据）
+    this.asset = assetManager || null; // AssetManager 引用（精灵图加载）
 
     // 全局时间基准（用于粒子动画）
     this._globalTime = 0;
@@ -93,38 +94,113 @@ class SkillVFXRenderer {
     return Math.min(1, Math.max(0, (phaseTimer || 0) / durationMs));
   }
 
-  // ==================== 水 Water：三层弧形水浪 ====================
-  // 视觉描述：
-  //   三层叠加的弧形水浪，每层使用径向渐变从浅蓝过渡到完全透明
-  //   错位排列形成波浪感，向远处推进时边缘阴影模糊模拟水墨晕染
+  // ==================== 水 Water：水墨漩涡精灵图 ====================
+  // 使用 water_flow_effect.png 替换程序化弧形水浪
+  // 保留原有碰撞箱逻辑、伤害数值及触发帧
 
   _renderWater(ctx, skill, cast, player, frameData, progress) {
+    const img = this.asset && this.asset.getImage("water_flow_effect");
+    if (img) {
+      this._renderWaterSprite(ctx, skill, cast, player, frameData, progress, img);
+    } else {
+      // 图片缺失时回退到程序化绘制
+      this._renderWaterLegacy(ctx, skill, cast, player, frameData, progress);
+    }
+  }
+
+  // ★ 新实现：精灵图渲染（单帧水墨漩涡 + 动态缩放/旋转/淡入淡出）
+  _renderWaterSprite(ctx, skill, cast, player, frameData, progress, img) {
+    const pc = this._getPlayerCenter(player);
+    const dir = pc.facing === "right" ? 1 : -1;
+    const area = this._getHitboxArea(player, frameData, 10);
+    const phase = skill.phases[cast.phaseIndex];
+    const norm = this._phaseNorm(cast.phaseTimer, phase.durationMs);
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";   // 叠加混合增强发光感
+
+    // 计算中心位置（对齐碰撞箱中心）
+    const cx = area ? (area.x + area.w / 2) : (pc.cx + dir * 40);
+    const cy = area ? (area.y + area.h / 2) : pc.cy;
+
+    // ★ 阶段动画参数（与原始时长严格匹配：windup 150ms / active 190ms / recovery 150ms）
+    let scale = 0.15, alpha = 0.2, rot = 0;
+
+    if (phase.id === "windup") {
+      // 起手：微小水波从角色前方凝聚
+      scale = 0.05 + norm * 0.15;
+      alpha = norm * 0.4;
+      rot = dir * norm * 0.3;
+    } else if (phase.id === "active") {
+      // 挥击命中：190ms 核心动画，三阶段节奏
+      if (norm < 0.15) {
+        // 0-15%（0-28ms）：快速淡入 + 展开
+        const t = norm / 0.15;
+        scale = 0.15 + this._easeOutQuad(t) * 0.25;   // 0.15→0.40
+        alpha = t * 0.85;                                // 0→0.85
+        rot = dir * t * 0.5;                             // 0→0.5rad
+      } else if (norm < 0.75) {
+        // 15-75%（28-142ms）：持续显示 + 旋转增长
+        const t = (norm - 0.15) / 0.60;
+        scale = 0.40 + t * 0.35;                        // 0.40→0.75
+        alpha = 0.85;
+        rot = dir * (0.5 + t * 1.2);                    // 0.5→1.7rad
+      } else {
+        // 75-100%（142-190ms）：淡出消散
+        const t = (norm - 0.75) / 0.25;
+        scale = 0.75 + t * 0.25;                        // 0.75→1.00
+        alpha = 0.85 * (1 - t);                          // 0.85→0
+        rot = dir * (1.7 + t * 0.5);                    // 1.7→2.2rad
+      }
+    } else if (phase.id === "recovery") {
+      // 收招：残留水波消散
+      scale = 0.70 + norm * 0.30;
+      alpha = (1 - norm) * 0.3;
+      rot = dir * (2.2 + norm * 0.3);
+    }
+
+    // 图片尺寸基于碰撞箱动态缩放，保持宽高比
+    const baseSize = area ? Math.max(area.w, area.h) : 120;
+    const drawW = baseSize * scale;
+    const drawH = drawW * (img.height / img.width);
+
+    ctx.translate(cx, cy);
+    ctx.rotate(rot);
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
+
+    ctx.restore();
+
+    // 水花飞溅粒子（命中帧触发）
+    if (frameData && frameData.isHitFrame && Math.random() > 0.5) {
+      this._spawnWaterDroplets(pc.cx + dir * 30, pc.cy - 10);
+    }
+  }
+
+  // ★ 旧实现：程序化弧形水浪（图片缺失时回退）
+  _renderWaterLegacy(ctx, skill, cast, player, frameData, progress) {
     const pc = this._getPlayerCenter(player);
     const dir = pc.facing === "right" ? 1 : -1;
     const area = this._getHitboxArea(player, frameData, 10);
 
     ctx.save();
-    ctx.globalCompositeOperation = "lighter";   // 叠加混合增强发光感
+    ctx.globalCompositeOperation = "lighter";
 
     const norm = this._phaseNorm(cast.phaseTimer,
       (skill.phases[cast.phaseIndex] || {}).durationMs);
 
-    // ★ 三层水浪 —— 错位相位、不同尺寸
+    // 三层水浪 —— 错位相位、不同尺寸
     for (let layer = 0; layer < 3; layer++) {
-      const phaseOff = layer * 0.35;            // 层间相位偏移
+      const phaseOff = layer * 0.35;
       const t = (norm + phaseOff) % 1;
-
-      // 波浪展开动画：从玩家前方收缩到远处扩散
       const expand = this._easeOutQuad(t);
       const waveW = area ? area.w : 60;
       const waveH = area ? area.h : 50;
-
       const w = waveW * (0.4 + expand * 0.8) * (1 - layer * 0.15);
       const h = waveH * (0.5 + expand * 0.6) * (1 - layer * 0.12);
       const ox = pc.cx + dir * (20 + expand * 35) + layer * dir * 12;
       const oy = pc.cy - h * 0.3 + layer * 6 + Math.sin(t * Math.PI * 3 + layer) * 4;
 
-      // 弧形路径
       ctx.beginPath();
       ctx.moveTo(ox - w * 0.5, oy + h);
       ctx.quadraticCurveTo(
@@ -137,15 +213,12 @@ class SkillVFXRenderer {
       );
       ctx.closePath();
 
-      // 径向渐变填充：浅蓝中心 → 完全透明边缘
       const grad = ctx.createRadialGradient(ox, oy - h * 0.1, 2, ox, oy, w * 0.7);
       grad.addColorStop(0, `rgba(100,180,240,${this.INK_ALPHA_BASE * (0.9 - layer * 0.25)})`);
       grad.addColorStop(0.45, `rgba(58,123,213,${this.INK_ALPHA_BASE * (0.55 - layer * 0.18)})`);
       grad.addColorStop(0.8, `rgba(58,123,213,${this.INK_ALPHA_BASE * (0.18 - layer * 0.06)})`);
       grad.addColorStop(1, "rgba(58,123,213,0)");
-
       ctx.fillStyle = grad;
-      // 阴影模糊模拟水墨晕染
       ctx.shadowColor = "rgba(58,123,213,0.35)";
       ctx.shadowBlur = 6 + layer * 3;
       ctx.fill();
@@ -154,7 +227,6 @@ class SkillVFXRenderer {
 
     ctx.restore();
 
-    // 水花飞溅粒子（命中帧触发）
     if (frameData && frameData.isHitFrame && Math.random() > 0.5) {
       this._spawnWaterDroplets(pc.cx + dir * 30, pc.cy - 10);
     }
@@ -403,9 +475,9 @@ class SkillVFXRenderer {
 
   // ==================== 火 Fire：墨龙冲 ====================
   // 视觉描述：
-  //   多段椭圆与曲线串联构成龙身
-  //   前端配以龙角三角，尾部分散为随机墨点模拟火焰拖尾
-  //   整体向前突进时尾部粒子逐渐消散
+  //   角色向前冲刺位移，身旁持续伴随火焰拖尾
+  //   多段椭圆与曲线串联构成龙身，前端龙角三角
+  //   在冲锋路径上持续生成火星粒子形成燃烧拖尾
 
   _renderFire(ctx, skill, cast, player, frameData, progress) {
     const pc = this._getPlayerCenter(player);
@@ -417,22 +489,21 @@ class SkillVFXRenderer {
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
 
-    // 冲刺位移量
-    const dashDist = phase.dashDistance || 120;
-    const dashT = this._easeOutCubic(norm);
-    const dashX = pc.baseX + dir * dashDist * dashT;
+    // ★ 龙身体中心位置：跟随角色当前位置（角色已由 SkillSystem 执行位移）
+    const dragonCx = pc.cx + dir * 10;
+    const dragonCy = pc.cy;
 
     // ★ 多段椭圆龙身
     const segCount = 8;
-    const dragonLen = area ? area.w : 90;
+    const dragonLen = area ? area.w * 0.9 : 90;
     const segLen = dragonLen / segCount;
 
     for (let s = 0; s < segCount; s++) {
       const st = s / segCount;
-      // 龙身各节位置：从头到尾依次排布
-      const headX = dashX + player.w * 0.5 + dir * 40;
+      // 龙头在前，龙身各节向后排列
+      const headX = dragonCx + dir * 30;
       const segX = headX - dir * st * segLen;
-      const segY = pc.cy + Math.sin(st * Math.PI * 3 + this._globalTime * 0.005) * (6 + s * 1.5);
+      const segY = dragonCy + Math.sin(st * Math.PI * 3 + this._globalTime * 0.005) * (6 + s * 1.5);
 
       // 椭圆大小：头部大 → 尾部小
       const ew = (18 - s * 1.4) * (1 - st * 0.4);
@@ -459,8 +530,8 @@ class SkillVFXRenderer {
     }
 
     // ★ 龙头：三角龙角
-    const headX = dashX + player.w * 0.5 + dir * 40;
-    const headY = pc.cy + Math.sin(this._globalTime * 0.006) * 5;
+    const headX = dragonCx + dir * 30;
+    const headY = dragonCy + Math.sin(this._globalTime * 0.006) * 5;
     const hornSize = 14;
 
     // 左角
@@ -487,63 +558,126 @@ class SkillVFXRenderer {
     ctx.fillStyle = "rgba(255,255,200,0.95)";
     ctx.fill();
 
-    // ★ 尾部火焰拖尾墨点粒子
+    // ★ 火焰拖尾：沿角色身后路径持续生成火星粒子
     const tailX = headX - dir * dragonLen;
-    if (norm > 0.2) {
-      this._spawnFireTrails(tailX, pc.cy, dir);
+    if (phase.hit) {
+      // 在龙尾和龙身多个位置生成火焰粒子，形成连续拖尾
+      this._spawnFireTrails(tailX, dragonCy, dir);
+      // 在龙身中部也生成粒子加强拖尾密度
+      if (Math.random() > 0.3) {
+        this._spawnFireTrails(tailX + dir * dragonLen * 0.3, dragonCy + (Math.random() - 0.5) * 16, dir);
+      }
+    }
+
+    // ★ 角色身边的火焰光环（冲刺时显示）
+    if (phase.hit && norm < 0.85) {
+      const auraAlpha = 0.3 * (1 - norm);
+      const auraR = 18 + Math.sin(this._globalTime * 0.01) * 4;
+      const auraGrad = ctx.createRadialGradient(pc.cx, pc.cy, auraR * 0.3, pc.cx, pc.cy, auraR);
+      auraGrad.addColorStop(0, `rgba(255,160,40,0)`);
+      auraGrad.addColorStop(0.5, `rgba(255,100,20,${auraAlpha * 0.5})`);
+      auraGrad.addColorStop(1, `rgba(200,50,10,0)`);
+      ctx.beginPath();
+      ctx.arc(pc.cx, pc.cy, auraR, 0, Math.PI * 2);
+      ctx.fillStyle = auraGrad;
+      ctx.fill();
     }
 
     ctx.restore();
   }
 
-  // 火焰拖尾粒子
+  // 火焰拖尾粒子（增强版：沿冲刺路径密集生成）
   _spawnFireTrails(x, y, dir) {
     const key = "fire_trails";
     if (!this._particles[key]) this._particles[key] = [];
-    if (this._particles[key].length > 40) return;   // 上限控制
-    for (let i = 0; i < 3; i++) {
+    if (this._particles[key].length > 60) return;   // 提高上限以适应密集拖尾
+    for (let i = 0; i < 5; i++) {
       this._particles[key].push({
-        x: x + (Math.random() - 0.5) * 30,
-        y: y + (Math.random() - 0.5) * 20,
-        vx: -dir * (Math.random() * 2 + 0.5),
-        vy: (Math.random() - 0.5) * 2,
-        life: 200 + Math.random() * 300,
-        maxLife: 500,
-        size: 2 + Math.random() * 4,
+        x: x + (Math.random() - 0.5) * 40,
+        y: y + (Math.random() - 0.5) * 28,
+        vx: -dir * (Math.random() * 2.5 + 0.5),
+        vy: (Math.random() - 0.5) * 3 - 0.5,
+        life: 250 + Math.random() * 350,
+        maxLife: 600,
+        size: 2 + Math.random() * 5,
         type: "fire_spark"
       });
     }
   }
 
+  // ★ 水墨陨石精灵图绘制（_renderEarth 与 _renderChargeEarth 共用）
+  _drawMeteorSprite(ctx, x, y, scale, alpha, rotation) {
+    const img = this.asset && this.asset.getImage("earth_meteor_ink");
+    if (!img) return false;  // 图片未加载，回退到程序化绘制
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    // 保持宽高比，基于 scale 缩放
+    const baseSize = 70;
+    const drawW = baseSize * scale;
+    const drawH = drawW * (img.height / img.width);
+    ctx.translate(x, y);
+    if (rotation != null) ctx.rotate(rotation);
+    ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
+    ctx.restore();
+    return true;
+  }
+
   // ==================== 土 Earth：陨星坠 ====================
   // 视觉描述：
-  //   不规则陨石通过叠加多层径向渐变表现质感
-  //   表面散布暗色墨点模拟坑洼
-  //   落地时生成从中心向外扩散的巨大冲击波
-  //   配合同心震荡圆环和数条地裂墨线构成完整撞击反馈
+  //   水墨陨石精灵图从天空坠落到锁定落点
+  //   保留冲击波、震荡圆环和地裂墨线作为撞击反馈
+  // ★ v2：支持目标锁定，陨石精准坠落至锁定敌人头顶
 
   _renderEarth(ctx, skill, cast, player, frameData, progress) {
     const pc = this._getPlayerCenter(player);
     const dir = pc.facing === "right" ? 1 : -1;
-    const area = this._getHitboxArea(player, frameData, 15);
     const phase = skill.phases[cast.phaseIndex];
     const norm = this._phaseNorm(cast.phaseTimer, phase.durationMs);
 
+    // ★ 目标锁定：陨石落点优先使用锁定坐标
+    const isTargetLocked = cast._targetLockX != null;
+    const impactCx = isTargetLocked ? cast._targetLockX : (pc.cx + dir * 40);
+    const impactCy = isTargetLocked ? cast._targetLockY : (pc.baseY + 20);
+
+    // ★ 蓄力视觉缩放系数：与碰撞箱同步 1x→2x
+    const chargeRatio = (cast._chargeRatio != null) ? cast._chargeRatio : 0;
+    const visScale = 1 + chargeRatio;  // 1x → 2x
+
+    // 碰撞箱区域（用于视觉参考大小，同步缩放）
+    let area;
+    if (isTargetLocked) {
+      const localFrame = Math.max(0, cast.frameIndex - (phase.frameStart || 0));
+      const pfh = (phase.perFrameHitboxes && phase.perFrameHitboxes.length > 0)
+        ? phase.perFrameHitboxes[Math.min(localFrame, phase.perFrameHitboxes.length - 1)]
+        : { width: 160, height: 140 };
+      const visR = Math.max(pfh.width, pfh.height) / 2 * visScale;
+      area = { x: impactCx - visR, y: impactCy - visR, w: visR * 2, h: visR * 2 };
+    } else {
+      area = this._getHitboxArea(player, frameData, 15);
+    }
+
     ctx.save();
 
-    // 陨石下落轨迹
-    const meteorStartY = pc.baseY - 180;
-    const targetY = area ? area.y : (pc.baseY + 20);
-    let currentY;
+    // ★ 直线坠落轨迹：从出生点到锁定落点
+    const startX = (isTargetLocked && cast._meteorSpawnX != null) ? cast._meteorSpawnX : (impactCx + dir * 30);
+    const startY = (isTargetLocked && cast._meteorSpawnY != null) ? cast._meteorSpawnY : (impactCy - 220);
+    const endX = impactCx;
+    const endY = area ? impactCy - (area.h * 0.25) : impactCy;
+
+    let currentX = startX;
+    let currentY = startY;
     let impactScale = 0;
 
     if (!phase.hit) {
-      // windup：陨石从高空缓缓出现
-      currentY = meteorStartY + (targetY - meteorStartY) * this._easeInQuad(norm * 0.5);
+      // windup：陨石从出生点缓慢出现
+      currentX = startX + (endX - startX) * this._easeInQuad(norm * 0.5);
+      currentY = startY + (endY - startY) * this._easeInQuad(norm * 0.5);
     } else {
-      // active：快速坠落 + 命中
+      // active：沿直线快速坠落
       const fallNorm = Math.min(1, norm * 1.6);
-      currentY = meteorStartY + (targetY - meteorStartY) * this._easeInExpo(fallNorm);
+      const t = this._easeInExpo(fallNorm);
+      currentX = startX + (endX - startX) * t;
+      currentY = startY + (endY - startY) * t;
 
       // 命中后开始显示撞击效果
       if (fallNorm > 0.85) {
@@ -551,60 +685,91 @@ class SkillVFXRenderer {
       }
     }
 
-    // 陨石 X 位置（在目标区域上方）
-    const mx = pc.cx + dir * ((area ? area.w : 110) * 0.25);
-    const mw = area ? Math.min(area.w, 70) : 56;
-    const mh = area ? Math.min(area.h, 52) : 44;
+    // ★ 陨石体尺寸同步缩放（上限随 visScale 增长）
+    const mw = area ? Math.min(area.w * 0.55, 70 * visScale) : 56 * visScale;
+    const mh = area ? Math.min(area.h * 0.50, 52 * visScale) : 44 * visScale;
 
-    // ★ 不规则陨石本体（多层径向渐变叠加）
-    // 外层：暗赭石
-    ctx.beginPath();
-    ctx.ellipse(mx, currentY, mw * 0.55, mh * 0.5, 0.15, 0, Math.PI * 2);
-    const outerGrad = ctx.createRadialGradient(mx, currentY - 5, 3, mx, currentY, mw * 0.55);
-    outerGrad.addColorStop(0, "rgba(160,120,70,0.88)");
-    outerGrad.addColorStop(0.5, "rgba(130,90,50,0.78)");
-    outerGrad.addColorStop(1, "rgba(90,60,35,0.55)");
-    ctx.fillStyle = outerGrad;
-    ctx.shadowColor = "rgba(138,109,59,0.4)";
-    ctx.shadowBlur = 10;
-    ctx.fill();
-    ctx.shadowBlur = 0;
+    // ★ 水墨陨石精灵图（替换程序化椭圆绘制）
+    const meteorAlpha = phase.hit ? 1 : (norm * 0.85);
+    // 计算坠落方向旋转角（斜线轨迹自然朝向）
+    const fallAngle = Math.atan2(endY - startY, endX - startX) + Math.PI / 2;
+    const drawn = this._drawMeteorSprite(ctx, currentX, currentY, visScale * 0.85, meteorAlpha, fallAngle);
 
-    // 内层：较亮赭黄
-    ctx.beginPath();
-    ctx.ellipse(mx - mw * 0.08, currentY - mh * 0.08, mw * 0.38, mh * 0.34, -0.1, 0, Math.PI * 2);
-    const innerGrad = ctx.createRadialGradient(mx - mw * 0.1, currentY - mh * 0.12, 2, mx, currentY, mw * 0.38);
-    innerGrad.addColorStop(0, "rgba(200,160,90,0.72)");
-    innerGrad.addColorStop(0.6, "rgba(170,130,70,0.52)");
-    innerGrad.addColorStop(1, "rgba(140,100,50,0.25)");
-    ctx.fillStyle = innerGrad;
-    ctx.fill();
-
-    // ★ 表面坑洼墨点（随机固定位置）
-    const craterSeed = skill.id.charCodeAt(0) * 31;   // 固定随机种
-    for (let c = 0; c < 8; c++) {
-      const angle = (craterSeed + c * 47) % 360 * Math.PI / 180;
-      const dist = (0.15 + ((craterSeed + c * 73) % 100) / 100 * 0.35) * mw * 0.5;
-      const cx = mx + Math.cos(angle) * dist;
-      const cy = currentY + Math.sin(angle) * dist * 0.85;
-      const cr = 1.5 + ((craterSeed + c * 29) % 100) / 100 * 3;
-
+    if (!drawn) {
+      // 回退：程序化椭圆绘制（图片缺失时）
+      // 外层：暗赭石
       ctx.beginPath();
-      ctx.arc(cx, cy, cr, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(70,45,25,${0.35 + Math.random() * 0.25})`;
+      ctx.ellipse(currentX, currentY, mw * 0.55, mh * 0.5, 0.15, 0, Math.PI * 2);
+      const outerGrad = ctx.createRadialGradient(currentX, currentY - 5, 3, currentX, currentY, mw * 0.55);
+      outerGrad.addColorStop(0, "rgba(160,120,70,0.88)");
+      outerGrad.addColorStop(0.5, "rgba(130,90,50,0.78)");
+      outerGrad.addColorStop(1, "rgba(90,60,35,0.55)");
+      ctx.fillStyle = outerGrad;
+      ctx.shadowColor = "rgba(138,109,59,0.4)";
+      ctx.shadowBlur = 10;
       ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // 内层：较亮赭黄
+      ctx.beginPath();
+      ctx.ellipse(currentX - mw * 0.08, currentY - mh * 0.08, mw * 0.38, mh * 0.34, -0.1, 0, Math.PI * 2);
+      const innerGrad = ctx.createRadialGradient(currentX - mw * 0.1, currentY - mh * 0.12, 2, currentX, currentY, mw * 0.38);
+      innerGrad.addColorStop(0, "rgba(200,160,90,0.72)");
+      innerGrad.addColorStop(0.6, "rgba(170,130,70,0.52)");
+      innerGrad.addColorStop(1, "rgba(140,100,50,0.25)");
+      ctx.fillStyle = innerGrad;
+      ctx.fill();
+
+      // 表面坑洼墨点
+      const craterSeed = skill.id.charCodeAt(0) * 31;
+      for (let c = 0; c < 8; c++) {
+        const angle = (craterSeed + c * 47) % 360 * Math.PI / 180;
+        const dist = (0.15 + ((craterSeed + c * 73) % 100) / 100 * 0.35) * mw * 0.5;
+        const cx = currentX + Math.cos(angle) * dist;
+        const cy = currentY + Math.sin(angle) * dist * 0.85;
+        const cr = 1.5 + ((craterSeed + c * 29) % 100) / 100 * 3;
+        ctx.beginPath();
+        ctx.arc(cx, cy, cr, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(70,45,25,${0.35 + Math.random() * 0.25})`;
+        ctx.fill();
+      }
+    }
+
+    // ★ 目标锁定标识：陨石下落前在落点显示瞄准标记
+    if (isTargetLocked && !phase.hit && norm < 0.6) {
+      const markerAlpha = (1 - norm / 0.6) * 0.5;
+      const markerR = mw * 0.5;
+      ctx.strokeStyle = `rgba(200,160,80,${markerAlpha})`;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath();
+      ctx.arc(impactCx, impactCy, markerR, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      // 十字准星
+      const crossLen = markerR * 0.35;
+      ctx.beginPath();
+      ctx.moveTo(impactCx, impactCy - crossLen);
+      ctx.lineTo(impactCx, impactCy + crossLen);
+      ctx.moveTo(impactCx - crossLen, impactCy);
+      ctx.lineTo(impactCx + crossLen, impactCy);
+      ctx.stroke();
     }
 
     // ★ 撞击反馈（impactScale > 0 时）
     if (impactScale > 0) {
-      const impY = targetY + mh * 0.4;   // 地面撞击点
+      const impY = impactCy;
+
+      // ★ 视觉冲击波与碰撞箱同步：baseScale × (1+chargeRatio)
+      const baseVisRadius = 50;
+      const visualRadiusScale = baseVisRadius * visScale;
 
       // 1) 径向扩散圆形冲击波
-      const swRadius = impactScale * 80 + 20;
+      const swRadius = impactScale * visualRadiusScale + 10;
       const swAlpha = Math.max(0, 1 - impactScale);
       ctx.beginPath();
-      ctx.arc(mx, impY, swRadius, 0, Math.PI * 2);
-      const shockGrad = ctx.createRadialGradient(mx, impY, 0, mx, impY, swRadius);
+      ctx.arc(impactCx, impY, swRadius, 0, Math.PI * 2);
+      const shockGrad = ctx.createRadialGradient(impactCx, impY, 0, impactCx, impY, swRadius);
       shockGrad.addColorStop(0, `rgba(200,160,90,${swAlpha * 0.55})`);
       shockGrad.addColorStop(0.4, `rgba(160,120,60,${swAlpha * 0.32})`);
       shockGrad.addColorStop(0.75, `rgba(138,109,59,${swAlpha * 0.12})`);
@@ -617,7 +782,7 @@ class SkillVFXRenderer {
         const ringR = swRadius * (0.4 + r * 0.3);
         const ringAlpha = (1 - impactScale) * (0.5 - r * 0.15);
         ctx.beginPath();
-        ctx.arc(mx, impY, ringR, 0, Math.PI * 2);
+        ctx.arc(impactCx, impY, ringR, 0, Math.PI * 2);
         ctx.strokeStyle = `rgba(138,109,59,${ringAlpha})`;
         ctx.lineWidth = 2 - r * 0.4;
         ctx.stroke();
@@ -626,23 +791,22 @@ class SkillVFXRenderer {
       // 3) 地裂墨线（从撞击点向外辐射的裂纹）
       const crackCount = 6;
       for (let ck = 0; ck < crackCount; ck++) {
-        const cAngle = (ck / crackCount) * Math.PI * 2 + Math.PI * 0.1;   // 向下半圆为主
+        const cAngle = (ck / crackCount) * Math.PI * 2 + Math.PI * 0.1;
         const cLen = (20 + Math.random() * 35) * impactScale;
         const jitter = () => (Math.random() - 0.5) * 6 * impactScale;
 
         ctx.beginPath();
-        ctx.moveTo(mx + Math.cos(cAngle) * 10, impY + Math.abs(Math.sin(cAngle)) * 10);
-        // 折线路径模拟裂纹
+        ctx.moveTo(impactCx + Math.cos(cAngle) * 10, impY + Math.abs(Math.sin(cAngle)) * 10);
         ctx.lineTo(
-          mx + Math.cos(cAngle) * cLen * 0.33 + jitter(),
+          impactCx + Math.cos(cAngle) * cLen * 0.33 + jitter(),
           impY + Math.abs(Math.sin(cAngle)) * cLen * 0.33 + jitter()
         );
         ctx.lineTo(
-          mx + Math.cos(cAngle) * cLen * 0.66 + jitter(),
+          impactCx + Math.cos(cAngle) * cLen * 0.66 + jitter(),
           impY + Math.abs(Math.sin(cAngle)) * cLen * 0.66 + jitter()
         );
         ctx.lineTo(
-          mx + Math.cos(cAngle) * cLen + jitter(),
+          impactCx + Math.cos(cAngle) * cLen + jitter(),
           impY + Math.abs(Math.sin(cAngle)) * cLen + jitter()
         );
 
@@ -653,7 +817,7 @@ class SkillVFXRenderer {
 
       // 撞击时产生碎石粒子
       if (impactScale < 0.3) {
-        this._spawnDebris(mx, impY);
+        this._spawnDebris(impactCx, impY);
       }
     }
 
@@ -694,6 +858,287 @@ class SkillVFXRenderer {
     ctx.fillStyle = "#888";
     ctx.fillRect(area.x, area.y, area.w, area.h);
     ctx.restore();
+  }
+
+  // ==================== ★ v6 蓄力特效（按元素分派，禁止混用） ====================
+
+  // 公共分派入口：根据技能元素类型调用对应蓄力特效
+  // spawnX/Y: 陨石出生点（earth），null 时自动计算
+  renderCharge(ctx, player, element, progress, spawnX, spawnY, targetX, targetY) {
+    if (!player || !element) return;
+    switch (element) {
+      case "fire":  this._renderChargeFire(ctx, player, progress); break;
+      case "earth": this._renderChargeEarth(ctx, player, progress, spawnX, spawnY, targetX, targetY); break;
+      default: break;
+    }
+  }
+
+  // ── 火 蓄力：火焰光环 + 龙形虚影 + 火星粒子 ──
+  _renderChargeFire(ctx, player, progress) {
+    if (!player) return;
+    const pcx = player.x + player.w / 2;
+    const pcy = player.y + player.h / 2;
+    const dir = player.facing === "right" ? 1 : -1;
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    // ★ 火焰光环层数随蓄力进度增加（1~5层）
+    const layers = Math.floor(1 + progress * 4);
+    for (let l = 0; l < layers; l++) {
+      const lt = l / Math.max(1, layers - 1);
+      const baseR = 18 + progress * 30;
+      const r = baseR + lt * 12 + Math.sin(this._globalTime * 0.008 + l * 2.1) * 8;
+      const alpha = (0.35 + progress * 0.45) * (1 - lt * 0.5);
+
+      const grad = ctx.createRadialGradient(pcx, pcy, r * 0.2, pcx, pcy, r);
+      grad.addColorStop(0, `rgba(255,220,80,0)`);
+      grad.addColorStop(0.35, `rgba(255,120,30,${alpha * 0.7})`);
+      grad.addColorStop(0.7, `rgba(220,50,10,${alpha * 0.35})`);
+      grad.addColorStop(1, "rgba(180,20,5,0)");
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(pcx, pcy, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // ★ 蓄力火龙虚影（高蓄力时显现）
+    if (progress > 0.4) {
+      const dragonAlpha = (progress - 0.4) * 1.5;
+      const ghostX = pcx + dir * (15 + progress * 25);
+      const ghostLen = 30 + progress * 50;
+      const segCount = 6;
+
+      for (let s = 0; s < segCount; s++) {
+        const st = s / segCount;
+        const sx = ghostX - dir * st * ghostLen;
+        const sy = pcy + Math.sin(st * Math.PI * 2.5 + this._globalTime * 0.006) * (4 + s);
+        const ew = (9 - s * 1.2) * (progress * 0.9);
+        const eh = (6 - s * 0.7) * (progress * 0.8);
+
+        ctx.beginPath();
+        ctx.ellipse(sx, sy, ew, eh, 0, 0, Math.PI * 2);
+        const segGrad = ctx.createRadialGradient(sx, sy, 0, sx, sy, ew);
+        segGrad.addColorStop(0, `rgba(255,180,60,${dragonAlpha * (0.6 - st * 0.5)})`);
+        segGrad.addColorStop(0.7, `rgba(200,50,15,${dragonAlpha * (0.25 - st * 0.2)})`);
+        segGrad.addColorStop(1, "rgba(200,50,15,0)");
+        ctx.fillStyle = segGrad;
+        ctx.fill();
+      }
+    }
+
+    // ★ 持续生成火星粒子（随进度加速）
+    if (Math.random() < 0.3 + progress * 0.5) {
+      this._spawnChargeSparks(pcx, pcy, dir, progress);
+    }
+
+    ctx.restore();
+  }
+
+  // 蓄力火星粒子（fire 专属）
+  _spawnChargeSparks(x, y, dir, progress) {
+    const key = "charge_sparks";
+    if (!this._particles[key]) this._particles[key] = [];
+    if (this._particles[key].length > 25) return;
+    for (let i = 0; i < 2; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const dist = (15 + progress * 30) * Math.random();
+      this._particles[key].push({
+        x: x + Math.cos(angle) * dist,
+        y: y + Math.sin(angle) * dist * 0.7,
+        vx: (Math.random() - 0.5) * 2 - dir * progress,
+        vy: -Math.random() * (1 + progress * 3) - 1,
+        life: 400 + Math.random() * 400,
+        maxLife: 800,
+        size: 1.5 + Math.random() * 3 + progress * 2,
+        type: "fire_spark"
+      });
+    }
+  }
+
+  // ── 土 蓄力：赭黄岩环 + 天空静止陨石 + 碎岩 + 地面裂隙 + 尘沙 ──
+  _renderChargeEarth(ctx, player, progress, spawnX, spawnY, targetX, targetY) {
+    if (!player) return;
+    const pcx = player.x + player.w / 2;
+    const pcy = player.y + player.h / 2;
+    const footY = player.y + player.h;
+
+    // ★ 陨石出生点（由 startCharge 锁定，蓄力期间固定不变）
+    const mx = (spawnX != null) ? spawnX : (pcx + (player.facing === "right" ? 60 : -60));
+    const my = (spawnY != null) ? spawnY : (pcy - 160);
+    const meteorScale = 1 + progress;  // 1x → 2x
+
+    ctx.save();
+
+    // ★ 天空陨石本体（蓄力全程静止在出生点，仅体积增长）
+    if (progress > 0.05) {
+      const meteorAlpha = Math.min(1, progress * 2.5);
+      // 使用水墨陨石精灵图
+      const drawn = this._drawMeteorSprite(ctx, mx, my, meteorScale * 0.6, meteorAlpha, null);
+
+      if (!drawn) {
+        // 回退：程序化椭圆绘制
+        const meteorW = 18 * meteorScale;
+        const meteorH = 14 * meteorScale;
+        ctx.beginPath();
+        ctx.ellipse(mx, my, meteorW * 0.5, meteorH * 0.45, 0.15, 0, Math.PI * 2);
+        const outerGrad = ctx.createRadialGradient(mx, my - 2, 2, mx, my, meteorW * 0.5);
+        outerGrad.addColorStop(0, `rgba(180,140,70,${meteorAlpha * 0.85})`);
+        outerGrad.addColorStop(0.4, `rgba(140,100,50,${meteorAlpha * 0.7})`);
+        outerGrad.addColorStop(0.8, `rgba(90,60,35,${meteorAlpha * 0.4})`);
+        outerGrad.addColorStop(1, "rgba(60,35,20,0)");
+        ctx.fillStyle = outerGrad;
+        ctx.shadowColor = `rgba(138,109,59,${meteorAlpha * 0.45})`;
+        ctx.shadowBlur = 8 * meteorScale;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        ctx.beginPath();
+        ctx.ellipse(mx - meteorW * 0.06, my - meteorH * 0.05, meteorW * 0.32, meteorH * 0.28, -0.1, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(210,170,90,${meteorAlpha * 0.55})`;
+        ctx.fill();
+
+        const seed = 137;
+        for (let c = 0; c < 6; c++) {
+          const angle = (seed + c * 61) % 360 * Math.PI / 180;
+          const dist = (0.15 + ((seed + c * 41) % 100) / 100 * 0.3) * meteorW * 0.45;
+          const cx = mx + Math.cos(angle) * dist;
+          const cy = my + Math.sin(angle) * dist * 0.7;
+          ctx.beginPath();
+          ctx.arc(cx, cy, 1.2 * meteorScale, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(60,40,20,${meteorAlpha * 0.4})`;
+          ctx.fill();
+        }
+      }
+
+      // 下落轨迹线（虚线，从出生点到锁定落点）
+      if (targetX != null) {
+        ctx.beginPath();
+        ctx.setLineDash([3 + progress * 2, 4]);
+        ctx.moveTo(mx, my + meteorH * 0.4);
+        ctx.lineTo(targetX, targetY || footY);
+        ctx.strokeStyle = `rgba(180,140,70,${0.15 + progress * 0.2})`;
+        ctx.lineWidth = 1 + progress;
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    // ★ 岩土光环（1~4层，赭黄/棕色调）
+    const ringLayers = Math.floor(1 + progress * 3);
+    for (let l = 0; l < ringLayers; l++) {
+      const lt = l / Math.max(1, ringLayers - 1);
+      const baseR = 20 + progress * 28;
+      // 岩环旋转（慢速，沉重感）
+      const angleOff = this._globalTime * 0.003 + l * 2.1;
+      const r = baseR + lt * 14 + Math.sin(angleOff) * 6;
+
+      ctx.beginPath();
+      ctx.arc(pcx, pcy, r, 0, Math.PI * 2);
+      const ringAlpha = (0.3 + progress * 0.4) * (1 - lt * 0.55);
+      ctx.strokeStyle = `rgba(160,120,60,${ringAlpha})`;
+      ctx.lineWidth = 2 + progress * 2;
+      ctx.setLineDash([8 + progress * 6, 6 - progress * 3]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 内层实心光晕
+      if (l === 0) {
+        const innerGrad = ctx.createRadialGradient(pcx, pcy, r * 0.3, pcx, pcy, r * 0.85);
+        innerGrad.addColorStop(0, "rgba(180,140,70,0)");
+        innerGrad.addColorStop(0.5, `rgba(140,100,50,${ringAlpha * 0.5})`);
+        innerGrad.addColorStop(1, "rgba(120,80,40,0)");
+        ctx.fillStyle = innerGrad;
+        ctx.fill();
+      }
+    }
+
+    // ★ 地面裂隙（脚底向外辐射）
+    if (progress > 0.2) {
+      const fissureAlpha = (progress - 0.2) * 0.7;
+      const fissureCount = 4 + Math.floor(progress * 4);
+      for (let f = 0; f < fissureCount; f++) {
+        const fAngle = (f / fissureCount) * Math.PI * 2 + this._globalTime * 0.001;
+        const fLen = 15 + progress * 35 + Math.sin(f * 3.7) * 8;
+        const endX = pcx + Math.cos(fAngle) * fLen;
+        const endY = footY + Math.abs(Math.sin(fAngle)) * fLen * 0.4;
+
+        ctx.beginPath();
+        ctx.moveTo(pcx, footY);
+        // 折线裂纹
+        ctx.lineTo(
+          pcx + Math.cos(fAngle) * fLen * 0.5 + (Math.random() - 0.5) * 8,
+          footY + Math.abs(Math.sin(fAngle)) * fLen * 0.5 * 0.4 + (Math.random() - 0.5) * 4
+        );
+        ctx.lineTo(endX, endY);
+
+        ctx.strokeStyle = `rgba(90,60,35,${fissureAlpha * 0.55})`;
+        ctx.lineWidth = 1 + progress * 1.5;
+        ctx.lineCap = "round";
+        ctx.stroke();
+      }
+    }
+
+    // ★ 浮游碎岩块（绕角色旋转的多边形碎石）
+    if (progress > 0.15) {
+      const rockCount = 3 + Math.floor(progress * 6);
+      for (let rk = 0; rk < rockCount; rk++) {
+        const phase = this._globalTime * (0.002 + rk * 0.0006) + rk * 1.8;
+        const orbitR = 22 + progress * 28 + Math.sin(phase * 1.5) * 8;
+        const rockAngle = phase;
+        const rx = pcx + Math.cos(rockAngle) * orbitR;
+        const ry = pcy + Math.sin(rockAngle) * orbitR * 0.6;
+        const rockSize = 3 + progress * 5;
+        const rockAlpha = 0.45 + progress * 0.35 + Math.sin(phase * 3) * 0.15;
+
+        ctx.save();
+        ctx.translate(rx, ry);
+        ctx.rotate(phase * 0.7);
+        // 不规则四边形碎石
+        ctx.beginPath();
+        ctx.moveTo(-rockSize * 0.7, -rockSize * 0.5);
+        ctx.lineTo(rockSize * 0.8, -rockSize * 0.3);
+        ctx.lineTo(rockSize * 0.5, rockSize * 0.6);
+        ctx.lineTo(-rockSize * 0.6, rockSize * 0.4);
+        ctx.closePath();
+        ctx.fillStyle = `rgba(150,110,60,${rockAlpha})`;
+        ctx.fill();
+        ctx.strokeStyle = `rgba(100,70,35,${rockAlpha * 0.5})`;
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    // ★ 尘沙粒子（从地面向上飘起，大量棕色微粒）
+    if (Math.random() < 0.25 + progress * 0.55) {
+      this._spawnChargeDust(pcx, footY, progress);
+    }
+
+    ctx.restore();
+  }
+
+  // 蓄力尘沙粒子（earth 专属）
+  _spawnChargeDust(x, y, progress) {
+    const key = "charge_dust";
+    if (!this._particles[key]) this._particles[key] = [];
+    if (this._particles[key].length > 35) return;
+    for (let i = 0; i < 3; i++) {
+      const spreadX = (Math.random() - 0.5) * (30 + progress * 40);
+      this._particles[key].push({
+        x: x + spreadX,
+        y: y - Math.random() * 8,
+        vx: (Math.random() - 0.5) * (0.8 + progress * 1.2),
+        vy: -Math.random() * (0.5 + progress * 2) - 0.3,
+        life: 600 + Math.random() * 500,
+        maxLife: 1100,
+        size: 1 + Math.random() * 2.5 + progress * 1.5,
+        rotation: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.04,
+        type: "earth_dust"
+      });
+    }
   }
 
   // ==================== 粒子系统管理 ====================
@@ -738,18 +1183,34 @@ class SkillVFXRenderer {
             break;
 
           case "fire_spark":
-            const sparkGrad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
-            sparkGrad.addColorStop(0, `rgba(255,200,80,${alpha})`);
-            sparkGrad.addColorStop(0.5, `rgba(240,100,30,${alpha * 0.6})`);
-            sparkGrad.addColorStop(1, "rgba(180,40,20,0)");
+            // 双层辉光火星粒子
+            const sparkSize = p.size * alpha;
+            const sparkGrad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, sparkSize * 1.5);
+            sparkGrad.addColorStop(0, `rgba(255,240,120,${alpha * 0.9})`);
+            sparkGrad.addColorStop(0.3, `rgba(255,160,40,${alpha * 0.7})`);
+            sparkGrad.addColorStop(0.7, `rgba(220,60,15,${alpha * 0.3})`);
+            sparkGrad.addColorStop(1, "rgba(180,20,10,0)");
             ctx.fillStyle = sparkGrad;
-            ctx.beginPath(); ctx.arc(p.x, p.y, p.size * alpha, 0, Math.PI * 2); ctx.fill();
+            ctx.shadowColor = "rgba(255,100,20,0.5)";
+            ctx.shadowBlur = 4;
+            ctx.beginPath(); ctx.arc(p.x, p.y, sparkSize * 1.5, 0, Math.PI * 2); ctx.fill();
+            ctx.shadowBlur = 0;
             break;
 
           case "debris":
             ctx.translate(p.x, p.y); ctx.rotate(p.rotation || 0);
             ctx.fillStyle = `rgba(138,109,59,${alpha * 0.75})`;
             ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+            break;
+
+          case "earth_dust":
+            // 尘沙微粒（土蓄力专属）：不规则小矩形 + 微旋转
+            ctx.translate(p.x, p.y); ctx.rotate(p.rotation || 0);
+            ctx.fillStyle = `rgba(160,120,70,${alpha * 0.65})`;
+            ctx.fillRect(-p.size * 0.7, -p.size * 0.5, p.size * 1.4, p.size);
+            // 外围微光晕
+            ctx.fillStyle = `rgba(200,160,90,${alpha * 0.25})`;
+            ctx.fillRect(-p.size, -p.size * 0.7, p.size * 2, p.size * 1.4);
             break;
         }
 

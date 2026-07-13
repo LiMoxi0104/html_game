@@ -125,4 +125,18 @@ class InputManager {
       default:        return false;
     }
   }
+
+  // ★ 蓄力支持：检测组合键是否持续按下（isDown 而非 isPressed）
+  isSlotDown(slotKey) {
+    switch (slotKey) {
+      case "light1":  return this.isDown("j") && !this.moveUp() && !this.moveDown();
+      case "light2":  return this.isDown("j") && this.moveDown() && !this.moveUp();
+      case "light3":  return this.isDown("j") && this.moveUp() && !this.moveDown();
+      case "heavy1":  return this.isDown("k") && this.moveUp() && !this.moveDown() && !this.moveLeft() && !this.moveRight();
+      case "heavy2":  return this.isDown("k") && (this.moveLeft() || this.moveRight()) && !this.moveUp() && !this.moveDown();
+      case "heavy3":  return this.isDown("k") && this.moveDown() && !this.moveUp();
+      case "parry":   return this.isDown("l");
+      default:        return false;
+    }
+  }
 }

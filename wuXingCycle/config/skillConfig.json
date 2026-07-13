@@ -31,6 +31,10 @@
           "frameCount": 5,
           "durationMs": 190,
           "hit": true,
+          "spriteHitbox": {
+            "shape": "circle",
+            "radius": 56
+          },
           "hitFrames": [
             4,
             5,
@@ -629,6 +633,12 @@
       "baseDamage": 34,
       "maxMastery": 5,
       "masteryBonus": 0.1,
+      "charge": {
+        "enabled": true,
+        "maxMs": 2000,
+        "minDistanceRatio": 0.2,
+        "description": "按住蓄力，松开冲刺；蓄力越长冲刺越远"
+      },
       "phases": [
         {
           "id": "windup",
@@ -647,12 +657,15 @@
           "frameCount": 8,
           "durationMs": 320,
           "hit": true,
+          "attachToPlayer": true,
           "hitFrames": [
+            1,
             2,
             3,
             4,
             5,
-            6
+            6,
+            7
           ],
           "hitbox": {
             "offsetX": 40,
@@ -851,6 +864,18 @@
       "baseDamage": 42,
       "maxMastery": 5,
       "masteryBonus": 0.11,
+      "charge": {
+        "enabled": true,
+        "maxMs": 2000,
+        "description": "按住蓄力，陨石冲击波范围增大"
+      },
+      "targetSearch": {
+        "enabled": true,
+        "radius": 400,
+        "lockAtPhase": "windup",
+        "description": "自动锁定范围内最近敌人，陨石精准坠击"
+      },
+      "groundLock": true,
       "phases": [
         {
           "id": "windup",

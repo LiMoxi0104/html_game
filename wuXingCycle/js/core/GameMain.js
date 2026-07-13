@@ -100,7 +100,7 @@ class GameMain {
 
     // ★ v4 战斗系统组件
     this.hitboxSys = new HitboxSystem();
-    this.vfxRenderer = new SkillVFXRenderer(this.hitboxSys);
+    this.vfxRenderer = new SkillVFXRenderer(this.hitboxSys, this.asset);
     // 注入到 SkillManager
     this.skill.setCombatSystems(this.hitboxSys, this.vfxRenderer);
 
@@ -213,16 +213,48 @@ class GameMain {
     }
 
     // ==================== 1. 动态招式触发：从槽位读取当前装配的技能ID ====================
-    // 遍历所有槽位（含新增 light3），检测对应组合键是否按下
     const slotKeys = ["light1", "light2", "light3", "heavy1", "heavy2", "heavy3", "parry"];
-    for (const sk of slotKeys) {
-      if (this.input.isSlotPressed(sk)) {
-        const skillId = this.skill.getSlotSkillId(sk);
-        if (skillId && this.skill.canCast(skillId)) {
-          if (sk === "parry") {
-            this.parry.trigger();
-          } else {
-            this.skill.startCast(skillId);
+
+    // ★ v6 蓄力技能释放检测（松开按键时触发）
+    if (this._chargeSlot) {
+      // 蓄力中断保护：受伤/死亡/闪避时取消蓄力
+      if (this.player.state !== "charge") {
+        this.skill.cancelCharge();
+        this._chargeSlot = null;
+      } else if (this.skill.isCharging()) {
+        this.skill.updateCharge(dt);
+        if (!this.input.isSlotDown(this._chargeSlot)) {
+          // 按键松开 → 释放蓄力技
+          this.skill.releaseCharge();
+          this._chargeSlot = null;
+        }
+      } else {
+        // 蓄力已结束（可能被 cancel）
+        this._chargeSlot = null;
+      }
+    }
+
+    // 非蓄力中的槽位检测
+    if (!this._chargeSlot) {
+      for (const sk of slotKeys) {
+        if (this.input.isSlotPressed(sk)) {
+          const skillId = this.skill.getSlotSkillId(sk);
+          if (skillId && this.skill.canCast(skillId)) {
+            if (sk === "parry") {
+              this.parry.trigger();
+            } else {
+              // ★ 检查是否为蓄力技能
+              const s = this.skill.skills[skillId];
+              if (s && s.charge && s.charge.enabled) {
+                // 蓄力技能：开始蓄力
+                if (this.skill.startCharge(skillId, this.map.enemies, this.map)) {
+                  this._chargeSlot = sk;
+                }
+              } else {
+                // 非蓄力技能：即时施放
+                this.skill.startCast(skillId, this.map.enemies, this.map);
+              }
+            }
           }
         }
       }
