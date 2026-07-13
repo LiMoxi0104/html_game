@@ -92,7 +92,7 @@
       { "id":"ts_3","type":"thorn","x":320,"y":480,"width":60,"height":20,"damage":12,"knockback":12 },
       { "id":"ss_1","type":"ceilingSaw","x":420,"y":460,"width":30,"height":30,"damage":22,"knockback":18 },
       { "id":"ss_2","type":"ceilingSaw","x":500,"y":460,"width":30,"height":30,"damage":22,"knockback":18 },
-      { "id":"ft_1","type":"spike","variant":"flytrap","x":770,"y":460,"width":40,"height":30,"damage":18,"intervalMs":2200,"activeMs":600,"knockback":14 },
+      { "id":"ft_1","type":"flytrap","x":770,"y":460,"width":40,"height":30,"damage":18,"knockback":14,"renderScaleX":3.0,"renderScaleY":3.0,"flipH":true },
       { "id":"vb_1","type":"crackedBridge","x":890,"y":500,"width":30,"height":8,"damage":999,"knockback":0 },
       { "id":"vb_2","type":"crackedBridge","x":930,"y":500,"width":30,"height":8,"damage":999,"knockback":0 },
       { "id":"sm_1","type":"poison","variant":"spore","x":1120,"y":440,"width":60,"height":20,"damage":3,"tickMs":600,"knockbackX":4,"knockbackY":-2,"slow":true },

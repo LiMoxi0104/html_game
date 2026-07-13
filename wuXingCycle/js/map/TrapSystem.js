@@ -16,6 +16,8 @@ class TrapSystem {
       case "boulder":        return new BoulderTrap(cfg);
       // 龙首喷火：4帧精灵动画，仅帧3产生伤害
       case "dragon":         return new DragonTrap(cfg);
+      // 捕蝇草：4帧精灵动画，帧1/3半伤，帧2满伤，帧0无伤
+      case "flytrap":        return new FlytrapTrap(cfg);
       // 荆棘尖刺：4帧精灵动画，帧1/3半伤，帧2满伤
       case "thorn":          return new ThornTrap(cfg);
       // 冰闸：3帧精灵动画，帧1半伤，帧2满伤
