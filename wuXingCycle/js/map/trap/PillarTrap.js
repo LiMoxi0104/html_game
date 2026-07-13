@@ -19,7 +19,7 @@ class PillarTrap extends TrapBase {
   constructor(cfg) {
     super(cfg);
 
-    // 周期参数（从配置读取，兼容旧 SpikeTrap 字段名）
+    // 周期参数（从配置读取）
     this.intervalMs = cfg.intervalMs || 2800;
     this.activeMs  = cfg.activeMs  || 1000;
     this.dormantMs = this.intervalMs - this.activeMs - 300; // 扣除蓄力300ms

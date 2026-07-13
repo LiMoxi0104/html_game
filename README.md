@@ -102,8 +102,7 @@ wuXingCycle/
 │   │   ├── TrapSystem.js   # 陷阱调度器
 │   │   └── trap/           # 陷阱实现
 │   │       ├── TrapBase.js
-│   │       ├── SpikeTrap.js
-│   │       └── PoisonTrap.js
+│   │       └── PillarTrap.js
 │   │
 │   ├── effect/             # ✨ 特效系统
 │   │   ├── EffectPool.js   # 对象池管理

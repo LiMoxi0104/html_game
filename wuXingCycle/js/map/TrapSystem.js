@@ -10,8 +10,6 @@ class TrapSystem {
   // 按 type 工厂创建陷阱实例（预留扩展点）
   static create(cfg) {
     switch (cfg.type) {
-      case "spike":          return new SpikeTrap(cfg);
-      case "poison":         return new PoisonTrap(cfg);
       // 滚石：帧动画 + 水平往复移动
       case "boulder":        return new BoulderTrap(cfg);
       // 龙首喷火：4帧精灵动画，仅帧3产生伤害
@@ -30,16 +28,6 @@ class TrapSystem {
       case "pillar":         return new PillarTrap(cfg);
       // 荆棘藤蔓：2帧精灵动画，帧1满伤
       case "thorn_vine":     return new ThornVineTrap(cfg);
-      // 电击网：复用 SpikeTrap 的周期性 on/off 逻辑
-      case "electricGrid":   return new SpikeTrap(cfg);
-      // 碎裂类：继承 TrapBase（碰撞 + 伤害）
-      case "crackedBridge":
-      case "crackedGlass":
-      case "crackedPlatform": return new TrapBase(cfg);
-      // 飞镖口 / 锯片 / 磁力区
-      case "dartLauncher":   return new TrapBase(cfg);
-      case "ceilingSaw":     return new CeilingSawTrap(cfg);
-      case "magnetField":    return new TrapBase(cfg);
     }
   }
 
