@@ -26,6 +26,10 @@ class TrapSystem {
       case "firewall":       return new FireWallTrap(cfg);
       // 熔岩喷发：3帧精灵动画，ping-pong 往复，帧1半伤，帧2满伤
       case "lava":           return new LavaTrap(cfg);
+      // 崩塌石柱：3帧精灵动画，帧1半伤，帧2满伤
+      case "pillar":         return new PillarTrap(cfg);
+      // 荆棘藤蔓：2帧精灵动画，帧1满伤
+      case "thorn_vine":     return new ThornVineTrap(cfg);
       // 电击网：复用 SpikeTrap 的周期性 on/off 逻辑
       case "electricGrid":   return new SpikeTrap(cfg);
       // 碎裂类：继承 TrapBase（碰撞 + 伤害）

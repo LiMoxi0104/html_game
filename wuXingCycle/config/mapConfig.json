@@ -99,7 +99,7 @@
       { "id":"sm_2","type":"poison","variant":"spore","x":1580,"y":400,"width":60,"height":20,"damage":3,"tickMs":600,"knockbackX":4,"knockbackY":-2,"blind":true },
       { "id":"ts_4","type":"thorn","x":1670,"y":450,"width":50,"height":20,"damage":12,"knockback":12 },
       { "id":"lb_1","type":"crackedBridge","x":1900,"y":500,"width":40,"height":15,"damage":999,"knockback":0 },
-      { "id":"tv_1","type":"spike","variant":"thorn_vine","x":1980,"y":480,"width":20,"height":20,"damage":14,"intervalMs":1800,"activeMs":500,"knockback":10 }
+      { "id":"tv_1","type":"thorn_vine","x":1980,"y":480,"width":20,"height":20,"damage":14,"intervalMs":1800,"activeMs":500,"knockback":10 }
     ],
     "platforms": [
       { "x": 0, "y": 500, "w": 350, "h": 20, "type": "wood_floor" },
@@ -248,13 +248,13 @@
     "enemies": [],
     "traps": [
       { "id":"qs_1","type":"poison","variant":"quicksand","x":120,"y":480,"width":80,"height":20,"damage":4,"tickMs":500,"knockbackX":2,"knockbackY":-1 },
-      { "id":"pc_1","type":"spike","variant":"pillar","x":420,"y":420,"width":30,"height":100,"damage":22,"intervalMs":2800,"activeMs":1000,"knockback":20 },
+      { "id":"pc_1","type":"pillar","x":420,"y":420,"width":30,"height":100,"damage":22,"intervalMs":2800,"activeMs":1000,"knockback":20 },
       { "id":"rb_1","type":"boulder","x":630,"y":228,"width":192,"height":192,"damage":30,"travelDistance":200,"travelTime":1500,"knockback":24 },
       { "id":"ec_1","type":"poison","variant":"earthquake","x":780,"y":370,"width":40,"height":20,"damage":5,"tickMs":500,"knockbackX":6,"knockbackY":-2 },
       { "id":"qs_2","type":"poison","variant":"quicksand","x":920,"y":380,"width":90,"height":15,"damage":4,"tickMs":500,"knockbackX":2,"knockbackY":-1 },
       { "id":"pf_1","type":"crackedPlatform","x":1120,"y":400,"width":30,"height":15,"damage":14,"knockback":6 },
       { "id":"rb_2","type":"boulder","x":1220,"y":124,"width":256,"height":256,"damage":30,"travelDistance":250,"travelTime":1800,"knockback":24 },
-      { "id":"pc_2","type":"spike","variant":"pillar","x":1400,"y":380,"width":25,"height":140,"damage":22,"intervalMs":2800,"activeMs":1000,"knockback":20 },
+      { "id":"pc_2","type":"pillar","x":1400,"y":380,"width":25,"height":140,"damage":22,"intervalMs":2800,"activeMs":1000,"knockback":20 },
       { "id":"st_1","type":"poison","variant":"tornado","x":1600,"y":390,"width":40,"height":30,"damage":3,"tickMs":400,"knockbackX":6,"knockbackY":-4,"slow":true },
       { "id":"ec_2","type":"poison","variant":"earthquake","x":1880,"y":430,"width":80,"height":20,"damage":5,"tickMs":500,"knockbackX":6,"knockbackY":-2 },
       { "id":"pf_2","type":"crackedPlatform","x":1950,"y":450,"width":50,"height":20,"damage":15,"knockback":8 }

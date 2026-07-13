@@ -64,10 +64,6 @@ class GameMain {
     this.asset = new AssetManager(consts);
     await this.asset.preload();
 
-    // ★ 陷阱帧动画图片预加载
-    await SpikeTrap.loadThornImages();
-    await SpikeTrap.loadLavaImages();
-
     // ■ 加载角色序列帧
     const seqFrames = await this.asset.loadFrameSequence(
       "assets/img/player/move_frames", "frame_", 120, "_nobg.png"
