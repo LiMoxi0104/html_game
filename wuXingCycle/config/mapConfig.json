@@ -99,7 +99,7 @@
       { "id":"sm_2","type":"poison","variant":"spore","x":1580,"y":400,"width":60,"height":20,"damage":3,"tickMs":600,"knockbackX":4,"knockbackY":-2,"blind":true },
       { "id":"ts_4","type":"thorn","x":1670,"y":450,"width":50,"height":20,"damage":12,"knockback":12 },
       { "id":"lb_1","type":"crackedBridge","x":1900,"y":500,"width":40,"height":15,"damage":999,"knockback":0 },
-      { "id":"tv_1","type":"thorn_vine","x":1980,"y":480,"width":20,"height":20,"damage":14,"intervalMs":1800,"activeMs":500,"knockback":10 }
+      { "id":"tv_1","type":"thorn_vine","x":1930,"y":470,"width":120,"height":30,"damage":14,"knockback":10,"renderScaleX":1.0,"renderScaleY":4.0 }
     ],
     "platforms": [
       { "x": 0, "y": 500, "w": 350, "h": 20, "type": "wood_floor" },
