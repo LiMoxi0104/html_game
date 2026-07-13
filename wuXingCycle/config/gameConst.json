@@ -2,8 +2,8 @@
   "canvas": { "width": 960, "height": 540 },
   "world": { "groundY": 472, "boundaryPadding": 24 },
   "player": {
-    "width": 40,
-    "height": 62,
+    "width": 80,
+    "height": 124,
     "moveSpeed": 3.4,
     "jumpForce": 12,
     "gravity": 0.62,

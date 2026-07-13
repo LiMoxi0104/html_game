@@ -29,6 +29,9 @@ class GameMain {
     // 数组：[{text, x, y, color, timer, duration}]
     this.floatTexts = [];
 
+    // —— 碰撞箱可视化调试 ——
+    this.showHitboxes = false;
+
     // ★ v4 传送门 / 转场系统
     this.transitionState = null;    // null | "fadeOut" | "switching" | "fadeIn"
     this.transitionAlpha = 0;       // 0=透明 1=全黑
@@ -60,6 +63,10 @@ class GameMain {
     // 资源预加载
     this.asset = new AssetManager(consts);
     await this.asset.preload();
+
+    // ★ 陷阱帧动画图片预加载
+    await SpikeTrap.loadThornImages();
+    await SpikeTrap.loadLavaImages();
 
     // ■ 加载角色序列帧
     const seqFrames = await this.asset.loadFrameSequence(
@@ -93,7 +100,7 @@ class GameMain {
 
     // ★ v4 战斗系统组件
     this.hitboxSys = new HitboxSystem();
-    this.vfxRenderer = new SkillVFXRenderer(this.hitboxSys);
+    this.vfxRenderer = new SkillVFXRenderer(this.hitboxSys, this.asset);
     // 注入到 SkillManager
     this.skill.setCombatSystems(this.hitboxSys, this.vfxRenderer);
 
@@ -157,13 +164,15 @@ class GameMain {
       return;  // 转场期间暂停游戏逻辑
     }
 
-    // ==================== 0. 调试模式切换（H 键） ====================
-    if (this.input && this.input._wasHPressed === undefined) this.input._wasHDown = false;
-    const hDown = !!(this.input.down && this.input.down["h"]);
-    if (this.hitboxSys && hDown && !this.input._wasHDown) {
-      this.hitboxSys.toggleDebug();
+    // ==================== 0. 碰撞箱可视化切换（H 键） ====================
+    if (this.input) {
+      const hNow = this.input.isDown("h");
+      if (hNow && !this._wasHDown) {
+        this.showHitboxes = !this.showHitboxes;
+        this.addFloatText(this.showHitboxes ? "碰撞箱 ON" : "碰撞箱 OFF", "#88ddff");
+      }
+      this._wasHDown = hNow;
     }
-    if (this.input) this.input._wasHDown = hDown;
 
     // ★ DEBUG 飞行模式（Q 键切换，后续整块可删除）——
     if (this.player && this.input.flyTogglePressed()) {
@@ -204,16 +213,48 @@ class GameMain {
     }
 
     // ==================== 1. 动态招式触发：从槽位读取当前装配的技能ID ====================
-    // 遍历所有槽位（含新增 light3），检测对应组合键是否按下
     const slotKeys = ["light1", "light2", "light3", "heavy1", "heavy2", "heavy3", "parry"];
-    for (const sk of slotKeys) {
-      if (this.input.isSlotPressed(sk)) {
-        const skillId = this.skill.getSlotSkillId(sk);
-        if (skillId && this.skill.canCast(skillId)) {
-          if (sk === "parry") {
-            this.parry.trigger();
-          } else {
-            this.skill.startCast(skillId);
+
+    // ★ v6 蓄力技能释放检测（松开按键时触发）
+    if (this._chargeSlot) {
+      // 蓄力中断保护：受伤/死亡/闪避时取消蓄力
+      if (this.player.state !== "charge") {
+        this.skill.cancelCharge();
+        this._chargeSlot = null;
+      } else if (this.skill.isCharging()) {
+        this.skill.updateCharge(dt);
+        if (!this.input.isSlotDown(this._chargeSlot)) {
+          // 按键松开 → 释放蓄力技
+          this.skill.releaseCharge();
+          this._chargeSlot = null;
+        }
+      } else {
+        // 蓄力已结束（可能被 cancel）
+        this._chargeSlot = null;
+      }
+    }
+
+    // 非蓄力中的槽位检测
+    if (!this._chargeSlot) {
+      for (const sk of slotKeys) {
+        if (this.input.isSlotPressed(sk)) {
+          const skillId = this.skill.getSlotSkillId(sk);
+          if (skillId && this.skill.canCast(skillId)) {
+            if (sk === "parry") {
+              this.parry.trigger();
+            } else {
+              // ★ 检查是否为蓄力技能
+              const s = this.skill.skills[skillId];
+              if (s && s.charge && s.charge.enabled) {
+                // 蓄力技能：开始蓄力
+                if (this.skill.startCharge(skillId, this.map.enemies, this.map)) {
+                  this._chargeSlot = sk;
+                }
+              } else {
+                // 非蓄力技能：即时施放
+                this.skill.startCast(skillId, this.map.enemies, this.map);
+              }
+            }
           }
         }
       }
@@ -308,6 +349,7 @@ class GameMain {
     this.player.draw(ctx);
     this.skill.draw(ctx);             // 攻击动画 + 解锁提示
     this.parry.draw(ctx);             // 弹反效果
+    this._drawHitboxes(ctx);          // 碰撞箱调试可视化
     this.renderer.endWorld();
 
     // —— UI 层（屏幕空间）：状态栏 + 技能面板 + 浮动文字 ——
@@ -465,6 +507,84 @@ class GameMain {
     const H = this.consts.canvas.height;
     ctx.fillStyle = `rgba(0,0,0,${this.transitionAlpha})`;
     ctx.fillRect(0, 0, W, H);
+  }
+
+  // ==================== 碰撞箱可视化调试 ====================
+  // 在世界空间中以半透明线框叠加渲染所有物体的碰撞矩形
+  _drawHitboxes(ctx) {
+    if (!this.showHitboxes) return;
+
+    const fillA = 0.12;     // 填充透明度
+    const strokeA = 0.65;   // 边框透明度
+    const lw = 1.5;         // 线宽
+
+    // 辅助：绘制一个 AABB 矩形
+    const drawBox = (rect) => {
+      if (!rect) return;
+      ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+      ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+    };
+
+    // 1. 玩家 — 青色
+    ctx.strokeStyle = `rgba(0,230,200,${strokeA})`;
+    ctx.fillStyle   = `rgba(0,230,200,${fillA})`;
+    ctx.lineWidth   = lw;
+    drawBox(this.player.getRect());
+
+    // 2. 敌人 — 红色
+    ctx.strokeStyle = `rgba(255,70,70,${strokeA})`;
+    ctx.fillStyle   = `rgba(255,70,70,${fillA})`;
+    for (const e of this.map.enemies) {
+      if (!e.alive) continue;
+      drawBox(e.getRect());
+    }
+
+    // 3. 陷阱 — 橙色（圆形碰撞体用圆绘制，矩形用框绘制）
+    ctx.strokeStyle = `rgba(255,160,40,${strokeA})`;
+    ctx.fillStyle   = `rgba(255,160,40,${fillA})`;
+    for (const t of this.trap.traps) {
+      const c = t.getCircle && t.getCircle();
+      if (c) {
+        ctx.beginPath();
+        ctx.arc(c.cx, c.cy, c.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      } else {
+        drawBox(t.getRect());
+      }
+    }
+
+    // 4. 平台 — 蓝色
+    if (this.map.platforms) {
+      ctx.strokeStyle = `rgba(80,160,255,${strokeA})`;
+      ctx.fillStyle   = `rgba(80,160,255,${fillA})`;
+      for (const p of this.map.platforms) {
+        drawBox(p);
+      }
+    }
+
+    // 5. 传送门 — 紫色（圆形碰撞体，与 checkPortalCollision 圆心/半径一致）
+    if (this.map.portals) {
+      ctx.strokeStyle = `rgba(200,90,255,${strokeA})`;
+      ctx.fillStyle   = `rgba(200,90,255,${fillA})`;
+      for (const p of this.map.portals) {
+        const cx = p.x + p.w / 2;
+        const cy = p.y + p.h / 2;
+        const r  = Math.min(p.w, p.h) / 2;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+    }
+
+    // 6. 当前攻击判定箱 — 黄色
+    const activeHb = this.skill && this.skill.getActiveHitbox && this.skill.getActiveHitbox();
+    if (activeHb) {
+      ctx.strokeStyle = `rgba(255,255,60,${strokeA})`;
+      ctx.fillStyle   = `rgba(255,255,60,${fillA * 1.5})`;
+      drawBox(activeHb);
+    }
   }
 }
 

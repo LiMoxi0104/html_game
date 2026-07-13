@@ -1,1 +1,1154 @@
-{"skills": {"water_slash": {"id": "water_slash", "name": "水行·叠浪", "type": "light", "element": "water", "description": "释放弧形青蓝水浪，远程冲击，可同时命中前方多个敌人", "unlockMode": "initial", "unlockCondition": null, "mpCost": 0, "cooldownMs": 280, "baseDamage": 14, "maxMastery": 5, "masteryBonus": 0.08, "phases": [{"id": "windup", "name": "起手", "sheet": "player_attack", "frameStart": 0, "frameCount": 4, "durationMs": 150, "hit": false}, {"id": "active", "name": "挥击命中", "sheet": "skill_water_light", "frameStart": 4, "frameCount": 5, "durationMs": 190, "hit": true, "hitFrames": [4, 5, 6, 7], "hitbox": {"offsetX": 52, "offsetY": 12, "width": 56, "height": 56}, "perFrameHitboxes": [{"offsetX": 46, "offsetY": 18, "width": 50, "height": 50}, {"offsetX": 50, "offsetY": 16, "width": 54, "height": 54}, {"offsetX": 54, "offsetY": 14, "width": 56, "height": 56}, {"offsetX": 52, "offsetY": 16, "width": 54, "height": 54}, {"offsetX": 48, "offsetY": 18, "width": 52, "height": 52}], "damage": 14, "knockback": 6}, {"id": "recovery", "name": "收招", "sheet": "player_attack", "frameStart": 9, "frameCount": 4, "durationMs": 150, "hit": false}]}, "water_vortex": {"id": "water_vortex", "name": "水行·寒潭漩涡", "type": "light", "element": "water", "description": "进阶水招，凝聚范围更大的寒潭漩涡，持续吸附周围敌人", "unlockMode": "mastery", "unlockCondition": {"skillId": "water_slash", "masteryLevel": 3}, "mpCost": 6, "cooldownMs": 400, "baseDamage": 22, "maxMastery": 5, "masteryBonus": 0.1, "phases": [{"id": "windup", "name": "凝聚", "sheet": "player_attack", "frameStart": 0, "frameCount": 6, "durationMs": 220, "hit": false}, {"id": "active", "name": "漩涡爆发", "sheet": "skill_water_light", "frameStart": 4, "frameCount": 7, "durationMs": 280, "hit": true, "hitFrames": [4, 5, 6, 7, 8, 9], "hitbox": {"offsetX": 10, "offsetY": -30, "width": 80, "height": 80}, "perFrameHitboxes": [{"offsetX": 4, "offsetY": -24, "width": 60, "height": 60}, {"offsetX": 6, "offsetY": -26, "width": 68, "height": 68}, {"offsetX": 8, "offsetY": -28, "width": 76, "height": 74}, {"offsetX": 10, "offsetY": -30, "width": 82, "height": 80}, {"offsetX": 8, "offsetY": -28, "width": 78, "height": 76}, {"offsetX": 6, "offsetY": -26, "width": 70, "height": 70}, {"offsetX": 4, "offsetY": -24, "width": 62, "height": 62}], "damage": 22, "knockback": 3}, {"id": "recovery", "name": "收招", "sheet": "player_attack", "frameStart": 9, "frameCount": 4, "durationMs": 180, "hit": false}]}, "wood_vine": {"id": "wood_vine", "name": "木行·藤刺", "type": "light", "element": "wood", "description": "从地面召唤苍绿藤蔓向上抬升，攻击近身目标", "unlockMode": "chest", "unlockCondition": {"mapId": "woodValley", "boxIndex": 0}, "mpCost": 0, "cooldownMs": 320, "baseDamage": 16, "maxMastery": 5, "masteryBonus": 0.08, "phases": [{"id": "windup", "name": "起手", "sheet": "player_attack", "frameStart": 0, "frameCount": 4, "durationMs": 160, "hit": false}, {"id": "active", "name": "藤蔓穿刺", "sheet": "skill_wood_light", "frameStart": 6, "frameCount": 6, "durationMs": 240, "hit": true, "hitFrames": [6, 7, 8, 9, 10], "hitbox": {"offsetX": 16, "offsetY": -20, "width": 44, "height": 70}, "perFrameHitboxes": [{"offsetX": 12, "offsetY": 0, "width": 32, "height": 40}, {"offsetX": 14, "offsetY": -8, "width": 36, "height": 52}, {"offsetX": 16, "offsetY": -14, "width": 40, "height": 60}, {"offsetX": 16, "offsetY": -18, "width": 44, "height": 68}, {"offsetX": 14, "offsetY": -22, "width": 42, "height": 72}, {"offsetX": 12, "offsetY": -20, "width": 38, "height": 70}], "damage": 16, "knockback": 8}, {"id": "recovery", "name": "收招", "sheet": "player_attack", "frameStart": 12, "frameCount": 5, "durationMs": 200, "hit": false}]}, "wood_thorn": {"id": "wood_thorn", "name": "木行·荆棘牢笼", "type": "light", "element": "wood", "description": "进阶木招，召唤环形荆棘包围自身，对近身敌人造成持续伤害", "unlockMode": "secret", "unlockCondition": {"mapId": "woodValley"}, "mpCost": 8, "cooldownMs": 480, "baseDamage": 24, "maxMastery": 5, "masteryBonus": 0.09, "phases": [{"id": "windup", "name": "扎根", "sheet": "player_attack", "frameStart": 0, "frameCount": 6, "durationMs": 240, "hit": false}, {"id": "active", "name": "荆棘绽放", "sheet": "skill_wood_light", "frameStart": 6, "frameCount": 8, "durationMs": 320, "hit": true, "hitFrames": [6, 7, 8, 9, 10, 11, 12], "hitbox": {"offsetX": -20, "offsetY": -24, "width": 84, "height": 84}, "perFrameHitboxes": [{"offsetX": -12, "offsetY": -10, "width": 52, "height": 44}, {"offsetX": -14, "offsetY": -14, "width": 60, "height": 56}, {"offsetX": -16, "offsetY": -18, "width": 68, "height": 66}, {"offsetX": -18, "offsetY": -20, "width": 76, "height": 74}, {"offsetX": -20, "offsetY": -22, "width": 82, "height": 80}, {"offsetX": -20, "offsetY": -24, "width": 84, "height": 84}, {"offsetX": -18, "offsetY": -22, "width": 80, "height": 82}, {"offsetX": -16, "offsetY": -20, "width": 74, "height": 76}], "damage": 24, "knockback": 4}, {"id": "recovery", "name": "收招", "sheet": "player_attack", "frameStart": 12, "frameCount": 5, "durationMs": 200, "hit": false}]}, "metal_sword": {"id": "metal_sword", "name": "金行·天剑坠", "type": "heavy", "element": "metal", "description": "在空中凝聚巨型鎏金长剑，自上而下劈砍，力道刚猛", "unlockMode": "chest", "unlockCondition": {"mapId": "woodValley", "boxIndex": 1}, "mpCost": 10, "cooldownMs": 620, "baseDamage": 38, "maxMastery": 5, "masteryBonus": 0.12, "phases": [{"id": "windup", "name": "聚剑", "sheet": "player_attack", "frameStart": 0, "frameCount": 8, "durationMs": 340, "hit": false}, {"id": "active", "name": "天剑劈落", "sheet": "skill_wood_light", "frameStart": 0, "frameCount": 6, "durationMs": 260, "hit": true, "hitFrames": [2, 3, 4], "hitbox": {"offsetX": 8, "offsetY": -40, "width": 56, "height": 90}, "perFrameHitboxes": [{"offsetX": 4, "offsetY": -20, "width": 36, "height": 40}, {"offsetX": 4, "offsetY": -30, "width": 42, "height": 58}, {"offsetX": 6, "offsetY": -38, "width": 48, "height": 78}, {"offsetX": 8, "offsetY": -44, "width": 54, "height": 92}, {"offsetX": 10, "offsetY": -38, "width": 52, "height": 86}, {"offsetX": 8, "offsetY": -32, "width": 48, "height": 74}], "damage": 38, "knockback": 18}, {"id": "recovery", "name": "收招", "sheet": "player_attack", "frameStart": 12, "frameCount": 6, "durationMs": 260, "hit": false}]}, "metal_blade": {"id": "metal_blade", "name": "金行·万刃旋", "type": "heavy", "element": "metal", "description": "进阶金招，以自身为中心释放环形刀刃风暴，覆盖全方位", "unlockMode": "boss", "unlockCondition": {"bossId": "woodGuardian"}, "mpCost": 16, "cooldownMs": 900, "baseDamage": 52, "maxMastery": 5, "masteryBonus": 0.1, "phases": [{"id": "windup", "name": "蓄力", "sheet": "player_attack", "frameStart": 0, "frameCount": 10, "durationMs": 450, "hit": false}, {"id": "active", "name": "刃风暴", "sheet": "skill_wood_light", "frameStart": 0, "frameCount": 10, "durationMs": 400, "hit": true, "hitFrames": [3, 4, 5, 6, 7], "hitbox": {"offsetX": -36, "offsetY": -32, "width": 112, "height": 100}, "perFrameHitboxes": [{"offsetX": -16, "offsetY": -14, "width": 64, "height": 50}, {"offsetX": -22, "offsetY": -18, "width": 78, "height": 64}, {"offsetX": -28, "offsetY": -24, "width": 92, "height": 78}, {"offsetX": -32, "offsetY": -28, "width": 104, "height": 88}, {"offsetX": -36, "offsetY": -30, "width": 110, "height": 96}, {"offsetX": -36, "offsetY": -31, "width": 112, "height": 98}, {"offsetX": -34, "offsetY": -30, "width": 108, "height": 96}, {"offsetX": -30, "offsetY": -28, "width": 100, "height": 90}], "damage": 52, "knockback": 14}, {"id": "recovery", "name": "收招", "sheet": "player_attack", "frameStart": 12, "frameCount": 6, "durationMs": 280, "hit": false}]}, "fire_dragon": {"id": "fire_dragon", "name": "火行·墨龙冲", "type": "heavy", "element": "fire", "description": "赤红水墨火龙直线贯穿前方，角色随火龙一同冲刺位移", "unlockMode": "chest", "unlockCondition": {"mapId": "firePeak", "boxIndex": 0}, "mpCost": 12, "cooldownMs": 700, "baseDamage": 34, "maxMastery": 5, "masteryBonus": 0.1, "phases": [{"id": "windup", "name": "凝火", "sheet": "player_attack", "frameStart": 0, "frameCount": 6, "durationMs": 260, "hit": false}, {"id": "active", "name": "火龙突进", "sheet": "skill_wood_light", "frameStart": 0, "frameCount": 8, "durationMs": 320, "hit": true, "hitFrames": [2, 3, 4, 5, 6], "hitbox": {"offsetX": 20, "offsetY": -16, "width": 90, "height": 50}, "perFrameHitboxes": [{"offsetX": 12, "offsetY": -10, "width": 50, "height": 30}, {"offsetX": 18, "offsetY": -12, "width": 68, "height": 38}, {"offsetX": 24, "offsetY": -14, "width": 82, "height": 44}, {"offsetX": 28, "offsetY": -14, "width": 90, "height": 48}, {"offsetX": 26, "offsetY": -13, "width": 86, "height": 46}, {"offsetX": 22, "offsetY": -12, "width": 78, "height": 42}, {"offsetX": 16, "offsetY": -10, "width": 62, "height": 36}, {"offsetX": 12, "offsetY": -8, "width": 48, "height": 30}], "damage": 34, "knockback": 16, "dashDistance": 120}, {"id": "recovery", "name": "收招", "sheet": "player_attack", "frameStart": 12, "frameCount": 5, "durationMs": 220, "hit": false}]}, "fire_inferno": {"id": "fire_inferno", "name": "火行·炼狱焚天", "type": "heavy", "element": "fire", "description": "进阶火招，引发大范围烈焰爆炸，灼烧范围内所有敌人", "unlockMode": "boss", "unlockCondition": {"bossId": "fireLord"}, "mpCost": 20, "cooldownMs": 1100, "baseDamage": 60, "maxMastery": 5, "masteryBonus": 0.1, "phases": [{"id": "windup", "name": "聚炎", "sheet": "player_attack", "frameStart": 0, "frameCount": 10, "durationMs": 480, "hit": false}, {"id": "active", "name": "焚天爆裂", "sheet": "skill_wood_light", "frameStart": 0, "frameCount": 10, "durationMs": 450, "hit": true, "hitFrames": [4, 5, 6, 7, 8], "hitbox": {"offsetX": -40, "offsetY": -48, "width": 130, "height": 110}, "perFrameHitboxes": [{"offsetX": -16, "offsetY": -20, "width": 64, "height": 52}, {"offsetX": -22, "offsetY": -28, "width": 84, "height": 68}, {"offsetX": -30, "offsetY": -36, "width": 104, "height": 84}, {"offsetX": -36, "offsetY": -42, "width": 122, "height": 98}, {"offsetX": -40, "offsetY": -46, "width": 130, "height": 106}, {"offsetX": -38, "offsetY": -44, "width": 126, "height": 104}, {"offsetX": -34, "offsetY": -40, "width": 118, "height": 96}, {"offsetX": -26, "offsetY": -32, "width": 98, "height": 78}], "damage": 60, "knockback": 22}, {"id": "recovery", "name": "收招", "sheet": "player_attack", "frameStart": 12, "frameCount": 6, "durationMs": 300, "hit": false}]}, "earth_meteor": {"id": "earth_meteor", "name": "土行·陨星震", "type": "heavy", "element": "earth", "description": "高空坠落赭黄陨石，落地产生大范围震荡冲击波", "unlockMode": "chest", "unlockCondition": {"mapId": "earthRuin", "boxIndex": 0}, "mpCost": 14, "cooldownMs": 800, "baseDamage": 42, "maxMastery": 5, "masteryBonus": 0.11, "phases": [{"id": "windup", "name": "引星", "sheet": "player_attack", "frameStart": 0, "frameCount": 8, "durationMs": 360, "hit": false}, {"id": "active", "name": "陨石坠落", "sheet": "skill_wood_light", "frameStart": 0, "frameCount": 8, "durationMs": 360, "hit": true, "hitFrames": [4, 5, 6], "hitbox": {"offsetX": -32, "offsetY": -36, "width": 110, "height": 96}, "perFrameHitboxes": [{"offsetX": -8, "offsetY": -12, "width": 36, "height": 32}, {"offsetX": -14, "offsetY": -18, "width": 52, "height": 48}, {"offsetX": -20, "offsetY": -24, "width": 68, "height": 64}, {"offsetX": -26, "offsetY": -30, "width": 84, "height": 78}, {"offsetX": -32, "offsetY": -36, "width": 102, "height": 92}, {"offsetX": -28, "offsetY": -34, "width": 96, "height": 90}, {"offsetX": -22, "offsetY": -28, "width": 80, "height": 76}, {"offsetX": -16, "offsetY": -20, "width": 60, "height": 56}], "damage": 42, "knockback": 20}, {"id": "recovery", "name": "收招", "sheet": "player_attack", "frameStart": 12, "frameCount": 6, "durationMs": 280, "hit": false}]}, "earthquake": {"id": "earthquake", "name": "土行·崩岳裂地", "type": "heavy", "element": "earth", "description": "进阶土招，以重击震撼大地，触发连锁裂隙波及全屏敌人", "unlockMode": "secret", "unlockCondition": {"mapId": "earthRuin"}, "mpCost": 24, "cooldownMs": 1300, "baseDamage": 70, "maxMastery": 5, "masteryBonus": 0.09, "phases": [{"id": "windup", "name": "蓄势", "sheet": "player_attack", "frameStart": 0, "frameCount": 12, "durationMs": 540, "hit": false}, {"id": "active", "name": "裂地震击", "sheet": "skill_wood_light", "frameStart": 0, "frameCount": 10, "durationMs": 500, "hit": true, "hitFrames": [5, 6, 7], "hitbox": {"offsetX": -60, "offsetY": -52, "width": 170, "height": 120}, "perFrameHitboxes": [{"offsetX": -24, "offsetY": -18, "width": 68, "height": 48}, {"offsetX": -32, "offsetY": -26, "width": 90, "height": 64}, {"offsetX": -40, "offsetY": -34, "width": 112, "height": 80}, {"offsetX": -48, "offsetY": -42, "width": 134, "height": 96}, {"offsetX": -54, "offsetY": -48, "width": 154, "height": 110}, {"offsetX": -58, "offsetY": -50, "width": 164, "height": 116}, {"offsetX": -60, "offsetY": -52, "width": 170, "height": 120}, {"offsetX": -56, "offsetY": -50, "width": 162, "height": 116}, {"offsetX": -50, "offsetY": -46, "width": 146, "height": 108}], "damage": 70, "knockback": 26}, {"id": "recovery", "name": "收招", "sheet": "player_attack", "frameStart": 12, "frameCount": 6, "durationMs": 300, "hit": false}]}, "parry_dagger": {"id": "parry_dagger", "name": "弹反·匕格挡", "type": "parry", "element": "none", "description": "横向格挡敌方攻击，成功触发时停、击退近身怪物并爆出银白火花", "unlockMode": "initial", "unlockCondition": null, "mpCost": 0, "cooldownMs": 300, "baseDamage": 0, "maxMastery": 1, "masteryBonus": 0, "phases": []}}, "slots": {"light1": {"key": "A/D+J", "label": "轻击一", "acceptType": ["light"]}, "light2": {"key": "S+J", "label": "轻击二", "acceptType": ["light"]}, "light3": {"key": "W+J", "label": "轻击三", "acceptType": ["light"]}, "heavy1": {"key": "W+K", "label": "重击一", "acceptType": ["heavy"]}, "heavy2": {"key": "A/D+K", "label": "重击二", "acceptType": ["heavy"]}, "heavy3": {"key": "S+K", "label": "重击三", "acceptType": ["heavy"]}, "parry": {"key": "L", "label": "弹反", "acceptType": ["parry"], "locked": true}}}
+{
+  "skills": {
+    "water_slash": {
+      "id": "water_slash",
+      "name": "水行·叠浪",
+      "type": "light",
+      "element": "water",
+      "description": "释放弧形青蓝水浪，远程冲击，可同时命中前方多个敌人",
+      "unlockMode": "initial",
+      "unlockCondition": null,
+      "mpCost": 0,
+      "cooldownMs": 280,
+      "baseDamage": 14,
+      "maxMastery": 5,
+      "masteryBonus": 0.08,
+      "phases": [
+        {
+          "id": "windup",
+          "name": "起手",
+          "sheet": "player_attack",
+          "frameStart": 0,
+          "frameCount": 4,
+          "durationMs": 150,
+          "hit": false
+        },
+        {
+          "id": "active",
+          "name": "挥击命中",
+          "sheet": "skill_water_light",
+          "frameStart": 4,
+          "frameCount": 5,
+          "durationMs": 190,
+          "hit": true,
+          "spriteHitbox": {
+            "shape": "circle",
+            "radius": 56
+          },
+          "hitFrames": [
+            4,
+            5,
+            6,
+            7
+          ],
+          "hitbox": {
+            "offsetX": 104,
+            "offsetY": 24,
+            "width": 112,
+            "height": 112
+          },
+          "perFrameHitboxes": [
+            {
+              "offsetX": 92,
+              "offsetY": 36,
+              "width": 100,
+              "height": 100
+            },
+            {
+              "offsetX": 100,
+              "offsetY": 32,
+              "width": 108,
+              "height": 108
+            },
+            {
+              "offsetX": 108,
+              "offsetY": 28,
+              "width": 112,
+              "height": 112
+            },
+            {
+              "offsetX": 104,
+              "offsetY": 32,
+              "width": 108,
+              "height": 108
+            },
+            {
+              "offsetX": 96,
+              "offsetY": 36,
+              "width": 104,
+              "height": 104
+            }
+          ],
+          "damage": 14,
+          "knockback": 6
+        },
+        {
+          "id": "recovery",
+          "name": "收招",
+          "sheet": "player_attack",
+          "frameStart": 9,
+          "frameCount": 4,
+          "durationMs": 150,
+          "hit": false
+        }
+      ]
+    },
+    "water_vortex": {
+      "id": "water_vortex",
+      "name": "水行·寒潭漩涡",
+      "type": "light",
+      "element": "water",
+      "description": "进阶水招，凝聚范围更大的寒潭漩涡，持续吸附周围敌人",
+      "unlockMode": "mastery",
+      "unlockCondition": {
+        "skillId": "water_slash",
+        "masteryLevel": 3
+      },
+      "mpCost": 6,
+      "cooldownMs": 400,
+      "baseDamage": 22,
+      "maxMastery": 5,
+      "masteryBonus": 0.1,
+      "phases": [
+        {
+          "id": "windup",
+          "name": "凝聚",
+          "sheet": "player_attack",
+          "frameStart": 0,
+          "frameCount": 6,
+          "durationMs": 220,
+          "hit": false
+        },
+        {
+          "id": "active",
+          "name": "漩涡爆发",
+          "sheet": "skill_water_light",
+          "frameStart": 4,
+          "frameCount": 7,
+          "durationMs": 280,
+          "hit": true,
+          "hitFrames": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "hitbox": {
+            "offsetX": 20,
+            "offsetY": -60,
+            "width": 160,
+            "height": 160
+          },
+          "perFrameHitboxes": [
+            {
+              "offsetX": 8,
+              "offsetY": -48,
+              "width": 120,
+              "height": 120
+            },
+            {
+              "offsetX": 12,
+              "offsetY": -52,
+              "width": 136,
+              "height": 136
+            },
+            {
+              "offsetX": 16,
+              "offsetY": -56,
+              "width": 152,
+              "height": 148
+            },
+            {
+              "offsetX": 20,
+              "offsetY": -60,
+              "width": 164,
+              "height": 160
+            },
+            {
+              "offsetX": 16,
+              "offsetY": -56,
+              "width": 156,
+              "height": 152
+            },
+            {
+              "offsetX": 12,
+              "offsetY": -52,
+              "width": 140,
+              "height": 140
+            },
+            {
+              "offsetX": 8,
+              "offsetY": -48,
+              "width": 124,
+              "height": 124
+            }
+          ],
+          "damage": 22,
+          "knockback": 3
+        },
+        {
+          "id": "recovery",
+          "name": "收招",
+          "sheet": "player_attack",
+          "frameStart": 9,
+          "frameCount": 4,
+          "durationMs": 180,
+          "hit": false
+        }
+      ]
+    },
+    "wood_vine": {
+      "id": "wood_vine",
+      "name": "木行·藤刺",
+      "type": "light",
+      "element": "wood",
+      "description": "从地面召唤苍绿藤蔓向上抬升，攻击近身目标",
+      "unlockMode": "chest",
+      "unlockCondition": {
+        "mapId": "woodValley",
+        "boxIndex": 0
+      },
+      "mpCost": 0,
+      "cooldownMs": 320,
+      "baseDamage": 16,
+      "maxMastery": 5,
+      "masteryBonus": 0.08,
+      "phases": [
+        {
+          "id": "windup",
+          "name": "起手",
+          "sheet": "player_attack",
+          "frameStart": 0,
+          "frameCount": 4,
+          "durationMs": 160,
+          "hit": false
+        },
+        {
+          "id": "active",
+          "name": "藤蔓穿刺",
+          "sheet": "skill_wood_light",
+          "frameStart": 6,
+          "frameCount": 6,
+          "durationMs": 240,
+          "hit": true,
+          "hitFrames": [
+            6,
+            7,
+            8,
+            9,
+            10
+          ],
+          "hitbox": {
+            "offsetX": 32,
+            "offsetY": -40,
+            "width": 88,
+            "height": 140
+          },
+          "perFrameHitboxes": [
+            {
+              "offsetX": 24,
+              "offsetY": 0,
+              "width": 64,
+              "height": 80
+            },
+            {
+              "offsetX": 28,
+              "offsetY": -16,
+              "width": 72,
+              "height": 104
+            },
+            {
+              "offsetX": 32,
+              "offsetY": -28,
+              "width": 80,
+              "height": 120
+            },
+            {
+              "offsetX": 32,
+              "offsetY": -36,
+              "width": 88,
+              "height": 136
+            },
+            {
+              "offsetX": 28,
+              "offsetY": -44,
+              "width": 84,
+              "height": 144
+            },
+            {
+              "offsetX": 24,
+              "offsetY": -40,
+              "width": 76,
+              "height": 140
+            }
+          ],
+          "damage": 16,
+          "knockback": 8
+        },
+        {
+          "id": "recovery",
+          "name": "收招",
+          "sheet": "player_attack",
+          "frameStart": 12,
+          "frameCount": 5,
+          "durationMs": 200,
+          "hit": false
+        }
+      ]
+    },
+    "wood_thorn": {
+      "id": "wood_thorn",
+      "name": "木行·荆棘牢笼",
+      "type": "light",
+      "element": "wood",
+      "description": "进阶木招，召唤环形荆棘包围自身，对近身敌人造成持续伤害",
+      "unlockMode": "secret",
+      "unlockCondition": {
+        "mapId": "woodValley"
+      },
+      "mpCost": 8,
+      "cooldownMs": 480,
+      "baseDamage": 24,
+      "maxMastery": 5,
+      "masteryBonus": 0.09,
+      "phases": [
+        {
+          "id": "windup",
+          "name": "扎根",
+          "sheet": "player_attack",
+          "frameStart": 0,
+          "frameCount": 6,
+          "durationMs": 240,
+          "hit": false
+        },
+        {
+          "id": "active",
+          "name": "荆棘绽放",
+          "sheet": "skill_wood_light",
+          "frameStart": 6,
+          "frameCount": 8,
+          "durationMs": 320,
+          "hit": true,
+          "hitFrames": [
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ],
+          "hitbox": {
+            "offsetX": -40,
+            "offsetY": -48,
+            "width": 168,
+            "height": 168
+          },
+          "perFrameHitboxes": [
+            {
+              "offsetX": -24,
+              "offsetY": -20,
+              "width": 104,
+              "height": 88
+            },
+            {
+              "offsetX": -28,
+              "offsetY": -28,
+              "width": 120,
+              "height": 112
+            },
+            {
+              "offsetX": -32,
+              "offsetY": -36,
+              "width": 136,
+              "height": 132
+            },
+            {
+              "offsetX": -36,
+              "offsetY": -40,
+              "width": 152,
+              "height": 148
+            },
+            {
+              "offsetX": -40,
+              "offsetY": -44,
+              "width": 164,
+              "height": 160
+            },
+            {
+              "offsetX": -40,
+              "offsetY": -48,
+              "width": 168,
+              "height": 168
+            },
+            {
+              "offsetX": -36,
+              "offsetY": -44,
+              "width": 160,
+              "height": 164
+            },
+            {
+              "offsetX": -32,
+              "offsetY": -40,
+              "width": 148,
+              "height": 152
+            }
+          ],
+          "damage": 24,
+          "knockback": 4
+        },
+        {
+          "id": "recovery",
+          "name": "收招",
+          "sheet": "player_attack",
+          "frameStart": 12,
+          "frameCount": 5,
+          "durationMs": 200,
+          "hit": false
+        }
+      ]
+    },
+    "metal_sword": {
+      "id": "metal_sword",
+      "name": "金行·天剑坠",
+      "type": "heavy",
+      "element": "metal",
+      "description": "在空中凝聚巨型鎏金长剑，自上而下劈砍，力道刚猛",
+      "unlockMode": "chest",
+      "unlockCondition": {
+        "mapId": "woodValley",
+        "boxIndex": 1
+      },
+      "mpCost": 10,
+      "cooldownMs": 620,
+      "baseDamage": 38,
+      "maxMastery": 5,
+      "masteryBonus": 0.12,
+      "phases": [
+        {
+          "id": "windup",
+          "name": "聚剑",
+          "sheet": "player_attack",
+          "frameStart": 0,
+          "frameCount": 8,
+          "durationMs": 340,
+          "hit": false
+        },
+        {
+          "id": "active",
+          "name": "天剑劈落",
+          "sheet": "skill_wood_light",
+          "frameStart": 0,
+          "frameCount": 6,
+          "durationMs": 260,
+          "hit": true,
+          "hitFrames": [
+            2,
+            3,
+            4
+          ],
+          "hitbox": {
+            "offsetX": 16,
+            "offsetY": -80,
+            "width": 112,
+            "height": 180
+          },
+          "perFrameHitboxes": [
+            {
+              "offsetX": 8,
+              "offsetY": -40,
+              "width": 72,
+              "height": 80
+            },
+            {
+              "offsetX": 8,
+              "offsetY": -60,
+              "width": 84,
+              "height": 116
+            },
+            {
+              "offsetX": 12,
+              "offsetY": -76,
+              "width": 96,
+              "height": 156
+            },
+            {
+              "offsetX": 16,
+              "offsetY": -88,
+              "width": 108,
+              "height": 184
+            },
+            {
+              "offsetX": 20,
+              "offsetY": -76,
+              "width": 104,
+              "height": 172
+            },
+            {
+              "offsetX": 16,
+              "offsetY": -64,
+              "width": 96,
+              "height": 148
+            }
+          ],
+          "damage": 38,
+          "knockback": 18
+        },
+        {
+          "id": "recovery",
+          "name": "收招",
+          "sheet": "player_attack",
+          "frameStart": 12,
+          "frameCount": 6,
+          "durationMs": 260,
+          "hit": false
+        }
+      ]
+    },
+    "metal_blade": {
+      "id": "metal_blade",
+      "name": "金行·万刃旋",
+      "type": "heavy",
+      "element": "metal",
+      "description": "进阶金招，以自身为中心释放环形刀刃风暴，覆盖全方位",
+      "unlockMode": "boss",
+      "unlockCondition": {
+        "bossId": "woodGuardian"
+      },
+      "mpCost": 16,
+      "cooldownMs": 900,
+      "baseDamage": 52,
+      "maxMastery": 5,
+      "masteryBonus": 0.1,
+      "phases": [
+        {
+          "id": "windup",
+          "name": "蓄力",
+          "sheet": "player_attack",
+          "frameStart": 0,
+          "frameCount": 10,
+          "durationMs": 450,
+          "hit": false
+        },
+        {
+          "id": "active",
+          "name": "刃风暴",
+          "sheet": "skill_wood_light",
+          "frameStart": 0,
+          "frameCount": 10,
+          "durationMs": 400,
+          "hit": true,
+          "hitFrames": [
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "hitbox": {
+            "offsetX": -72,
+            "offsetY": -64,
+            "width": 224,
+            "height": 200
+          },
+          "perFrameHitboxes": [
+            {
+              "offsetX": -32,
+              "offsetY": -28,
+              "width": 128,
+              "height": 100
+            },
+            {
+              "offsetX": -44,
+              "offsetY": -36,
+              "width": 156,
+              "height": 128
+            },
+            {
+              "offsetX": -56,
+              "offsetY": -48,
+              "width": 184,
+              "height": 156
+            },
+            {
+              "offsetX": -64,
+              "offsetY": -56,
+              "width": 208,
+              "height": 176
+            },
+            {
+              "offsetX": -72,
+              "offsetY": -60,
+              "width": 220,
+              "height": 192
+            },
+            {
+              "offsetX": -72,
+              "offsetY": -62,
+              "width": 224,
+              "height": 196
+            },
+            {
+              "offsetX": -68,
+              "offsetY": -60,
+              "width": 216,
+              "height": 192
+            },
+            {
+              "offsetX": -60,
+              "offsetY": -56,
+              "width": 200,
+              "height": 180
+            }
+          ],
+          "damage": 52,
+          "knockback": 14
+        },
+        {
+          "id": "recovery",
+          "name": "收招",
+          "sheet": "player_attack",
+          "frameStart": 12,
+          "frameCount": 6,
+          "durationMs": 280,
+          "hit": false
+        }
+      ]
+    },
+    "fire_dragon": {
+      "id": "fire_dragon",
+      "name": "火行·墨龙冲",
+      "type": "heavy",
+      "element": "fire",
+      "description": "赤红水墨火龙直线贯穿前方，角色随火龙一同冲刺位移",
+      "unlockMode": "chest",
+      "unlockCondition": {
+        "mapId": "firePeak",
+        "boxIndex": 0
+      },
+      "mpCost": 12,
+      "cooldownMs": 700,
+      "baseDamage": 34,
+      "maxMastery": 5,
+      "masteryBonus": 0.1,
+      "charge": {
+        "enabled": true,
+        "maxMs": 2000,
+        "minDistanceRatio": 0.2,
+        "description": "按住蓄力，松开冲刺；蓄力越长冲刺越远"
+      },
+      "phases": [
+        {
+          "id": "windup",
+          "name": "凝火",
+          "sheet": "player_attack",
+          "frameStart": 0,
+          "frameCount": 6,
+          "durationMs": 260,
+          "hit": false
+        },
+        {
+          "id": "active",
+          "name": "火龙突进",
+          "sheet": "skill_wood_light",
+          "frameStart": 0,
+          "frameCount": 8,
+          "durationMs": 320,
+          "hit": true,
+          "attachToPlayer": true,
+          "hitFrames": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "hitbox": {
+            "offsetX": 40,
+            "offsetY": -32,
+            "width": 180,
+            "height": 100
+          },
+          "perFrameHitboxes": [
+            {
+              "offsetX": 24,
+              "offsetY": -20,
+              "width": 100,
+              "height": 60
+            },
+            {
+              "offsetX": 36,
+              "offsetY": -24,
+              "width": 136,
+              "height": 76
+            },
+            {
+              "offsetX": 48,
+              "offsetY": -28,
+              "width": 164,
+              "height": 88
+            },
+            {
+              "offsetX": 56,
+              "offsetY": -28,
+              "width": 180,
+              "height": 96
+            },
+            {
+              "offsetX": 52,
+              "offsetY": -26,
+              "width": 172,
+              "height": 92
+            },
+            {
+              "offsetX": 44,
+              "offsetY": -24,
+              "width": 156,
+              "height": 84
+            },
+            {
+              "offsetX": 32,
+              "offsetY": -20,
+              "width": 124,
+              "height": 72
+            },
+            {
+              "offsetX": 24,
+              "offsetY": -16,
+              "width": 96,
+              "height": 60
+            }
+          ],
+          "damage": 34,
+          "knockback": 16,
+          "dashDistance": 240
+        },
+        {
+          "id": "recovery",
+          "name": "收招",
+          "sheet": "player_attack",
+          "frameStart": 12,
+          "frameCount": 5,
+          "durationMs": 220,
+          "hit": false
+        }
+      ]
+    },
+    "fire_inferno": {
+      "id": "fire_inferno",
+      "name": "火行·炼狱焚天",
+      "type": "heavy",
+      "element": "fire",
+      "description": "进阶火招，引发大范围烈焰爆炸，灼烧范围内所有敌人",
+      "unlockMode": "boss",
+      "unlockCondition": {
+        "bossId": "fireLord"
+      },
+      "mpCost": 20,
+      "cooldownMs": 1100,
+      "baseDamage": 60,
+      "maxMastery": 5,
+      "masteryBonus": 0.1,
+      "phases": [
+        {
+          "id": "windup",
+          "name": "聚炎",
+          "sheet": "player_attack",
+          "frameStart": 0,
+          "frameCount": 10,
+          "durationMs": 480,
+          "hit": false
+        },
+        {
+          "id": "active",
+          "name": "焚天爆裂",
+          "sheet": "skill_wood_light",
+          "frameStart": 0,
+          "frameCount": 10,
+          "durationMs": 450,
+          "hit": true,
+          "hitFrames": [
+            4,
+            5,
+            6,
+            7,
+            8
+          ],
+          "hitbox": {
+            "offsetX": -80,
+            "offsetY": -96,
+            "width": 260,
+            "height": 220
+          },
+          "perFrameHitboxes": [
+            {
+              "offsetX": -32,
+              "offsetY": -40,
+              "width": 128,
+              "height": 104
+            },
+            {
+              "offsetX": -44,
+              "offsetY": -56,
+              "width": 168,
+              "height": 136
+            },
+            {
+              "offsetX": -60,
+              "offsetY": -72,
+              "width": 208,
+              "height": 168
+            },
+            {
+              "offsetX": -72,
+              "offsetY": -84,
+              "width": 244,
+              "height": 196
+            },
+            {
+              "offsetX": -80,
+              "offsetY": -92,
+              "width": 260,
+              "height": 212
+            },
+            {
+              "offsetX": -76,
+              "offsetY": -88,
+              "width": 252,
+              "height": 208
+            },
+            {
+              "offsetX": -68,
+              "offsetY": -80,
+              "width": 236,
+              "height": 192
+            },
+            {
+              "offsetX": -52,
+              "offsetY": -64,
+              "width": 196,
+              "height": 156
+            }
+          ],
+          "damage": 60,
+          "knockback": 22
+        },
+        {
+          "id": "recovery",
+          "name": "收招",
+          "sheet": "player_attack",
+          "frameStart": 12,
+          "frameCount": 6,
+          "durationMs": 300,
+          "hit": false
+        }
+      ]
+    },
+    "earth_meteor": {
+      "id": "earth_meteor",
+      "name": "土行·陨星震",
+      "type": "heavy",
+      "element": "earth",
+      "description": "高空坠落赭黄陨石，落地产生大范围震荡冲击波",
+      "unlockMode": "chest",
+      "unlockCondition": {
+        "mapId": "earthRuin",
+        "boxIndex": 0
+      },
+      "mpCost": 14,
+      "cooldownMs": 800,
+      "baseDamage": 42,
+      "maxMastery": 5,
+      "masteryBonus": 0.11,
+      "charge": {
+        "enabled": true,
+        "maxMs": 2000,
+        "description": "按住蓄力，陨石冲击波范围增大"
+      },
+      "targetSearch": {
+        "enabled": true,
+        "radius": 400,
+        "lockAtPhase": "windup",
+        "description": "自动锁定范围内最近敌人，陨石精准坠击"
+      },
+      "groundLock": true,
+      "phases": [
+        {
+          "id": "windup",
+          "name": "引星",
+          "sheet": "player_attack",
+          "frameStart": 0,
+          "frameCount": 8,
+          "durationMs": 360,
+          "hit": false
+        },
+        {
+          "id": "active",
+          "name": "陨石坠落",
+          "sheet": "skill_wood_light",
+          "frameStart": 0,
+          "frameCount": 8,
+          "durationMs": 360,
+          "hit": true,
+          "hitFrames": [
+            4,
+            5,
+            6
+          ],
+          "hitbox": {
+            "offsetX": -64,
+            "offsetY": -72,
+            "width": 220,
+            "height": 192
+          },
+          "perFrameHitboxes": [
+            {
+              "offsetX": -16,
+              "offsetY": -24,
+              "width": 72,
+              "height": 64
+            },
+            {
+              "offsetX": -28,
+              "offsetY": -36,
+              "width": 104,
+              "height": 96
+            },
+            {
+              "offsetX": -40,
+              "offsetY": -48,
+              "width": 136,
+              "height": 128
+            },
+            {
+              "offsetX": -52,
+              "offsetY": -60,
+              "width": 168,
+              "height": 156
+            },
+            {
+              "offsetX": -64,
+              "offsetY": -72,
+              "width": 204,
+              "height": 184
+            },
+            {
+              "offsetX": -56,
+              "offsetY": -68,
+              "width": 192,
+              "height": 180
+            },
+            {
+              "offsetX": -44,
+              "offsetY": -56,
+              "width": 160,
+              "height": 152
+            },
+            {
+              "offsetX": -32,
+              "offsetY": -40,
+              "width": 120,
+              "height": 112
+            }
+          ],
+          "damage": 42,
+          "knockback": 20
+        },
+        {
+          "id": "recovery",
+          "name": "收招",
+          "sheet": "player_attack",
+          "frameStart": 12,
+          "frameCount": 6,
+          "durationMs": 280,
+          "hit": false
+        }
+      ]
+    },
+    "earthquake": {
+      "id": "earthquake",
+      "name": "土行·崩岳裂地",
+      "type": "heavy",
+      "element": "earth",
+      "description": "进阶土招，以重击震撼大地，触发连锁裂隙波及全屏敌人",
+      "unlockMode": "secret",
+      "unlockCondition": {
+        "mapId": "earthRuin"
+      },
+      "mpCost": 24,
+      "cooldownMs": 1300,
+      "baseDamage": 70,
+      "maxMastery": 5,
+      "masteryBonus": 0.09,
+      "phases": [
+        {
+          "id": "windup",
+          "name": "蓄势",
+          "sheet": "player_attack",
+          "frameStart": 0,
+          "frameCount": 12,
+          "durationMs": 540,
+          "hit": false
+        },
+        {
+          "id": "active",
+          "name": "裂地震击",
+          "sheet": "skill_wood_light",
+          "frameStart": 0,
+          "frameCount": 10,
+          "durationMs": 500,
+          "hit": true,
+          "hitFrames": [
+            5,
+            6,
+            7
+          ],
+          "hitbox": {
+            "offsetX": -120,
+            "offsetY": -104,
+            "width": 340,
+            "height": 240
+          },
+          "perFrameHitboxes": [
+            {
+              "offsetX": -48,
+              "offsetY": -36,
+              "width": 136,
+              "height": 96
+            },
+            {
+              "offsetX": -64,
+              "offsetY": -52,
+              "width": 180,
+              "height": 128
+            },
+            {
+              "offsetX": -80,
+              "offsetY": -68,
+              "width": 224,
+              "height": 160
+            },
+            {
+              "offsetX": -96,
+              "offsetY": -84,
+              "width": 268,
+              "height": 192
+            },
+            {
+              "offsetX": -108,
+              "offsetY": -96,
+              "width": 308,
+              "height": 220
+            },
+            {
+              "offsetX": -116,
+              "offsetY": -100,
+              "width": 328,
+              "height": 232
+            },
+            {
+              "offsetX": -120,
+              "offsetY": -104,
+              "width": 340,
+              "height": 240
+            },
+            {
+              "offsetX": -112,
+              "offsetY": -100,
+              "width": 324,
+              "height": 232
+            },
+            {
+              "offsetX": -100,
+              "offsetY": -92,
+              "width": 292,
+              "height": 216
+            }
+          ],
+          "damage": 70,
+          "knockback": 26
+        },
+        {
+          "id": "recovery",
+          "name": "收招",
+          "sheet": "player_attack",
+          "frameStart": 12,
+          "frameCount": 6,
+          "durationMs": 300,
+          "hit": false
+        }
+      ]
+    },
+    "parry_dagger": {
+      "id": "parry_dagger",
+      "name": "弹反·匕格挡",
+      "type": "parry",
+      "element": "none",
+      "description": "横向格挡敌方攻击，成功触发时停、击退近身怪物并爆出银白火花",
+      "unlockMode": "initial",
+      "unlockCondition": null,
+      "mpCost": 0,
+      "cooldownMs": 300,
+      "baseDamage": 0,
+      "maxMastery": 1,
+      "masteryBonus": 0,
+      "phases": []
+    }
+  },
+  "slots": {
+    "light1": {
+      "key": "A/D+J",
+      "label": "轻击一",
+      "acceptType": [
+        "light"
+      ]
+    },
+    "light2": {
+      "key": "S+J",
+      "label": "轻击二",
+      "acceptType": [
+        "light"
+      ]
+    },
+    "light3": {
+      "key": "W+J",
+      "label": "轻击三",
+      "acceptType": [
+        "light"
+      ]
+    },
+    "heavy1": {
+      "key": "W+K",
+      "label": "重击一",
+      "acceptType": [
+        "heavy"
+      ]
+    },
+    "heavy2": {
+      "key": "A/D+K",
+      "label": "重击二",
+      "acceptType": [
+        "heavy"
+      ]
+    },
+    "heavy3": {
+      "key": "S+K",
+      "label": "重击三",
+      "acceptType": [
+        "heavy"
+      ]
+    },
+    "parry": {
+      "key": "L",
+      "label": "弹反",
+      "acceptType": [
+        "parry"
+      ],
+      "locked": true
+    }
+  }
+}

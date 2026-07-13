@@ -34,9 +34,8 @@ class TrapSystem {
       case "crackedPlatform": return new TrapBase(cfg);
       // 飞镖口 / 锯片 / 磁力区
       case "dartLauncher":   return new TrapBase(cfg);
-      case "ceilingSaw":     return new TrapBase(cfg);
+      case "ceilingSaw":     return new CeilingSawTrap(cfg);
       case "magnetField":    return new TrapBase(cfg);
-      default:               return new TrapBase(cfg);   // 未知类型回退
     }
   }
 

@@ -100,7 +100,7 @@ class HitboxSystem {
         height: phase.hitbox.height || 40
       };
     }
-    return { offsetX: 20, offsetY: 0, width: 40, height: 40 };
+    return { offsetX: 40, offsetY: 0, width: 80, height: 80 };
   }
 
   // ==================== 实时帧查询 ====================

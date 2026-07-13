@@ -37,6 +37,9 @@ class SkillManager {
     // ★ v4 新增：战斗系统组件引用（由 GameMain 注入）
     this.hitboxSystem = null;           // HitboxSystem 实例
     this.vfxRenderer = null;            // SkillVFXRenderer 实例
+
+    // ★ v6 蓄力系统
+    this.chargeState = null;            // { active, skillId, timer, maxMs, enemies }
   }
 
   // ======================== 初始化 ========================
@@ -86,7 +89,16 @@ class SkillManager {
 
   // ======================== 施放控制（继承原 SkillSystem）========================
 
-  isCasting() { return !!this.active; }
+  isCasting() { return !!this.active || !!(this.chargeState && this.chargeState.active); }
+
+  // ★ 蓄力状态查询
+  isCharging() { return !!(this.chargeState && this.chargeState.active); }
+  isChargeFull() { return this.chargeState && this.chargeState.active && this.chargeState.timer >= this.chargeState.maxMs; }
+  getChargeProgress() {
+    if (!this.chargeState || !this.chargeState.active) return 0;
+    return Math.min(1, this.chargeState.timer / this.chargeState.maxMs);
+  }
+  getChargeSkillId() { return this.chargeState ? this.chargeState.skillId : null; }
 
   // ★ v4 注入战斗组件（由 GameMain 在 start() 时调用）
   setCombatSystems(hitboxSys, vfx) {
@@ -98,22 +110,253 @@ class SkillManager {
     const s = this.skills[skillId];
     if (!s) return false;
     if (this.active) return false;
+    if (this.chargeState && this.chargeState.active) return false;  // ★ 蓄力中不可施放其他技能
     if (this.player.state === "hurt" || this.player.state === "dead" || this.player.state === "dodge") return false;
     if ((this.cooldowns[skillId] || 0) > 0) return false;
     if (s.mpCost && this.player.mp < s.mpCost) return false;
     return true;
   }
 
-  startCast(skillId) {
+  // ======================== ★ v6 蓄力系统 ========================
+
+  startCharge(skillId, enemies, map) {
     const s = this.skills[skillId];
-    if (!s || !this.canCast(skillId)) return false;
+    if (!s || !s.charge || !s.charge.enabled) return false;
+    if (this.active) return false;
+    if (this.chargeState && this.chargeState.active) return false;
+    if (this.player.state === "hurt" || this.player.state === "dead" || this.player.state === "dodge") return false;
+    if ((this.cooldowns[skillId] || 0) > 0) return false;
+    if (s.mpCost && this.player.mp < s.mpCost) return false;
+
+    const ch = s.charge;
+
+    // ★ 地面锁定技能：蓄力开始瞬间计算并锁定落点 + 45°斜上方出生点
+    let _targetLockX = null, _targetLockY = null;
+    let _meteorSpawnX = null, _meteorSpawnY = null;
+    if (s.groundLock) {
+      const nearest = this._findNearestEnemy(s, enemies);
+      if (nearest) {
+        _targetLockX = nearest.x;
+        _targetLockY = (map ? Math.min(nearest.footY, map.groundY) : nearest.footY) || (map ? map.groundY : nearest.footY);
+      } else if (map) {
+        const dir = this.player.facing === "right" ? 1 : -1;
+        _targetLockX = this.player.x + this.player.w / 2 + dir * 150;
+        _targetLockY = map.groundY;
+      }
+      // ★ 计算 45° 斜上方出生点（屏幕最上方、朝向角色一侧）
+      if (_targetLockX != null) {
+        const playerCx = this.player.x + this.player.w / 2;
+        const toPlayerSign = (playerCx > _targetLockX) ? 1 : -1;
+        _meteorSpawnY = Math.max(20, _targetLockY - 400);  // 目标上方400px
+        _meteorSpawnX = _targetLockX + toPlayerSign * (_targetLockY - _meteorSpawnY);  // 45°: dx==dy
+        console.log(`[SkillManager] 锁定落点(${_targetLockX.toFixed(0)},${_targetLockY.toFixed(0)}) 出生点(${_meteorSpawnX.toFixed(0)},${_meteorSpawnY.toFixed(0)})`);
+      }
+    }
+
+    this.chargeState = {
+      active: true,
+      skillId: skillId,
+      timer: 0,
+      maxMs: ch.maxMs || 2000,
+      minRatio: ch.minDistanceRatio || 0.2,
+      enemies: enemies || [],
+      _map: map || null,
+      // ★ 锁定落点与出生点（蓄力期间不变）
+      _targetLockX, _targetLockY,
+      _meteorSpawnX, _meteorSpawnY
+    };
+
+    this.player.state = "charge";
+    this.player.facingLock = true;
+    this.player.vx = 0;
+    this.player.vy = 0;
+
+    console.log(`[SkillManager] 开始蓄力: ${s.name} 最大 ${this.chargeState.maxMs}ms`);
+    return true;
+  }
+
+  updateCharge(dtMs) {
+    if (!this.chargeState || !this.chargeState.active) return;
+    this.chargeState.timer = Math.min(this.chargeState.maxMs, this.chargeState.timer + dtMs);
+  }
+
+  releaseCharge() {
+    if (!this.chargeState || !this.chargeState.active) return false;
+    const cs = this.chargeState;
+    const s = this.skills[cs.skillId];
+    if (!s) { this.chargeState = null; return false; }
+
+    // 计算蓄力比例
+    const ratio = Math.min(1, cs.timer / cs.maxMs);
+
+    const activePhase = s.phases.find(p => p.id === "active");
+    const baseDash = activePhase ? (activePhase.dashDistance || 0) : 0;
+
+    // ★ 区分技能类型：有 dashDistance 则按位移缩放；有 groundLock 则按冲击半径缩放
+    let scaledDash = 0;
+    let impactScale = 1;
+    if (baseDash > 0) {
+      // 冲刺类（fire_dragon）：缩放位移距离
+      const effectiveRatio = cs.minRatio + (1 - cs.minRatio) * ratio;
+      scaledDash = Math.floor(baseDash * effectiveRatio);
+      console.log(`[SkillManager] 释放蓄力: ${s.name} 蓄力比=${ratio.toFixed(2)} 位移=${scaledDash}px`);
+    }
+    if (s.groundLock) {
+      // 锁定类（earth_meteor）：缩放冲击半径
+      impactScale = ratio;
+      console.log(`[SkillManager] 释放蓄力: ${s.name} 蓄力比=${ratio.toFixed(2)} 冲击波缩放=${impactScale.toFixed(2)}`);
+    }
+
+    // ★ 提取锁定位置（在清除 chargeState 之前读取）
+    const mapRef = cs._map || null;
+    const lockedX = cs._targetLockX;
+    const lockedY = cs._targetLockY;
+    const spawnX  = cs._meteorSpawnX;
+    const spawnY  = cs._meteorSpawnY;
+
+    // 清除蓄力状态
+    this.chargeState = null;
+
+    // 以缩放后参数执行技能（传入锁定的落点与出生点）
+    this._startCastWithDash(s, cs.skillId, scaledDash, cs.enemies, mapRef, impactScale, lockedX, lockedY, spawnX, spawnY);
+    return true;
+  }
+
+  cancelCharge() {
+    if (!this.chargeState || !this.chargeState.active) return;
+    console.log(`[SkillManager] 取消蓄力`);
+    this.chargeState = null;
+    this.player.state = "idle";
+    this.player.facingLock = false;
+  }
+
+  // ★ 搜索范围内最近敌人（返回 {x, y} 或 null）
+  _findNearestEnemy(skill, enemies) {
+    const ts = skill.targetSearch;
+    if (!ts || !ts.enabled || !enemies || enemies.length === 0) return null;
+    const playerCx = this.player.x + this.player.w / 2;
+    const playerCy = this.player.y + this.player.h / 2;
+    let nearestDist = ts.radius || 400;
+    let nearest = null;
+    for (const e of enemies) {
+      if (!e.alive) continue;
+      const ecx = e.x + e.w / 2;
+      const ecy = e.y + e.h / 2;
+      const d = MathTool.dist(playerCx, playerCy, ecx, ecy);
+      if (d <= nearestDist) {
+        nearestDist = d;
+        nearest = { x: ecx, y: ecy, footY: e.y + e.h };  // footY = 敌人脚下（地面）
+      }
+    }
+    return nearest;
+  }
+
+  // 内部：以指定参数执行技能（releaseCharge 调用）
+  _startCastWithDash(s, skillId, dashDistance, enemies, map, chargeRatio, lockX, lockY, spawnX, spawnY) {
+    // ★ 优先使用传入的锁定坐标（由 releaseCharge/startCharge 预先计算）
+    let targetLockX = lockX || null;
+    let targetLockY = lockY || null;
+    let meteorSpawnX = spawnX || null;
+    let meteorSpawnY = spawnY || null;
+
+    // 回退：无传入值时重新搜索
+    if (targetLockX == null) {
+      const nearest = this._findNearestEnemy(s, enemies);
+      if (s.groundLock) {
+        if (nearest) {
+          targetLockX = nearest.x;
+          targetLockY = (map ? Math.min(nearest.footY, map.groundY) : nearest.footY) || (map ? map.groundY : nearest.footY);
+        } else if (map) {
+          const dir = this.player.facing === "right" ? 1 : -1;
+          targetLockX = this.player.x + this.player.w / 2 + dir * 150;
+          targetLockY = map.groundY;
+        }
+        if (targetLockX != null && meteorSpawnX == null) {
+          const playerCx = this.player.x + this.player.w / 2;
+          const toPlayerSign = (playerCx > targetLockX) ? 1 : -1;
+          meteorSpawnY = Math.max(20, targetLockY - 400);
+          meteorSpawnX = targetLockX + toPlayerSign * (targetLockY - meteorSpawnY);
+        }
+      } else if (nearest) {
+        targetLockX = nearest.x;
+        targetLockY = nearest.y;
+      }
+    }
 
     this.active = {
       id: skillId,
       phaseIndex: 0,
       phaseTimer: 0,
       frameIndex: s.phases.length > 0 ? s.phases[0].frameStart : 0,
-      hasHit: false
+      hasHit: false,
+      _dashStartX: dashDistance > 0 ? this.player.x : null,
+      _dashDistance: dashDistance,
+      _hitEnemies: (dashDistance > 0 || targetLockX != null) ? new Set() : null,
+      _targetLockX: targetLockX || null,
+      _targetLockY: targetLockY || null,
+      _chargeRatio: (chargeRatio != null) ? chargeRatio : 0,
+      _phaseDurationScale: s.groundLock ? (1 + (chargeRatio || 0)) : 1,
+      // ★ 陨石出生点（用于直线坠落轨迹）
+      _meteorSpawnX: meteorSpawnX || null,
+      _meteorSpawnY: meteorSpawnY || null
+    };
+
+    this.player.state = "attack";
+    this.player.facingLock = true;
+
+    if (s.element && s.element !== "none") {
+      AudioManager.play("skill_" + s.element);
+    }
+    console.log(`[SkillManager] 执行技能: ${s.name}` + (chargeRatio != null ? ` 蓄力比=${chargeRatio.toFixed(2)}` : ''));
+  }
+
+  startCast(skillId, enemies, map) {
+    const s = this.skills[skillId];
+    if (!s || !this.canCast(skillId)) return false;
+
+    // ★ 检测是否有冲刺位移（fire_dragon 等）
+    const activePhase = s.phases.find(p => p.id === "active");
+    const dashDist = activePhase ? (activePhase.dashDistance || 0) : 0;
+
+    // ★ 目标锁定
+    let targetLockX = null;
+    let targetLockY = null;
+    const nearest = this._findNearestEnemy(s, enemies);
+
+    if (s.groundLock) {
+      // ★ 地面锁定模式（earth_meteor）：落点在敌人脚底/地面
+      if (nearest) {
+        targetLockX = nearest.x;
+        const groundY = map ? map.groundY : (nearest.footY);
+        targetLockY = nearest.footY || groundY;
+        if (map && targetLockY > map.groundY) targetLockY = map.groundY;
+      } else if (map) {
+        const dir = this.player.facing === "right" ? 1 : -1;
+        targetLockX = this.player.x + this.player.w / 2 + dir * 150;
+        targetLockY = map.groundY;
+      }
+      console.log(`[SkillManager] 地面锁定 → (${targetLockX ? targetLockX.toFixed(0) : 'X'}, ${targetLockY ? targetLockY.toFixed(0) : 'Y'})`);
+    } else if (nearest) {
+      targetLockX = nearest.x;
+      targetLockY = nearest.y;
+      console.log(`[SkillManager] 锁定目标 → (${targetLockX.toFixed(0)}, ${targetLockY.toFixed(0)})`);
+    }
+
+    this.active = {
+      id: skillId,
+      phaseIndex: 0,
+      phaseTimer: 0,
+      frameIndex: s.phases.length > 0 ? s.phases[0].frameStart : 0,
+      hasHit: false,
+      // ★ 冲刺位移相关
+      _dashStartX: dashDist > 0 ? this.player.x : null,
+      _dashDistance: dashDist,
+      _hitEnemies: (dashDist > 0 || targetLockX != null) ? new Set() : null,
+      // ★ 目标锁定相关
+      _targetLockX: targetLockX,
+      _targetLockY: targetLockY,
+      _chargeRatio: 0,   // 非蓄力模式默认基础大小(1x)
+      _phaseDurationScale: 1  // 非蓄力模式正常速度
     };
 
     this.player.state = "attack";
@@ -139,6 +382,9 @@ class SkillManager {
       if (this._unlockTimer <= 0) this._unlockQueue.shift();
     }
 
+    // ★ 蓄力中：由 GameMain 调用 updateCharge 驱动，此处跳过施放逻辑
+    if (this.chargeState && this.chargeState.active) return;
+
     if (!this.active) return;
 
     const cast = this.active;
@@ -151,13 +397,23 @@ class SkillManager {
     }
 
     const phase = skill.phases[cast.phaseIndex];
-    cast.phaseTimer += dtMs;
+    // ★ 阶段时长缩放（earth_meteor 蓄力越久下落越慢）
+    cast.phaseTimer += dtMs / (cast._phaseDurationScale || 1);
 
     // 计算当前阶段内的局部帧索引
     const frameDur = phase.durationMs / phase.frameCount;
     let local = Math.floor(cast.phaseTimer / frameDur);
     if (local >= phase.frameCount) local = phase.frameCount - 1;
     cast.frameIndex = phase.frameStart + local;
+
+    // ★ 冲刺位移：在 active 阶段按 easeOutCubic 曲线移动角色
+    if (phase.id === "active" && cast._dashDistance > 0 && cast._dashStartX != null) {
+      const progress = Math.min(1, cast.phaseTimer / phase.durationMs);
+      // easeOutCubic: 1 - (1 - t)^3，模拟自然冲刺减速
+      const t = 1 - Math.pow(1 - progress, 3);
+      const dir = this.player.facing === "right" ? 1 : -1;
+      this.player.x = cast._dashStartX + dir * cast._dashDistance * t;
+    }
 
     // 标记命中窗口
     if (phase.hit && phase.hitFrames && phase.hitFrames.includes(cast.frameIndex)) {
@@ -194,6 +450,59 @@ class SkillManager {
     if (!phase.hit) return null;
     if (!phase.hitFrames || !phase.hitFrames.includes(cast.frameIndex)) return null;
 
+    // ★ 目标锁定技能：生成以锁定坐标为圆心的圆形碰撞箱
+    if (cast._targetLockX != null) {
+      return this._getTargetedHitbox(skill, cast, phase);
+    }
+
+    // ★ attachToPlayer：碰撞箱与角色尺寸完全一致，同步跟随位移
+    if (phase.attachToPlayer) {
+      const masteryLevel = this.getMastery(cast.id);
+      const masteryMult = 1 + (skill.masteryBonus || 0) * masteryLevel;
+      const finalDamage = Math.floor(phase.damage * masteryMult);
+      return {
+        x: this.player.x,
+        y: this.player.y,
+        w: this.player.w,
+        h: this.player.h,
+        damage: finalDamage,
+        knockback: phase.knockback || 0,
+        element: skill.element,
+        skillId: cast.id,
+        hitEnemies: cast._hitEnemies || null
+      };
+    }
+
+    // ★ spriteHitbox：精灵图圆形碰撞箱，固定半径，精确居中（water_slash）
+    if (phase.spriteHitbox && phase.spriteHitbox.shape === "circle") {
+      const sh = phase.spriteHitbox;
+      const hb = phase.hitbox;  // 用于计算精灵图中心
+      const dir = this.player.facing === "right" ? 1 : -1;
+      const px = this.player.x;
+      const py = this.player.y;
+      const ox = hb.offsetX * dir;
+      const x = dir === 1 ? px + ox : px - ox - hb.width;
+      const y = py + hb.offsetY;
+      const cx = x + hb.width / 2;
+      const cy = y + hb.height / 2;
+
+      const masteryLevel = this.getMastery(cast.id);
+      const masteryMult = 1 + (skill.masteryBonus || 0) * masteryLevel;
+      const finalDamage = Math.floor(phase.damage * masteryMult);
+
+      return {
+        shape: "circle",
+        cx: cx,
+        cy: cy,
+        radius: sh.radius,
+        damage: finalDamage,
+        knockback: phase.knockback || 0,
+        element: skill.element,
+        skillId: cast.id,
+        hitEnemies: cast._hitEnemies || null
+      };
+    }
+
     // ★ v4：优先使用 HitboxSystem 引擎
     if (this.hitboxSystem) {
       let hb = this.hitboxSystem.getCurrentHitbox(skill, cast, this.player);
@@ -202,6 +511,7 @@ class SkillManager {
         const masteryLevel = this.getMastery(cast.id);
         const masteryMult = 1 + (skill.masteryBonus || 0) * masteryLevel;
         hb.damage = Math.floor(hb.damage * masteryMult);
+        hb.hitEnemies = cast._hitEnemies || null;  // ★ 冲刺技去重
         return hb;
       }
     }
@@ -224,7 +534,48 @@ class SkillManager {
       damage: finalDamage,
       knockback: phase.knockback || 0,
       element: skill.element,
-      skillId: cast.id
+      skillId: cast.id,
+      hitEnemies: cast._hitEnemies || null  // ★ 冲刺技的去重集合
+    };
+  }
+
+  // ★ 目标锁定技能：生成圆形碰撞箱，圆心为锁定坐标
+  _getTargetedHitbox(skill, cast, phase) {
+    const cx = cast._targetLockX;
+    const cy = cast._targetLockY;
+
+    // 从 perFrameHitboxes 或 hitbox 推导当前帧的冲击半径
+    let baseRadius = 80;  // 默认最小半径
+    if (phase.perFrameHitboxes && phase.perFrameHitboxes.length > 0) {
+      const localFrame = Math.max(0, cast.frameIndex - (phase.frameStart || 0));
+      const idx = Math.min(localFrame, phase.perFrameHitboxes.length - 1);
+      const fhb = phase.perFrameHitboxes[idx];
+      baseRadius = Math.max(fhb.width, fhb.height) / 2;
+    } else if (phase.hitbox) {
+      baseRadius = Math.max(phase.hitbox.width, phase.hitbox.height) / 2;
+    }
+
+    // ★ 蓄力半径缩放（earth_meteor 等 groundLock 技能，线性 1x → 2x）
+    let radius = baseRadius;
+    if (skill.groundLock) {
+      const chargeRatio = (cast._chargeRatio != null) ? cast._chargeRatio : 0;
+      radius = baseRadius * (1 + chargeRatio);  // 0→1 对应 1x→2x
+    }
+
+    const masteryLevel = this.getMastery(cast.id);
+    const masteryMult = 1 + (skill.masteryBonus || 0) * masteryLevel;
+    const finalDamage = Math.floor(phase.damage * masteryMult);
+
+    return {
+      shape: "circle",
+      cx: cx,
+      cy: cy,
+      radius: radius,
+      damage: finalDamage,
+      knockback: phase.knockback || 0,
+      element: skill.element,
+      skillId: cast.id,
+      hitEnemies: cast._hitEnemies || null
     };
   }
 
@@ -427,6 +778,20 @@ class SkillManager {
 
   // ★ v4 重构：攻击特效渲染（VFXRenderer 驱动）+ 调试可视化
   draw(ctx) {
+    // ★ v6 蓄力条 UI（角色头顶）
+    if (this.chargeState && this.chargeState.active) {
+      this._drawChargeBar(ctx);
+      // ★ 按蓄力技能的元素类型分派专属蓄力特效（火≠土，严禁混用）
+      if (this.vfxRenderer) {
+        const cs = this.chargeState;
+        const chargeSkill = this.skills[cs.skillId];
+        const elem = chargeSkill ? chargeSkill.element : null;
+        this.vfxRenderer.renderCharge(ctx, this.player, elem, this.getChargeProgress(),
+          cs._meteorSpawnX, cs._meteorSpawnY, cs._targetLockX, cs._targetLockY);
+        this.vfxRenderer.renderParticles(ctx);
+      }
+    }
+
     if (this.active) {
       const cast = this.active;
       const skill = this.skills[cast.id];
@@ -545,6 +910,59 @@ class SkillManager {
     const elemCol = (skill && skill.element && elemColorMap[skill.element]) || "#666";
     ctx.fillStyle = elemCol;
     ctx.fillRect(-50, 42, 100, 3);
+
+    ctx.restore();
+  }
+
+  // ★ v6 蓄力进度条（角色头顶）
+  _drawChargeBar(ctx) {
+    const cs = this.chargeState;
+    if (!cs || !cs.active) return;
+    const p = this.player;
+    const progress = Math.min(1, cs.timer / cs.maxMs);
+    const barW = 40;
+    const barH = 6;
+    const x = p.x + p.w / 2 - barW / 2;
+    const y = p.y - 18;
+
+    ctx.save();
+
+    // 背景条（暗色）
+    ctx.fillStyle = "rgba(20,20,20,0.7)";
+    ctx.fillRect(x - 1, y - 1, barW + 2, barH + 2);
+    ctx.strokeStyle = "rgba(120,120,120,0.5)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x - 1, y - 1, barW + 2, barH + 2);
+
+    // ★ 按蓄力技能元素配色（火=红橙 土=赭棕，不再硬编码红色）
+    const chargeSkill = this.skills[cs.skillId];
+    const elem = chargeSkill ? chargeSkill.element : "fire";
+    const barPalette = {
+      fire:  { c0: "#ff4400", c1: "#ff8800", c2: "#ffcc00", max: "#ffffc8" },
+      earth: { c0: "#8a5a20", c1: "#b8860b", c2: "#daa520", max: "#ffe4a0" }
+    };
+    const pal = barPalette[elem] || barPalette.fire;
+
+    // 蓄力填充条
+    const fillW = barW * progress;
+    const fillGrad = ctx.createLinearGradient(x, y, x + barW, y);
+    fillGrad.addColorStop(0, pal.c0);
+    fillGrad.addColorStop(0.5, pal.c1);
+    fillGrad.addColorStop(1, pal.c2);
+    ctx.fillStyle = fillGrad;
+    ctx.fillRect(x, y, fillW, barH);
+
+    // 满蓄力闪光效果（按元素配色）
+    if (progress >= 1) {
+      const pulse = 0.5 + Math.sin(performance.now() * 0.012) * 0.5;
+      ctx.fillStyle = `rgba(255,255,200,${pulse * 0.7})`;
+      ctx.fillRect(x, y, barW, barH);
+      ctx.fillStyle = pal.max;
+      ctx.font = 'bold 10px "PingFang SC", sans-serif';
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      ctx.fillText("MAX", p.x + p.w / 2, y - 6);
+    }
 
     ctx.restore();
   }

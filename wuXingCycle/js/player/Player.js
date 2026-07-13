@@ -42,7 +42,7 @@ class Player {
     // —— 闪避系统 ——
     this.dodgeTimer        = 0;
     this.dodgeCooldown     = 0;
-    this.dodgeDistance     = 70;
+    this.dodgeDistance     = 140;
     this.dodgeDuration     = 150;
     this.dodgeCooldownMax  = 800;
     this.ghostRect         = null;
@@ -104,7 +104,7 @@ class Player {
   // ==================== 跳跃系统 ====================
 
   startJump() {
-    if (this.state === "dead" || this.state === "hurt" || this.state === "attack") return false;
+    if (this.state === "dead" || this.state === "hurt" || this.state === "attack" || this.state === "charge") return false;
     if (this.jumpCount >= this.maxJumps) return false;
 
     this.jumpCount++;
@@ -125,7 +125,7 @@ class Player {
   // ==================== 闪避 ====================
 
   startDodge(input, mapWidth) {
-    if (this.state === "dead" || this.state === "hurt" || this.state === "attack" || this.state === "parry") return false;
+    if (this.state === "dead" || this.state === "hurt" || this.state === "attack" || this.state === "parry" || this.state === "charge") return false;
     if (this.dodgeCooldown > 0) return false;
 
     // ■ 闪避方向判定
@@ -357,7 +357,7 @@ class Player {
     }
 
     // —— 状态机 ——
-    if (!casting && this.state !== "hurt" && this.state !== "dodge" && this.state !== "parry") {
+    if (!casting && this.state !== "hurt" && this.state !== "dodge" && this.state !== "parry" && this.state !== "charge") {
       if (!this.onGround) {
         this.state = "jump";
       } else if (mx !== 0) {
@@ -370,6 +370,10 @@ class Player {
     // —— 攻击推进 + 命中判定 ——
     if (this.skill) {
       this.skill.update(dt);
+      // ★ 冲刺位移后重新钳制边界（fire_dragon 等技能会在 active 阶段移动角色）
+      const pad2 = c.world.boundaryPadding;
+      if (this.x < pad2) this.x = pad2;
+      if (this.x > map.width - this.w - pad2) this.x = map.width - this.w - pad2;
       const hb = this.skill.getActiveHitbox();
       if (hb) {
         this.applyHit(hb, map.enemies);
@@ -381,11 +385,34 @@ class Player {
   applyHit(hb, enemies) {
     for (const e of enemies) {
       if (!e.alive) continue;
-      if (Collision.rectOverlap(hb, e.getRect())) {
+      // ★ 冲刺/锁定技能去重：同一次施放中已被命中的敌人不再重复受伤
+      if (hb.hitEnemies && hb.hitEnemies.has(e)) continue;
+
+      // ★ 圆形碰撞检测（陨星震等范围技）
+      let hit;
+      if (hb.shape === "circle") {
+        hit = Collision.circleRect(hb.cx, hb.cy, hb.radius, e.getRect());
+      } else {
+        hit = Collision.rectOverlap(hb, e.getRect());
+      }
+
+      if (hit) {
         e.takeDamage(hb.damage);
-        const dir = this.facing === "right" ? 1 : -1;
-        e.x += dir * (hb.knockback || 0);
+        // 击退方向：圆形技从圆心向外推开；矩形技按玩家朝向
+        if (hb.shape === "circle") {
+          const ecx = e.x + e.w / 2;
+          const ecy = e.y + e.h / 2;
+          const dx = ecx - hb.cx;
+          const dy = ecy - hb.cy;
+          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+          e.x += (dx / dist) * (hb.knockback || 0);
+          e.y += (dy / dist) * (hb.knockback || 0) * 0.5;
+        } else {
+          const dir = this.facing === "right" ? 1 : -1;
+          e.x += dir * (hb.knockback || 0);
+        }
         AudioManager.play && AudioManager.play("hit");
+        if (hb.hitEnemies) hb.hitEnemies.add(e);
       }
     }
   }
@@ -465,6 +492,35 @@ class Player {
       ctx.globalAlpha = 0.35;
       ctx.fillStyle = "#a83232";
       ctx.fillRect(this.x, this.y, this.w, this.h);
+    }
+
+    // —— 蓄力环绕光晕（按技能元素着色，火≠土）——
+    if (this.state === "charge") {
+      const chargeProgress = this.skill ? this.skill.getChargeProgress() : 0;
+      const chargeSkillId = this.skill ? this.skill.getChargeSkillId() : null;
+      const chargeSkill = chargeSkillId ? (this.skill.skills[chargeSkillId] || {}) : {};
+      const elem = chargeSkill.element || "fire";
+
+      // ★ 按元素选择配色
+      const elemColors = {
+        fire:  { inner: "rgba(255,100,20,0)", mid: "rgba(255,60,10,#)", outer: "rgba(200,30,5,#)" },
+        earth: { inner: "rgba(180,140,70,0)", mid: "rgba(150,100,40,#)", outer: "rgba(100,60,30,#)" }
+      };
+      const pal = elemColors[elem] || elemColors.fire;
+
+      const pulse = 0.7 + Math.sin(performance.now() * 0.015) * 0.3;
+      const auraAlpha = 0.15 + chargeProgress * 0.4;
+      ctx.globalAlpha = auraAlpha * pulse;
+      const auraGrad = ctx.createRadialGradient(
+        this.x + this.w / 2, this.y + this.h / 2, this.w * 0.4,
+        this.x + this.w / 2, this.y + this.h / 2, this.w * 1.2 + chargeProgress * 30
+      );
+      auraGrad.addColorStop(0, pal.inner);
+      auraGrad.addColorStop(0.3, pal.mid.replace("#", `${0.5 * chargeProgress}`));
+      auraGrad.addColorStop(0.7, pal.outer.replace("#", `${0.3 * chargeProgress}`));
+      auraGrad.addColorStop(1, pal.outer.replace("#", "0"));
+      ctx.fillStyle = auraGrad;
+      ctx.fillRect(this.x - 40, this.y - 40, this.w + 80, this.h + 80);
     }
 
     // ★ DEBUG 飞行模式视觉标识（蓝色辉光环）——
@@ -547,7 +603,7 @@ class Player {
 
     // 面部朝向标识
     ctx.fillStyle = c.colors.playerFace;
-    const eyeX = this.facing === "right" ? this.x + this.w - 10 : this.x + 4;
+    const eyeX = this.facing === "right" ? this.x + this.w - 10 : this.x + 8;
     ctx.fillRect(eyeX, this.y + 12, 6, 6);
   }
 }

@@ -86,7 +86,7 @@ class ParrySystem {
     // 击退 + 反伤
     const dir = this.player.facing === "right" ? 1 : -1;
     if (attacker && typeof attacker.alive !== "undefined") {
-      attacker.x += dir * 28;
+      attacker.x += dir * 56;
       if (attacker.takeDamage) attacker.takeDamage(10);
     }
 
@@ -162,13 +162,13 @@ class ParrySystem {
       const cx = p.x + p.w / 2;
       const cy = p.y + p.h * 0.38;
       ctx.beginPath();
-      ctx.moveTo(cx - 22 * dir, cy - 6);
-      ctx.lineTo(cx + 26 * dir, cy + 4);
+      ctx.moveTo(cx - 44 * dir, cy - 12);
+      ctx.lineTo(cx + 52 * dir, cy + 8);
       ctx.stroke();
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(cx + 20 * dir, cy + 2);
-      ctx.lineTo(cx + 30 * dir, cy + 8);
+      ctx.moveTo(cx + 40 * dir, cy + 4);
+      ctx.lineTo(cx + 60 * dir, cy + 16);
       ctx.stroke();
       // 进度条
       const progress = this.timer / this.windowMs;
