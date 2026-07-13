@@ -658,70 +658,22 @@
           "durationMs": 320,
           "hit": true,
           "attachToPlayer": true,
-          "hitFrames": [
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7
-          ],
+          "hitFrames": [0, 1, 2, 3, 4, 5, 6, 7],
           "hitbox": {
-            "offsetX": 40,
-            "offsetY": -32,
-            "width": 180,
-            "height": 100
+            "offsetX": 0,
+            "offsetY": 0,
+            "width": 40,
+            "height": 62
           },
           "perFrameHitboxes": [
-            {
-              "offsetX": 24,
-              "offsetY": -20,
-              "width": 100,
-              "height": 60
-            },
-            {
-              "offsetX": 36,
-              "offsetY": -24,
-              "width": 136,
-              "height": 76
-            },
-            {
-              "offsetX": 48,
-              "offsetY": -28,
-              "width": 164,
-              "height": 88
-            },
-            {
-              "offsetX": 56,
-              "offsetY": -28,
-              "width": 180,
-              "height": 96
-            },
-            {
-              "offsetX": 52,
-              "offsetY": -26,
-              "width": 172,
-              "height": 92
-            },
-            {
-              "offsetX": 44,
-              "offsetY": -24,
-              "width": 156,
-              "height": 84
-            },
-            {
-              "offsetX": 32,
-              "offsetY": -20,
-              "width": 124,
-              "height": 72
-            },
-            {
-              "offsetX": 24,
-              "offsetY": -16,
-              "width": 96,
-              "height": 60
-            }
+            { "offsetX": 0, "offsetY": 0, "width": 40, "height": 62 },
+            { "offsetX": 0, "offsetY": 0, "width": 40, "height": 62 },
+            { "offsetX": 0, "offsetY": 0, "width": 40, "height": 62 },
+            { "offsetX": 0, "offsetY": 0, "width": 40, "height": 62 },
+            { "offsetX": 0, "offsetY": 0, "width": 40, "height": 62 },
+            { "offsetX": 0, "offsetY": 0, "width": 40, "height": 62 },
+            { "offsetX": 0, "offsetY": 0, "width": 40, "height": 62 },
+            { "offsetX": 0, "offsetY": 0, "width": 40, "height": 62 }
           ],
           "damage": 34,
           "knockback": 16,
@@ -900,59 +852,59 @@
             6
           ],
           "hitbox": {
-            "offsetX": -64,
+            "offsetX": -40,
             "offsetY": -72,
-            "width": 220,
-            "height": 192
+            "width": 136,
+            "height": 156
           },
           "perFrameHitboxes": [
             {
-              "offsetX": -16,
-              "offsetY": -24,
-              "width": 72,
-              "height": 64
+              "offsetX": -8,
+              "offsetY": -32,
+              "width": 56,
+              "height": 72
             },
             {
-              "offsetX": -28,
-              "offsetY": -36,
-              "width": 104,
+              "offsetX": -16,
+              "offsetY": -44,
+              "width": 80,
               "height": 96
             },
             {
-              "offsetX": -40,
-              "offsetY": -48,
-              "width": 136,
-              "height": 128
-            },
-            {
-              "offsetX": -52,
-              "offsetY": -60,
-              "width": 168,
-              "height": 156
-            },
-            {
-              "offsetX": -64,
-              "offsetY": -72,
-              "width": 204,
-              "height": 184
-            },
-            {
-              "offsetX": -56,
-              "offsetY": -68,
-              "width": 192,
-              "height": 180
-            },
-            {
-              "offsetX": -44,
+              "offsetX": -24,
               "offsetY": -56,
-              "width": 160,
-              "height": 152
+              "width": 104,
+              "height": 120
             },
             {
               "offsetX": -32,
-              "offsetY": -40,
+              "offsetY": -64,
               "width": 120,
-              "height": 112
+              "height": 140
+            },
+            {
+              "offsetX": -40,
+              "offsetY": -72,
+              "width": 136,
+              "height": 156
+            },
+            {
+              "offsetX": -36,
+              "offsetY": -68,
+              "width": 128,
+              "height": 148
+            },
+            {
+              "offsetX": -28,
+              "offsetY": -56,
+              "width": 108,
+              "height": 124
+            },
+            {
+              "offsetX": -20,
+              "offsetY": -44,
+              "width": 84,
+              "height": 96
             }
           ],
           "damage": 42,

@@ -18,8 +18,14 @@ class MapLoader {
       portals: []                  // ★ v4 传送门数组 [{x,y,w,h,targetMap,targetX,targetY,label}]
     };
 
-    // 敌人
-    (cfg.enemies || []).forEach(e => map.enemies.push(new EnemyBase(e)));
+    // 敌人（按 type 工厂创建，扩展新敌人类型在此登记）
+    (cfg.enemies || []).forEach(e => {
+      switch (e.type) {
+        case "rockArmor":    map.enemies.push(new EnemyRockArmor(e));    break;
+        case "ironSoldier":  map.enemies.push(new EnemyIronSoldier(e));  break;
+        default:             map.enemies.push(new EnemyBase(e));         break;
+      }
+    });
 
     // ★ v3 平台碰撞体：用于玩家站立检测 + 渲染
     if (cfg.platforms && cfg.platforms.length > 0) {
@@ -38,7 +44,7 @@ class MapLoader {
     }
 
     map.drawBackground = (ctx, camX) => MapLoader.drawParallax(ctx, consts, camX, map);
-    map.drawGround    = (ctx)       => MapLoader.drawGround(ctx, consts, map);
+    map.drawGround    = (ctx, camX) => MapLoader.drawGround(ctx, consts, map, camX, asset);
     map.drawPlatforms = (ctx)       => MapLoader.renderPlatforms(ctx, consts, map);
     map.drawPortals   = (ctx, t)    => MapLoader.renderPortals(ctx, map, t);  // ★ v4
     return map;
@@ -181,20 +187,79 @@ class MapLoader {
     ctx.fill();
   }
 
-  // 单层地面（木幽谷用）
-  static drawGround(ctx, c, map) {
-    // 五行地图使用平台系统，地面仅作坠落线填充
-    if (map.hasPlatforms) {
-      ctx.fillStyle = "#2a2a2a";
-      ctx.fillRect(0, map.groundY, map.width, map.height - map.groundY);
-      ctx.fillStyle = "#3a3a3a";
-      ctx.fillRect(0, map.groundY, map.width, 4);
+  // ★ v5 地面精灵图无缝平铺：用 dimain.png 横向重复覆盖地面区域。
+  // 物理碰撞仍由 map.groundY 与 platforms 决定（渲染与物理解耦）。
+  // 滚动速度 = 1.0x 相机速度（即"贴地"滚动），最右与最左之间做边缘 alpha 融合以消除接缝。
+  static _groundSeamMask = null;   // 缓存的左右接缝 mask（横向渐变）
+
+  static _buildGroundSeamMask(w, h) {
+    const c = document.createElement("canvas");
+    c.width = w; c.height = h;
+    const cx = c.getContext("2d");
+    // 渐变：左侧 alpha 从 0 升到 1，右侧从 1 降到 0 —— 让首尾相接时无可见缝隙
+    const grad = cx.createLinearGradient(0, 0, w, 0);
+    grad.addColorStop(0.0,  "rgba(0,0,0,0)");
+    grad.addColorStop(0.5,  "rgba(0,0,0,1)");
+    grad.addColorStop(1.0,  "rgba(0,0,0,0)");
+    cx.fillStyle = grad;
+    cx.fillRect(0, 0, w, h);
+    return c;
+  }
+
+  static drawGround(ctx, c, map, camX = 0, asset = null) {
+    // —— 有 platforms 的地图：地面纹理只画最低坠落线区域（角色脚底以下）
+    const groundTopY = map.groundY;
+    const groundH    = map.height - groundTopY;
+    if (groundH <= 0) return;
+
+    // 1) 底色兜底（防止图片未加载完时黑屏）
+    ctx.fillStyle = "#1a1814";
+    ctx.fillRect(0, groundTopY, map.width, groundH);
+
+    // 2) 精灵图平铺
+    const img = asset ? asset.getImage("ground_tile") : null;
+    if (!img || !img.complete || img.naturalWidth <= 0) {
+      // 回退：原色块渲染
+      ctx.fillStyle = "#6b5b4a";
+      ctx.fillRect(0, groundTopY, map.width, groundH);
+      ctx.fillStyle = "#4f4234";
+      ctx.fillRect(0, groundTopY, map.width, 6);
       return;
     }
-    ctx.fillStyle = "#6b5b4a";
-    ctx.fillRect(0, map.groundY, map.width, map.height - map.groundY);
-    ctx.fillStyle = "#4f4234";
-    ctx.fillRect(0, map.groundY, map.width, 6);
+
+    // 地面区域高 = map.height - groundY（用此高度做贴图高度，保持宽高比）
+    const drawH = groundH;
+    const drawW = drawH * (img.naturalWidth / img.naturalHeight);
+    if (drawW <= 0) return;
+
+    // ★ 无缝拼接：横向滚动时使用相位偏移，首尾通过 alpha mask 融合
+    // 3) 缓存接缝 mask
+    if (!this._groundSeamMask || this._groundSeamMask.width !== Math.ceil(drawW)) {
+      this._groundSeamMask = this._buildGroundSeamMask(Math.ceil(drawW), drawH);
+    }
+    const mask = this._groundSeamMask;
+
+    // 4) 离屏 canvas：先把整张图绘制，再叠 mask 乘到 alpha
+    const tile = document.createElement("canvas");
+    tile.width = Math.ceil(drawW); tile.height = drawH;
+    const tctx = tile.getContext("2d");
+    tctx.drawImage(img, 0, 0, drawW, drawH);
+    tctx.globalCompositeOperation = "destination-in";
+    tctx.drawImage(mask, 0, 0, drawW, drawH);
+    tctx.globalCompositeOperation = "source-over";
+
+    // 5) 平铺：横向 count 张，速度 1.0x 相机（贴地）
+    const W = c.canvas.width;
+    const count = Math.ceil(W / drawW) + 2;
+    const baseOffset = -(camX * 1.0) % drawW;
+    const startX = baseOffset - drawW;
+    for (let i = 0; i < count; i++) {
+      ctx.drawImage(tile, startX + i * drawW, groundTopY, drawW, drawH);
+    }
+
+    // 6) 顶部接缝暗线（视觉强化地表边界）
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.fillRect(0, groundTopY, map.width, 2);
   }
 
   // ★ v4 多主题平台渲染（覆盖在地面之上）
@@ -305,6 +370,59 @@ class MapLoader {
 
       ctx.restore();
     }
+  }
+
+  // ═══════════════ 四层视差背景图片渲染 ═══════════════
+  // Z序（后画盖前画）：天空色底 → 1.png → 2.png → 3.png(背景) → 地面+角色+敌人 → 4.png(前景遮罩)
+  // 3.png 在背景层最上方但不遮挡游戏对象
+
+  static _parallaxLayers = {
+    woodValley: [
+      { key: "bg_parallax_far",  speed: 0.18, drawH: 0.72, align: "bottom", alpha: 1.0 },
+      { key: "bg_parallax_mid",  speed: 0.45, drawH: 0.78, align: "bottom", alpha: 1.0 },
+      { key: "bg_parallax_near", speed: 0.80, drawH: 0.82, align: "bottom", alpha: 1.0 }
+    ],
+    _foreground: { key: "bg_parallax_fore", speed: 1.25, drawH: 0.55, alpha: 1.0, align: "top" }
+  };
+
+  static drawParallaxImages(ctx, c, camX, map, asset) {
+    const layers = this._parallaxLayers[map.id];
+    if (!layers || !asset) return;
+    const W = c.canvas.width, H = c.canvas.height;
+    for (const lay of layers) {
+      const img = asset.getImage(lay.key);
+      if (!img || !img.complete || img.naturalWidth <= 0) continue;
+      const drawH = H * lay.drawH;
+      const drawW = drawH * (img.naturalWidth / img.naturalHeight);
+      if (drawW <= 0) continue;
+      const count = Math.ceil(W / drawW) + 2;
+      const baseOffset = -(camX * lay.speed) % drawW;
+      const startX = baseOffset - drawW;
+      ctx.save();
+      ctx.globalAlpha = lay.alpha || 1;
+      const y = lay.align === "top" ? 0 : H - drawH;
+      for (let i = 0; i < count; i++) ctx.drawImage(img, startX + i * drawW, y, drawW, drawH);
+      ctx.restore();
+    }
+  }
+
+  static drawForegroundOverlay(ctx, c, camX, map, asset) {
+    const fg = this._parallaxLayers._foreground;
+    const layers = this._parallaxLayers[map.id];
+    if (!layers || !asset) return;
+    const img = asset.getImage(fg.key);
+    if (!img || !img.complete || img.naturalWidth <= 0) return;
+    const W = c.canvas.width, H = c.canvas.height;
+    const drawH = H * fg.drawH;
+    const drawW = drawH * (img.naturalWidth / img.naturalHeight);
+    if (drawW <= 0) return;
+    const count = Math.ceil(W / drawW) + 2;
+    const baseOffset = -(camX * fg.speed) % drawW;
+    const startX = baseOffset - drawW;
+    ctx.save();
+    ctx.globalAlpha = fg.alpha;
+    for (let i = 0; i < count; i++) ctx.drawImage(img, startX + i * drawW, -drawH * 0.1, drawW, drawH);
+    ctx.restore();
   }
 
   // ★ v4 传送门碰撞检测：圆形碰撞体（圆心=视觉中心，半径=min(w,h)/2）

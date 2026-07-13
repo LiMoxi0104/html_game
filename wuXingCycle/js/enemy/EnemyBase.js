@@ -28,15 +28,33 @@ class EnemyBase {
   }
 
   draw(ctx) {
+    // —— 程序化绘制（无精灵图时回退）——
     ctx.save();
     ctx.fillStyle = this.flash > 0 ? "#ffffff" : "#5a2a2a";
     ctx.fillRect(this.x, this.y, this.w, this.h);
-    // 血条
-    const bw = this.w, bx = this.x, by = this.y - 8;
-    ctx.fillStyle = "rgba(0,0,0,0.4)";
-    ctx.fillRect(bx, by, bw, 4);
-    ctx.fillStyle = "#c0392b";
-    ctx.fillRect(bx, by, bw * (this.hp / this.maxHp), 4);
     ctx.restore();
+
+    // —— 血条：始终在世界空间绘制，不继承任何变换矩阵 ——
+    this._drawWorldBar(ctx, this.w);
+  }
+
+  /**
+   * ★ 世界空间血条：绘制于 ctx.save/restore 之外，
+   *    确保始终正立（不随精灵旋转），无延迟跟随位置。
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {number} bw - 血条宽度(px)
+   */
+  _drawWorldBar(ctx, bw) {
+    const bx = this.x;
+    const by = this.y - 8;
+    // 底板
+    ctx.fillStyle = "rgba(0,0,0,0.45)";
+    ctx.fillRect(bx, by, bw, 4);
+    // 血量填充
+    const ratio = Math.max(0, this.hp / this.maxHp);
+    const k = ratio > 0.5 ? 0 : (ratio > 0.25 ? 1 : 2);
+    const hpColors = ["#caa64a", "#d98a20", "#c0392b"];
+    ctx.fillStyle = hpColors[k];
+    ctx.fillRect(bx, by, bw * ratio, 4);
   }
 }

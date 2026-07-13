@@ -474,109 +474,105 @@ class SkillVFXRenderer {
   }
 
   // ==================== 火 Fire：墨龙冲 ====================
-  // 视觉描述：
-  //   角色向前冲刺位移，身旁持续伴随火焰拖尾
-  //   多段椭圆与曲线串联构成龙身，前端龙角三角
-  //   在冲锋路径上持续生成火星粒子形成燃烧拖尾
+  // ★ 重写版 v2：解耦 perFrameHitboxes，使用固定视觉尺寸
+  //   龙身长度固定 110px，跟随角色位置同步移动。
+  //   windup 淡入 → active 全显+粒子拖尾 → recovery 淡出。
+  //   碰撞判定由 attachToPlayer（角色 rect）独立负责，VFX 仅呈现。
 
   _renderFire(ctx, skill, cast, player, frameData, progress) {
+    if (!player) return;
     const pc = this._getPlayerCenter(player);
     const dir = pc.facing === "right" ? 1 : -1;
-    const area = this._getHitboxArea(player, frameData, 12);
     const phase = skill.phases[cast.phaseIndex];
     const norm = this._phaseNorm(cast.phaseTimer, phase.durationMs);
+
+    // ── 阶段透明度 ──
+    let visAlpha = 1;
+    if (phase.id === "windup") {
+      visAlpha = norm * 0.8;                       // 0 → 0.8 淡入
+    } else if (phase.id === "recovery") {
+      visAlpha = Math.max(0, 1 - norm * 1.3);      // 1 → 0 快速淡出
+    }
+
+    if (visAlpha <= 0) return;  // 完全透明则跳过绘制
 
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
 
-    // ★ 龙身体中心位置：跟随角色当前位置（角色已由 SkillSystem 执行位移）
-    const dragonCx = pc.cx + dir * 10;
+    const DRAGON_LEN = 110;           // 火龙固定全长 (px)
+    const dragonCx = pc.cx + dir * 12;
     const dragonCy = pc.cy;
 
-    // ★ 多段椭圆龙身
+    // ── 一、多段椭圆龙身（8段，头部大→尾部小）──
     const segCount = 8;
-    const dragonLen = area ? area.w * 0.9 : 90;
-    const segLen = dragonLen / segCount;
-
     for (let s = 0; s < segCount; s++) {
       const st = s / segCount;
-      // 龙头在前，龙身各节向后排列
-      const headX = dragonCx + dir * 30;
-      const segX = headX - dir * st * segLen;
-      const segY = dragonCy + Math.sin(st * Math.PI * 3 + this._globalTime * 0.005) * (6 + s * 1.5);
-
-      // 椭圆大小：头部大 → 尾部小
-      const ew = (18 - s * 1.4) * (1 - st * 0.4);
-      const eh = (12 - s * 0.8) * (1 - st * 0.3);
-
-      // 身体透明度递减
-      const bodyAlpha = 0.82 - st * 0.5;
+      const headX = dragonCx + dir * (DRAGON_LEN * 0.3);
+      const segX = headX - dir * st * (DRAGON_LEN / segCount);
+      const segY = dragonCy + Math.sin(st * Math.PI * 3 + this._globalTime * 0.0045) * (5 + s * 1.3);
+      const ew = (17 - s * 1.3) * (1 - st * 0.35);
+      const eh = (11 - s * 0.7) * (1 - st * 0.25);
+      const bodyAlpha = (0.85 - st * 0.5) * visAlpha;
 
       ctx.beginPath();
       ctx.ellipse(segX, segY, ew, eh, 0, 0, Math.PI * 2);
 
-      // 火焰色渐变（橙红→暗红）
       const fireGrad = ctx.createRadialGradient(segX, segY, 0, segX, segY, ew);
-      fireGrad.addColorStop(0, `rgba(255,200,80,${bodyAlpha})`);
+      fireGrad.addColorStop(0,   `rgba(255,200,80,${bodyAlpha})`);
       fireGrad.addColorStop(0.4, `rgba(240,100,30,${bodyAlpha * 0.75})`);
       fireGrad.addColorStop(0.8, `rgba(180,40,20,${bodyAlpha * 0.35})`);
-      fireGrad.addColorStop(1, "rgba(180,40,20,0)");
+      fireGrad.addColorStop(1,   "rgba(180,40,20,0)");
 
       ctx.fillStyle = fireGrad;
-      ctx.shadowColor = "rgba(255,120,30,0.4)";
-      ctx.shadowBlur = 8 - s * 0.8;
+      ctx.shadowColor = "rgba(255,120,30,0.35)";
+      ctx.shadowBlur = 7 - s * 0.7;
       ctx.fill();
       ctx.shadowBlur = 0;
     }
 
-    // ★ 龙头：三角龙角
-    const headX = dragonCx + dir * 30;
-    const headY = dragonCy + Math.sin(this._globalTime * 0.006) * 5;
-    const hornSize = 14;
+    // ── 二、龙头：三角龙角 + 龙眼 ──
+    const headX = dragonCx + dir * (DRAGON_LEN * 0.3 + 8);
+    const headY = dragonCy + Math.sin(this._globalTime * 0.005) * 4;
+    const hornSize = 13;
 
-    // 左角
     ctx.beginPath();
-    ctx.moveTo(headX + dir * 8, headY - hornSize * 0.4);
-    ctx.lineTo(headX + dir * (8 + hornSize * 0.8), headY - hornSize * 1.1);
-    ctx.lineTo(headX + dir * 4, headY - hornSize * 0.2);
+    ctx.moveTo(headX + dir * 7,  headY - hornSize * 0.35);
+    ctx.lineTo(headX + dir * (7 + hornSize * 0.75), headY - hornSize * 1.05);
+    ctx.lineTo(headX + dir * 3,  headY - hornSize * 0.15);
     ctx.closePath();
-    ctx.fillStyle = "rgba(255,180,60,0.85)";
+    ctx.fillStyle = `rgba(255,180,60,${0.88 * visAlpha})`;
     ctx.fill();
 
-    // 右角
     ctx.beginPath();
-    ctx.moveTo(headX + dir * 8, headY - hornSize * 0.4);
-    ctx.lineTo(headX + dir * (8 + hornSize * 0.6), headY - hornSize * 0.1);
-    ctx.lineTo(headX + dir * 12, headY - hornSize * 0.3);
+    ctx.moveTo(headX + dir * 7,  headY - hornSize * 0.35);
+    ctx.lineTo(headX + dir * (7 + hornSize * 0.55), headY - hornSize * 0.05);
+    ctx.lineTo(headX + dir * 11, headY - hornSize * 0.25);
     ctx.closePath();
-    ctx.fillStyle = "rgba(255,160,40,0.75)";
+    ctx.fillStyle = `rgba(255,160,40,${0.78 * visAlpha})`;
     ctx.fill();
 
-    // 龙眼
     ctx.beginPath();
-    ctx.arc(headX + dir * 10, headY - 3, 2.5, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(255,255,200,0.95)";
+    ctx.arc(headX + dir * 9, headY - 3, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255,255,200,${0.95 * visAlpha})`;
     ctx.fill();
 
-    // ★ 火焰拖尾：沿角色身后路径持续生成火星粒子
-    const tailX = headX - dir * dragonLen;
-    if (phase.hit) {
-      // 在龙尾和龙身多个位置生成火焰粒子，形成连续拖尾
+    // ── 三、火焰拖尾火星粒子（仅 active 阶段）──
+    const tailX = headX - dir * DRAGON_LEN;
+    if (phase.hit && norm > 0.05) {
       this._spawnFireTrails(tailX, dragonCy, dir);
-      // 在龙身中部也生成粒子加强拖尾密度
       if (Math.random() > 0.3) {
-        this._spawnFireTrails(tailX + dir * dragonLen * 0.3, dragonCy + (Math.random() - 0.5) * 16, dir);
+        this._spawnFireTrails(tailX + dir * DRAGON_LEN * 0.3, dragonCy + (Math.random() - 0.5) * 14, dir);
       }
     }
 
-    // ★ 角色身边的火焰光环（冲刺时显示）
+    // ── 四、角色火焰光环（active 前半段）──
     if (phase.hit && norm < 0.85) {
-      const auraAlpha = 0.3 * (1 - norm);
-      const auraR = 18 + Math.sin(this._globalTime * 0.01) * 4;
-      const auraGrad = ctx.createRadialGradient(pc.cx, pc.cy, auraR * 0.3, pc.cx, pc.cy, auraR);
-      auraGrad.addColorStop(0, `rgba(255,160,40,0)`);
+      const auraAlpha = 0.28 * (1 - norm) * visAlpha;
+      const auraR = 17 + Math.sin(this._globalTime * 0.009) * 3;
+      const auraGrad = ctx.createRadialGradient(pc.cx, pc.cy, auraR * 0.25, pc.cx, pc.cy, auraR);
+      auraGrad.addColorStop(0,   "rgba(255,160,40,0)");
       auraGrad.addColorStop(0.5, `rgba(255,100,20,${auraAlpha * 0.5})`);
-      auraGrad.addColorStop(1, `rgba(200,50,10,0)`);
+      auraGrad.addColorStop(1,   "rgba(200,50,10,0)");
       ctx.beginPath();
       ctx.arc(pc.cx, pc.cy, auraR, 0, Math.PI * 2);
       ctx.fillStyle = auraGrad;
@@ -606,15 +602,20 @@ class SkillVFXRenderer {
   }
 
   // ★ 水墨陨石精灵图绘制（_renderEarth 与 _renderChargeEarth 共用）
+  // 已替换为 boulder_trap_frame_02.png，基于实际精灵图尺寸保持宽高比缩放
   _drawMeteorSprite(ctx, x, y, scale, alpha, rotation) {
     const img = this.asset && this.asset.getImage("earth_meteor_ink");
-    if (!img) return false;  // 图片未加载，回退到程序化绘制
+    // ★ 安全校验：防止空引用、未加载完成或尺寸异常的精灵图
+    if (!img || !img.complete || img.naturalWidth <= 0 || img.naturalHeight <= 0) {
+      return false;
+    }
     ctx.save();
     ctx.globalAlpha = alpha;
-    // 保持宽高比，基于 scale 缩放
+    // ★ 基于精灵图实际尺寸保持宽高比缩放，避免拉伸变形
+    const imgAspect = img.naturalWidth / img.naturalHeight;
     const baseSize = 70;
     const drawW = baseSize * scale;
-    const drawH = drawW * (img.height / img.width);
+    const drawH = drawW / imgAspect;
     ctx.translate(x, y);
     if (rotation != null) ctx.rotate(rotation);
     ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
@@ -668,12 +669,12 @@ class SkillVFXRenderer {
     let currentY = startY;
     let impactScale = 0;
 
-    if (!phase.hit) {
-      // windup：陨石从出生点缓慢出现
-      currentX = startX + (endX - startX) * this._easeInQuad(norm * 0.5);
-      currentY = startY + (endY - startY) * this._easeInQuad(norm * 0.5);
-    } else {
-      // active：沿直线快速坠落
+    if (phase.id === "windup") {
+      // windup：陨石在出生点静止淡入
+      currentX = startX;
+      currentY = startY;
+    } else if (phase.id === "active") {
+      // active：从出生点沿直线加速坠落至落点（easeInExpo 模拟重力加速）
       const fallNorm = Math.min(1, norm * 1.6);
       const t = this._easeInExpo(fallNorm);
       currentX = startX + (endX - startX) * t;
@@ -683,14 +684,23 @@ class SkillVFXRenderer {
       if (fallNorm > 0.85) {
         impactScale = (fallNorm - 0.85) / 0.15;
       }
+    } else {
+      // recovery：陨石停留在落地位置不动，撞击余波淡出
+      // 不再重置到 startX/startY，避免"落地后弹回出生点"的视觉bug
+      currentX = endX;
+      currentY = endY;
+      // 撞击效果随 recovery 进度线性淡出
+      impactScale = Math.max(0, 1 - norm);
     }
 
     // ★ 陨石体尺寸同步缩放（上限随 visScale 增长）
     const mw = area ? Math.min(area.w * 0.55, 70 * visScale) : 56 * visScale;
     const mh = area ? Math.min(area.h * 0.50, 52 * visScale) : 44 * visScale;
 
-    // ★ 水墨陨石精灵图（替换程序化椭圆绘制）
-    const meteorAlpha = phase.hit ? 1 : (norm * 0.85);
+    // ★ 陨石透明度：windup 淡入 → active 全显 → recovery 淡出消散
+    const meteorAlpha = phase.id === "active" ? 1
+                      : phase.id === "windup" ? (norm * 0.85)
+                      : Math.max(0, 1 - norm);
     // 计算坠落方向旋转角（斜线轨迹自然朝向）
     const fallAngle = Math.atan2(endY - startY, endX - startX) + Math.PI / 2;
     const drawn = this._drawMeteorSprite(ctx, currentX, currentY, visScale * 0.85, meteorAlpha, fallAngle);
@@ -973,14 +983,16 @@ class SkillVFXRenderer {
 
     // ★ 天空陨石本体（蓄力全程静止在出生点，仅体积增长）
     if (progress > 0.05) {
+      // ★ 修正：meteorW / meteorH 声明提前到 if (!drawn) 块外，
+      //   防止精灵图加载成功时 drawn=true 导致块跳过，变量未声明 → ReferenceError 崩溃游戏主循环
+      const meteorW = 18 * meteorScale;
+      const meteorH = 14 * meteorScale;
       const meteorAlpha = Math.min(1, progress * 2.5);
       // 使用水墨陨石精灵图
       const drawn = this._drawMeteorSprite(ctx, mx, my, meteorScale * 0.6, meteorAlpha, null);
 
       if (!drawn) {
         // 回退：程序化椭圆绘制
-        const meteorW = 18 * meteorScale;
-        const meteorH = 14 * meteorScale;
         ctx.beginPath();
         ctx.ellipse(mx, my, meteorW * 0.5, meteorH * 0.45, 0.15, 0, Math.PI * 2);
         const outerGrad = ctx.createRadialGradient(mx, my - 2, 2, mx, my, meteorW * 0.5);

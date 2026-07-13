@@ -6,7 +6,12 @@
     "groundY": 472,
     "spawn": { "x": 120, "y": 410 },
     "enemies": [
-      { "id": "dummy_1", "type": "dummy", "x": 560, "y": 410, "w": 40, "h": 62, "hp": 80 }
+      { "id":"iron_0","type":"ironSoldier","x":350,"y":286,"w":40,"h":62,"hp":30,
+        "damage":12,"chaseSpeed":0.35,"detectRadius":60,"cooldownMs":400,"modelScale":3.0 },
+      { "id": "dummy_1", "type": "dummy", "x": 560, "y": 410, "w": 40, "h": 62, "hp": 80 },
+      { "id":"rock_0","type":"rockArmor","x":1200,"y":410,"w":40,"h":62,"hp":100,
+        "damage":15,"patrolSpeed":0.8,"detectRadius":260,"cooldownMs":1000,
+        "attackSpeedX":2.4,"rotationSpeed":6.0,"gravity":0.62 }
     ],
     "traps": [
       {
@@ -207,7 +212,11 @@
     "height": 540,
     "groundY": 520,
     "spawn": { "x": 200, "y": 436 },
-    "enemies": [],
+    "enemies": [
+      { "id":"rock_1","type":"rockArmor","x":1750,"y":388,"w":40,"h":62,"hp":120,
+        "damage":18,"patrolSpeed":1.0,"detectRadius":280,"cooldownMs":1000,
+        "attackSpeedX":2.8,"rotationSpeed":6.5,"gravity":0.62 }
+    ],
     "traps": [
       { "id":"pc_1","type":"pillar","x":420,"y":420,"width":30,"height":100,"damage":22,"intervalMs":2800,"activeMs":1000,"knockback":20 },
       { "id":"rb_1","type":"boulder","x":630,"y":228,"width":192,"height":192,"damage":30,"travelDistance":200,"travelTime":1500,"knockback":24 },

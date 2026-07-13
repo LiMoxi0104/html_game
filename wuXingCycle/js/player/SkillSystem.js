@@ -143,12 +143,12 @@ class SkillManager {
         _targetLockX = this.player.x + this.player.w / 2 + dir * 150;
         _targetLockY = map.groundY;
       }
-      // ★ 计算 45° 斜上方出生点（屏幕最上方、朝向角色一侧）
+      // ★ 陨石出生点：目标正上方 400px，水平微偏 ~80px（~11° 斜角，接近垂直坠落）
       if (_targetLockX != null) {
         const playerCx = this.player.x + this.player.w / 2;
         const toPlayerSign = (playerCx > _targetLockX) ? 1 : -1;
         _meteorSpawnY = Math.max(20, _targetLockY - 400);  // 目标上方400px
-        _meteorSpawnX = _targetLockX + toPlayerSign * (_targetLockY - _meteorSpawnY);  // 45°: dx==dy
+        _meteorSpawnX = _targetLockX + toPlayerSign * 80;   // 水平微偏 80px（≈arctan(80/400)=11°）
         console.log(`[SkillManager] 锁定落点(${_targetLockX.toFixed(0)},${_targetLockY.toFixed(0)}) 出生点(${_meteorSpawnX.toFixed(0)},${_meteorSpawnY.toFixed(0)})`);
       }
     }
@@ -275,7 +275,7 @@ class SkillManager {
           const playerCx = this.player.x + this.player.w / 2;
           const toPlayerSign = (playerCx > targetLockX) ? 1 : -1;
           meteorSpawnY = Math.max(20, targetLockY - 400);
-          meteorSpawnX = targetLockX + toPlayerSign * (targetLockY - meteorSpawnY);
+          meteorSpawnX = targetLockX + toPlayerSign * 80;   // 水平微偏 80px，接近垂直
         }
       } else if (nearest) {
         targetLockX = nearest.x;
@@ -918,50 +918,84 @@ class SkillManager {
   _drawChargeBar(ctx) {
     const cs = this.chargeState;
     if (!cs || !cs.active) return;
+    if (!this.player) return;
+
     const p = this.player;
     const progress = Math.min(1, cs.timer / cs.maxMs);
-    const barW = 40;
-    const barH = 6;
+    const barW = 56;                               // 加宽到 56px（原 40）
+    const barH = 12;                               // 加高到 12px（原 6）
+    const pad  = 2;                                // 外边框间距
     const x = p.x + p.w / 2 - barW / 2;
-    const y = p.y - 18;
+    const y = p.y - 22;                            // 上移，远离头部
+
+    // ★ 五行元素专属蓄力条配色
+    //    每个元素包含：bg(底板暗色) c0(渐变起点) c1(渐变中点) c2(渐变终点) max(满蓄闪白)
+    const chargeSkill = this.skills[cs.skillId];
+    const elem = chargeSkill ? chargeSkill.element : "none";
+    const barPalette = {
+      fire:  { bg: "#331010", c0: "#ff4400", c1: "#ff8800", c2: "#ffcc00", max: "#ffffc8" },
+      water: { bg: "#0a1a2e", c0: "#1a5cd5", c1: "#3a8bf5", c2: "#7abfff", max: "#d0e8ff" },
+      wood:  { bg: "#0a1e10", c0: "#1a7a3a", c1: "#2eaa4a", c2: "#5adb6a", max: "#c8ffd0" },
+      metal: { bg: "#1a1a1e", c0: "#7a7a88", c1: "#aaaaaa", c2: "#d8d8e0", max: "#f8f8ff" },
+      earth: { bg: "#1a1208", c0: "#8a5a20", c1: "#b8860b", c2: "#daa520", max: "#ffe4a0" }
+    };
+    const pal = barPalette[elem] || {
+      bg: "#151515", c0: "#666", c1: "#999", c2: "#ccc", max: "#fff"
+    };
 
     ctx.save();
 
-    // 背景条（暗色）
-    ctx.fillStyle = "rgba(20,20,20,0.7)";
-    ctx.fillRect(x - 1, y - 1, barW + 2, barH + 2);
-    ctx.strokeStyle = "rgba(120,120,120,0.5)";
+    // ── 1. 外发光背景（增强可辨识度）──
+    ctx.shadowColor = pal.c0;
+    ctx.shadowBlur  = 6 + progress * 4;             // 蓄力越满光晕越大
+
+    // ── 2. 底板 ──
+    ctx.fillStyle = pal.bg;
+    ctx.strokeStyle = `rgba(180,180,180,${0.35 + progress * 0.2})`;
     ctx.lineWidth = 1;
-    ctx.strokeRect(x - 1, y - 1, barW + 2, barH + 2);
+    this._roundRect(ctx, x - pad, y - pad, barW + pad * 2, barH + pad * 2, 3);
+    ctx.fill();
+    ctx.stroke();
 
-    // ★ 按蓄力技能元素配色（火=红橙 土=赭棕，不再硬编码红色）
-    const chargeSkill = this.skills[cs.skillId];
-    const elem = chargeSkill ? chargeSkill.element : "fire";
-    const barPalette = {
-      fire:  { c0: "#ff4400", c1: "#ff8800", c2: "#ffcc00", max: "#ffffc8" },
-      earth: { c0: "#8a5a20", c1: "#b8860b", c2: "#daa520", max: "#ffe4a0" }
-    };
-    const pal = barPalette[elem] || barPalette.fire;
+    ctx.shadowBlur = 0;                             // 复位，只对底板加光晕
 
-    // 蓄力填充条
+    // ── 3. 填充进度条 ──
     const fillW = barW * progress;
-    const fillGrad = ctx.createLinearGradient(x, y, x + barW, y);
-    fillGrad.addColorStop(0, pal.c0);
-    fillGrad.addColorStop(0.5, pal.c1);
-    fillGrad.addColorStop(1, pal.c2);
-    ctx.fillStyle = fillGrad;
-    ctx.fillRect(x, y, fillW, barH);
+    if (fillW > 0) {
+      const fillGrad = ctx.createLinearGradient(x, y, x + barW, y);
+      fillGrad.addColorStop(0,   pal.c0);
+      fillGrad.addColorStop(0.4, pal.c1);
+      fillGrad.addColorStop(1,   pal.c2);
+      ctx.fillStyle = fillGrad;
+      this._roundRect(ctx, x, y, fillW, barH, 2);
+      ctx.fill();
+    }
 
-    // 满蓄力闪光效果（按元素配色）
+    // ── 4. 满蓄力闪光 ──
     if (progress >= 1) {
-      const pulse = 0.5 + Math.sin(performance.now() * 0.012) * 0.5;
-      ctx.fillStyle = `rgba(255,255,200,${pulse * 0.7})`;
-      ctx.fillRect(x, y, barW, barH);
+      const pulse = 0.4 + Math.sin(performance.now() * 0.01) * 0.6;
+      ctx.fillStyle = `rgba(255,255,220,${pulse * 0.65})`;
+      this._roundRect(ctx, x, y, barW, barH, 2);
+      ctx.fill();
+      // MAX 标注
       ctx.fillStyle = pal.max;
-      ctx.font = 'bold 10px "PingFang SC", sans-serif';
+      ctx.font = 'bold 11px "PingFang SC", sans-serif';
       ctx.textAlign = "center";
       ctx.textBaseline = "bottom";
+      ctx.shadowColor = pal.c0;
+      ctx.shadowBlur  = 4;
       ctx.fillText("MAX", p.x + p.w / 2, y - 6);
+      ctx.shadowBlur = 0;
+    }
+
+    // ── 5. 进度百分比（蓄力到 30% 后显示）──
+    if (progress > 0.3) {
+      const pct = Math.floor(progress * 100);
+      ctx.fillStyle = "rgba(255,255,255,0.85)";
+      ctx.font = '9px Consolas, monospace';
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(pct + "%", p.x + p.w / 2, y + barH / 2);
     }
 
     ctx.restore();

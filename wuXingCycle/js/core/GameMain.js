@@ -78,6 +78,30 @@ class GameMain {
     const mapCfg = mapConfigs[this.data.currentMap] || mapConfigs.woodValley;
     this.map = MapLoader.load(this.data.currentMap, consts, mapCfg, this.asset);
 
+    // ■ 加载岩甲蛰序列帧（assets/img/xiaoguai/5/）
+    this._rockFrames = await this.asset.loadFrameSequence(
+      "assets/img/xiaoguai/5", "frame_", 120, "_nobg.png"
+    );
+    // 注入精灵帧到所有 rockArmor 类型敌人
+    for (const e of this.map.enemies) {
+      if (e.type === "rockArmor" && e.setFrames) e.setFrames(this._rockFrames);
+    }
+
+    // ■ 加载玄铁卒序列帧（assets/img/xiaoguai/1/ move + hit）
+    this._ironMoveFrames = await this.asset.loadFrameSequence(
+      "assets/img/xiaoguai/1/move", "frame_", 71, "_nobg.png"
+    );
+    this._ironHitFrames = await this.asset.loadFrameSequence(
+      "assets/img/xiaoguai/1/hit", "frame_", 120, "_nobg.png"
+    );
+    // 注入到 ironSoldier 类型敌人
+    for (const e of this.map.enemies) {
+      if (e.type === "ironSoldier") {
+        if (e.setMoveFrames) e.setMoveFrames(this._ironMoveFrames);
+        if (e.setHitFrames)  e.setHitFrames(this._ironHitFrames);
+      }
+    }
+
     // 玩家
     this.player = new Player(mapCfg.spawn.x, mapCfg.spawn.y, consts);
     this.player.setAssetManager(this.asset);
@@ -143,13 +167,21 @@ class GameMain {
     this.accumulator += rawDt;
     let steps = 0;
     while (this.accumulator >= FIXED_DT && steps < 5) {
-      if (!this.paused) this.update(FIXED_DT);
+      try {
+        if (!this.paused) this.update(FIXED_DT);
+      } catch (e) {
+        console.error("[GameMain] update 异常:", e);
+      }
       this.accumulator -= FIXED_DT;
       steps++;
     }
     if (this.accumulator > FIXED_DT * 5) this.accumulator = 0;
 
-    this.render();
+    try {
+      this.render();
+    } catch (e) {
+      console.error("[GameMain] render 异常:", e);
+    }
     requestAnimationFrame(this.loop.bind(this));
   }
 
@@ -260,7 +292,10 @@ class GameMain {
     this.player.update(dt, this.input, this.map);
 
     // ==================== 3. 敌人更新 ====================
-    for (const e of this.map.enemies) e.update(dt);
+    for (const e of this.map.enemies) {
+      if (e.injectWorld) e.injectWorld(this.player, this.map);
+      e.update(dt);
+    }
 
     // ==================== 4. 弹反更新 ====================
     this.parry.update(dt);
@@ -337,16 +372,18 @@ class GameMain {
     // —— 世界层（相机平移）——
     this.renderer.beginWorld(this.cameraX);
     this.map.drawBackground(ctx, this.cameraX);
-    this.map.drawGround(ctx);
-    this.map.drawPlatforms(ctx);       // ★ v3 多平台渲染
-    this.map.drawPortals(ctx);          // ★ v4 多传送门渲染
+    MapLoader.drawParallaxImages(ctx, this.consts, this.cameraX, this.map, this.asset);
+    this.map.drawGround(ctx, this.cameraX);
+    this.map.drawPlatforms(ctx);
+    this.map.drawPortals(ctx);
     this.trap.draw(ctx);
     for (const e of this.map.enemies) e.draw(ctx);
     this.player.draw(ctx);
-    this.skill.draw(ctx);             // 攻击动画 + 解锁提示
-    this.parry.draw(ctx);             // 弹反效果
-    this._drawHitboxes(ctx);          // 碰撞箱调试可视化
+    this.skill.draw(ctx);
+    this.parry.draw(ctx);
+    this._drawHitboxes(ctx);
     this.renderer.endWorld();
+    MapLoader.drawForegroundOverlay(ctx, this.consts, this.cameraX, this.map, this.asset);
 
     // —— UI 层（屏幕空间）：状态栏 + 技能面板 + 浮动文字 ——
     this.ui.render(ctx);              // 含 StatusBar / SkillPanel / FloatTexts
@@ -455,6 +492,21 @@ class GameMain {
 
     // 2. 重新载入新地图
     this.map = MapLoader.load(t.mapId, this.consts, newCfg, this.asset);
+
+    // ★ 注入岩甲蛰 + 玄铁卒精灵帧到新地图
+    if (this._rockFrames) {
+      for (const e of this.map.enemies) {
+        if (e.type === "rockArmor" && e.setFrames) e.setFrames(this._rockFrames);
+      }
+    }
+    if (this._ironMoveFrames || this._ironHitFrames) {
+      for (const e of this.map.enemies) {
+        if (e.type === "ironSoldier") {
+          if (e.setMoveFrames) e.setMoveFrames(this._ironMoveFrames);
+          if (e.setHitFrames)  e.setHitFrames(this._ironHitFrames);
+        }
+      }
+    }
 
     // 3. 重设玩家位置（传送至目标坐标）
     this.player.x = t.targetX;
