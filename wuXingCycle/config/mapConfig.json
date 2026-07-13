@@ -10,7 +10,7 @@
     ],
     "traps": [
       {
-        "id": "spike_1", "type": "spike", "variant": "thorn",
+        "id": "spike_1", "type": "thorn",
         "x": 820, "y": 442, "width": 46, "height": 30,
         "damage": 12, "intervalMs": 1600, "activeMs": 520, "knockback": 16
       },
@@ -194,16 +194,16 @@
     "enemies": [],
     "traps": [
       { "id":"cf_1","type":"crackedPlatform","x":180,"y":480,"width":60,"height":20,"damage":14,"knockback":6 },
-      { "id":"le_1","type":"spike","variant":"lava","x":350,"y":460,"width":60,"height":120,"damage":25,"intervalMs":2400,"activeMs":900,"knockback":20 },
+      { "id":"le_1","type":"lava","x":350,"y":460,"width":60,"height":120,"damage":25,"intervalMs":2400,"activeMs":900,"knockback":20 },
       { "id":"up_1","type":"poison","variant":"updraft","x":570,"y":480,"width":40,"height":30,"damage":4,"tickMs":500,"knockbackX":4,"knockbackY":-8 },
       { "id":"wb_1","type":"crackedBridge","x":720,"y":500,"width":40,"height":12,"damage":999,"knockback":0 },
       { "id":"wb_2","type":"crackedBridge","x":820,"y":500,"width":40,"height":12,"damage":999,"knockback":0 },
-      { "id":"fd_1","type":"spike","variant":"dragon","x":920,"y":470,"width":40,"height":30,"damage":25,"intervalMs":2000,"activeMs":700,"knockback":18 },
-      { "id":"le_2","type":"spike","variant":"lava","x":1060,"y":460,"width":50,"height":120,"damage":25,"intervalMs":2200,"activeMs":800,"knockback":20 },
-      { "id":"le_3","type":"spike","variant":"lava","x":1140,"y":460,"width":50,"height":120,"damage":25,"intervalMs":2200,"activeMs":800,"knockback":20 },
+      { "id":"fd_1","type":"dragon","x":920,"y":470,"width":40,"height":30,"damage":25,"intervalMs":2000,"activeMs":700,"knockback":18 },
+      { "id":"le_2","type":"lava","x":1060,"y":460,"width":50,"height":120,"damage":25,"intervalMs":2200,"activeMs":800,"knockback":20 },
+      { "id":"le_3","type":"lava","x":1140,"y":460,"width":50,"height":120,"damage":25,"intervalMs":2200,"activeMs":800,"knockback":20 },
       { "id":"up_2","type":"poison","variant":"updraft","x":1340,"y":480,"width":40,"height":30,"damage":4,"tickMs":500,"knockbackX":4,"knockbackY":-8 },
       { "id":"gh_1","type":"poison","variant":"grate","x":1480,"y":500,"width":30,"height":10,"damage":5,"tickMs":400,"knockbackX":4,"knockbackY":-2 },
-      { "id":"fd_2","type":"spike","variant":"dragon","x":1640,"y":480,"width":40,"height":30,"damage":25,"intervalMs":2000,"activeMs":700,"knockback":18 },
+      { "id":"fd_2","type":"dragon","x":1640,"y":480,"width":40,"height":30,"damage":25,"intervalMs":2000,"activeMs":700,"knockback":18 },
       { "id":"fw_1","type":"firewall","x":1800,"y":440,"width":80,"height":80,"damage":35,"knockback":24 }
     ],
     "platforms": [
