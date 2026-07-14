@@ -23,6 +23,9 @@ class MapLoader {
       switch (e.type) {
         case "rockArmor":    map.enemies.push(new EnemyRockArmor(e));    break;
         case "ironSoldier":  map.enemies.push(new EnemyIronSoldier(e));  break;
+        case "emberSpirit":  map.enemies.push(new EnemyEmberSpirit(e));  break;
+        case "tideSpirit":   map.enemies.push(new EnemyTideSpirit(e));   break;
+        case "thornSeed":    map.enemies.push(new EnemyThornSeed(e));    break;
         default:             map.enemies.push(new EnemyBase(e));         break;
       }
     });

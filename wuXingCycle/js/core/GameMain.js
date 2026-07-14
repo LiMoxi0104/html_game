@@ -102,6 +102,52 @@ class GameMain {
       }
     }
 
+    // ■ 加载烬火游灵序列帧（assets/img/xiaoguai/4/ move + hit）
+    this._emberMoveFrames = await this.asset.loadFrameSequence(
+      "assets/img/xiaoguai/4/move", "frame_", 51, "_nobg.png"
+    );
+    this._emberHitFrames = await this.asset.loadFrameSequence(
+      "assets/img/xiaoguai/4/hit", "frame_", 101, "_nobg.png"
+    );
+    // 注入到 emberSpirit 类型敌人
+    for (const e of this.map.enemies) {
+      if (e.type === "emberSpirit") {
+        if (e.setMoveFrames) e.setMoveFrames(this._emberMoveFrames);
+        if (e.setHitFrames)  e.setHitFrames(this._emberHitFrames);
+      }
+    }
+
+    // ■ 加载凝汐灵序列帧（assets/img/xiaoguai/3/ move + hit）
+    this._tideMoveFrames = await this.asset.loadFrameSequence(
+      "assets/img/xiaoguai/3/move", "frame_", 27, "_nobg.png"
+    );
+    this._tideHitFrames = await this.asset.loadFrameSequence(
+      "assets/img/xiaoguai/3/hit", "frame_", 71, "_nobg.png"
+    );
+    // 注入到 tideSpirit 类型敌人
+    for (const e of this.map.enemies) {
+      if (e.type === "tideSpirit") {
+        if (e.setMoveFrames) e.setMoveFrames(this._tideMoveFrames);
+        if (e.setHitFrames)  e.setHitFrames(this._tideHitFrames);
+        if (e.setProjectileImage) e.setProjectileImage(this.asset.getImage("water_orb"));
+      }
+    }
+
+    // ■ 加载棘藤种序列帧（assets/img/xiaoguai/2/ shake + hit）
+    this._thornShakeFrames = await this.asset.loadFrameSequence(
+      "assets/img/xiaoguai/2/shake", "frame_", 47, "_nobg.png"
+    );
+    this._thornHitFrames = await this.asset.loadFrameSequence(
+      "assets/img/xiaoguai/2/hit", "frame_", 107, "_nobg.png"
+    );
+    // 注入到 thornSeed 类型敌人
+    for (const e of this.map.enemies) {
+      if (e.type === "thornSeed") {
+        if (e.setShakeFrames) e.setShakeFrames(this._thornShakeFrames);
+        if (e.setHitFrames)   e.setHitFrames(this._thornHitFrames);
+      }
+    }
+
     // ■ 加载主角跳跃序列帧（assets/img/player/jump/）
     const jumpFrames = await this.asset.loadFrameSequence(
       "assets/img/player/jump", "frame_", 138, "_nobg.png"
@@ -117,6 +163,10 @@ class GameMain {
       "assets/img/player/attack1", "frame_", 135, "_nobg.png"
     );
 
+    // ★ 加载墨龙冲三段式动画帧（molong/xuli + molong/weiyi）
+    this._molongAnim = new MolongAnimState(this.asset);
+    await this._molongAnim.load();
+
     // 玩家
     this.player = new Player(mapCfg.spawn.x, mapCfg.spawn.y, consts);
     this.player.setAssetManager(this.asset);
@@ -125,6 +175,7 @@ class GameMain {
     this.player.setRunStartupFrames(seqFrames);    // move_frames = 起跑帧
     this.player.setRunLoopFrames(runFrames);
     this.player.setAttackFrames(attackFrames);     // ★ 轻攻击动画帧（attack1/）
+    this.player.setMolongAnim(this._molongAnim);   // ★ 墨龙冲动画引用
 
     // —— 动态招式管理器（v2）——
     this.skill = new SkillManager(this.player, this.asset, this.data);
@@ -132,6 +183,7 @@ class GameMain {
     this.skill.registerConfig(skillCfg);
     this.skill.initFromSave();
     this.player.setSkillSystem(this.skill);
+    this.skill.setMolongAnim(this._molongAnim);   // ★ 注入墨龙冲动画状态机
 
     // 弹反系统
     this.parry = new ParrySystem(this.player, consts);
@@ -524,6 +576,31 @@ class GameMain {
         if (e.type === "ironSoldier") {
           if (e.setMoveFrames) e.setMoveFrames(this._ironMoveFrames);
           if (e.setHitFrames)  e.setHitFrames(this._ironHitFrames);
+        }
+      }
+    }
+    if (this._emberMoveFrames || this._emberHitFrames) {
+      for (const e of this.map.enemies) {
+        if (e.type === "emberSpirit") {
+          if (e.setMoveFrames) e.setMoveFrames(this._emberMoveFrames);
+          if (e.setHitFrames)  e.setHitFrames(this._emberHitFrames);
+        }
+      }
+    }
+    if (this._tideMoveFrames || this._tideHitFrames) {
+      for (const e of this.map.enemies) {
+        if (e.type === "tideSpirit") {
+          if (e.setMoveFrames) e.setMoveFrames(this._tideMoveFrames);
+          if (e.setHitFrames)  e.setHitFrames(this._tideHitFrames);
+          if (e.setProjectileImage) e.setProjectileImage(this.asset.getImage("water_orb"));
+        }
+      }
+    }
+    if (this._thornShakeFrames || this._thornHitFrames) {
+      for (const e of this.map.enemies) {
+        if (e.type === "thornSeed") {
+          if (e.setShakeFrames) e.setShakeFrames(this._thornShakeFrames);
+          if (e.setHitFrames)   e.setHitFrames(this._thornHitFrames);
         }
       }
     }

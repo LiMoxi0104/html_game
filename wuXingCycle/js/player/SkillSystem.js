@@ -40,6 +40,9 @@ class SkillManager {
 
     // ★ v6 蓄力系统
     this.chargeState = null;            // { active, skillId, timer, maxMs, enemies }
+
+    // ★ 墨龙冲三段式动画状态机（fire_dragon 专属）
+    this.molong = null;
   }
 
   // ======================== 初始化 ========================
@@ -104,6 +107,11 @@ class SkillManager {
   setCombatSystems(hitboxSys, vfx) {
     this.hitboxSystem = hitboxSys;
     this.vfxRenderer = vfx;
+  }
+
+  // ★ 注入墨龙冲动画状态机（由 GameMain 在 start() 时调用）
+  setMolongAnim(molong) {
+    this.molong = molong;
   }
 
   canCast(skillId) {
@@ -171,6 +179,11 @@ class SkillManager {
     this.player.vx = 0;
     this.player.vy = 0;
 
+    // ★ fire_dragon 专属：启动墨龙冲蓄力动画
+    if (skillId === 'fire_dragon' && this.molong) {
+      this.molong.startCharge();
+    }
+
     console.log(`[SkillManager] 开始蓄力: ${s.name} 最大 ${this.chargeState.maxMs}ms`);
     return true;
   }
@@ -178,6 +191,12 @@ class SkillManager {
   updateCharge(dtMs) {
     if (!this.chargeState || !this.chargeState.active) return;
     this.chargeState.timer = Math.min(this.chargeState.maxMs, this.chargeState.timer + dtMs);
+
+    // ★ 墨龙冲蓄力缩放：ratio 0→1 映射到 scale 1→4
+    if (this.chargeState.skillId === 'fire_dragon' && this.molong) {
+      const ratio = this.chargeState.timer / this.chargeState.maxMs;
+      this.molong.setChargeProgress(ratio);
+    }
   }
 
   releaseCharge() {
@@ -193,18 +212,25 @@ class SkillManager {
     const baseDash = activePhase ? (activePhase.dashDistance || 0) : 0;
 
     // ★ 区分技能类型：有 dashDistance 则按位移缩放；有 groundLock 则按冲击半径缩放
+    //    通用蓄力：伤害倍率 1x → 1.5x
     let scaledDash = 0;
     let impactScale = 1;
+    let chargeDmgMult = 1;
     if (baseDash > 0) {
       // 冲刺类（fire_dragon）：缩放位移距离
       const effectiveRatio = cs.minRatio + (1 - cs.minRatio) * ratio;
       scaledDash = Math.floor(baseDash * effectiveRatio);
       console.log(`[SkillManager] 释放蓄力: ${s.name} 蓄力比=${ratio.toFixed(2)} 位移=${scaledDash}px`);
+    } else if (!s.groundLock) {
+      // ★ 通用蓄力重击（metal_blade 等自身AOE）：蓄力越长伤害越高 1x→1.5x
+      chargeDmgMult = 1 + ratio * 0.5;
+      console.log(`[SkillManager] 释放蓄力: ${s.name} 蓄力比=${ratio.toFixed(2)} 伤害倍率=${chargeDmgMult.toFixed(2)}x`);
     }
     if (s.groundLock) {
-      // 锁定类（earth_meteor）：缩放冲击半径
+      // 锁定类（earth_meteor / metal_sword / fire_inferno / earthquake）：缩放冲击半径 + 伤害
       impactScale = ratio;
-      console.log(`[SkillManager] 释放蓄力: ${s.name} 蓄力比=${ratio.toFixed(2)} 冲击波缩放=${impactScale.toFixed(2)}`);
+      chargeDmgMult = 1 + ratio * 0.3;  // 1x→1.3x（地面锁定技蓄力伤害加成略低，以半径为主）
+      console.log(`[SkillManager] 释放蓄力: ${s.name} 蓄力比=${ratio.toFixed(2)} 冲击波缩放=${(1+impactScale).toFixed(2)}x 伤害=${chargeDmgMult.toFixed(2)}x`);
     }
 
     // ★ 提取锁定位置（在清除 chargeState 之前读取）
@@ -214,17 +240,26 @@ class SkillManager {
     const spawnX  = cs._meteorSpawnX;
     const spawnY  = cs._meteorSpawnY;
 
+    // ★ fire_dragon 专属：蓄力释放时切换到墨龙冲 DASH 阶段
+    if (cs.skillId === 'fire_dragon' && this.molong) {
+      this.molong.startDash();
+    }
+
     // 清除蓄力状态
     this.chargeState = null;
 
-    // 以缩放后参数执行技能（传入锁定的落点与出生点）
-    this._startCastWithDash(s, cs.skillId, scaledDash, cs.enemies, mapRef, impactScale, lockedX, lockedY, spawnX, spawnY);
+    // 以缩放后参数执行技能（传入锁定的落点与出生点 + 伤害倍率）
+    this._startCastWithDash(s, cs.skillId, scaledDash, cs.enemies, mapRef, impactScale, lockedX, lockedY, spawnX, spawnY, chargeDmgMult);
     return true;
   }
 
   cancelCharge() {
     if (!this.chargeState || !this.chargeState.active) return;
     console.log(`[SkillManager] 取消蓄力`);
+    // ★ 取消墨龙冲动画
+    if (this.molong && this.molong.isActive) {
+      this.molong.reset();
+    }
     this.chargeState = null;
     this.player.state = "idle";
     this.player.facingLock = false;
@@ -252,7 +287,7 @@ class SkillManager {
   }
 
   // 内部：以指定参数执行技能（releaseCharge 调用）
-  _startCastWithDash(s, skillId, dashDistance, enemies, map, chargeRatio, lockX, lockY, spawnX, spawnY) {
+  _startCastWithDash(s, skillId, dashDistance, enemies, map, chargeRatio, lockX, lockY, spawnX, spawnY, chargeDmgMult) {
     // ★ 优先使用传入的锁定坐标（由 releaseCharge/startCharge 预先计算）
     let targetLockX = lockX || null;
     let targetLockY = lockY || null;
@@ -295,6 +330,7 @@ class SkillManager {
       _targetLockX: targetLockX || null,
       _targetLockY: targetLockY || null,
       _chargeRatio: (chargeRatio != null) ? chargeRatio : 0,
+      _chargeDmgMult: (chargeDmgMult != null) ? chargeDmgMult : 1,
       _phaseDurationScale: s.groundLock ? (1 + (chargeRatio || 0)) : 1,
       // ★ 陨石出生点（用于直线坠落轨迹）
       _meteorSpawnX: meteorSpawnX || null,
@@ -388,7 +424,25 @@ class SkillManager {
       if (this._unlockTimer <= 0) this._unlockQueue.shift();
     }
 
-    // ★ 蓄力中：由 GameMain 调用 updateCharge 驱动，此处跳过施放逻辑
+    // ★ 墨龙冲动画驱动（贯穿全流程：CHARGE/DASH/END）★
+    if (this.molong && this.molong.isActive) {
+      this.molong.update(dtMs);
+    }
+
+    // ★ 墨龙冲收尾阶段：技能 phases 已结束但 END 动画还在播
+    if (this.active && this.active._molongEndPhase) {
+      if (this.molong && this.molong.state === MolongAnimState.END) {
+        // 动画还在播，保持 attack 状态
+        return;
+      }
+      // 动画完成 → 清理
+      this.active = null;
+      this.player.state = "idle";
+      this.player.facingLock = false;
+      return;
+    }
+
+    // 蓄力中：由 GameMain 调用 updateCharge 驱动，此处跳过施放逻辑
     if (this.chargeState && this.chargeState.active) return;
 
     if (!this.active) return;
@@ -426,12 +480,34 @@ class SkillManager {
       cast.hasHit = true;
     }
 
+    // ★ 墨龙冲：检测 active 阶段结束 → 触发收尾动画
+    if (cast.id === 'fire_dragon' && this.molong && phase.id === 'active' &&
+        cast.phaseTimer >= phase.durationMs) {
+      // active 阶段即将结束，位移完成，触发墨龙冲 END 阶段
+      if (this.molong.state === MolongAnimState.DASH) {
+        this.molong.endDash();
+      }
+    }
+
     // 阶段切换
     if (cast.phaseTimer >= phase.durationMs) {
       cast.phaseIndex++;
       cast.phaseTimer = 0;
       if (cast.phaseIndex >= skill.phases.length) {
-        // 施放结束：冷却、扣灵气、增加熟练度、复位状态
+        // ★ 墨龙冲：延迟 idle 复位，等 END 动画播完
+        if (cast.id === 'fire_dragon' && this.molong &&
+            this.molong.state === MolongAnimState.END) {
+          // 保留 this.active，标记为收尾阶段
+          this.active._molongEndPhase = true;
+          // 施放结束但动画未结束：冷却、扣蓝、熟练度等仍需执行
+          this.cooldowns[cast.id] = skill.cooldownMs || 0;
+          if (skill.mpCost) this.player.mp = Math.max(0, this.player.mp - skill.mpCost);
+          this.addMastery(cast.id, 1);
+          this._checkMasteryUnlock(cast.id);
+          return;
+        }
+
+        // 正常施放结束：冷却、扣灵气、增加熟练度、复位状态
         this.cooldowns[cast.id] = skill.cooldownMs || 0;
         if (skill.mpCost) this.player.mp = Math.max(0, this.player.mp - skill.mpCost);
         this.addMastery(cast.id, 1);       // 每次使用 +1 熟练度经验
@@ -494,7 +570,8 @@ class SkillManager {
 
       const masteryLevel = this.getMastery(cast.id);
       const masteryMult = 1 + (skill.masteryBonus || 0) * masteryLevel;
-      const finalDamage = Math.floor(phase.damage * masteryMult);
+      const chargeDmgMult = (cast._chargeDmgMult != null) ? cast._chargeDmgMult : 1;
+      const finalDamage = Math.floor(phase.damage * masteryMult * chargeDmgMult);
 
       return {
         shape: "circle",
@@ -512,11 +589,12 @@ class SkillManager {
     // ★ v4：优先使用 HitboxSystem 引擎
     if (this.hitboxSystem) {
       let hb = this.hitboxSystem.getCurrentHitbox(skill, cast, this.player);
-      // 熟练度伤害加成（叠加在 HitboxSystem 的 baseDamage 上）
+      // 熟练度伤害加成（叠加在 HitboxSystem 的 baseDamage 上）+ 蓄力倍率
       if (hb) {
         const masteryLevel = this.getMastery(cast.id);
         const masteryMult = 1 + (skill.masteryBonus || 0) * masteryLevel;
-        hb.damage = Math.floor(hb.damage * masteryMult);
+        const chargeDmgMult = (cast._chargeDmgMult != null) ? cast._chargeDmgMult : 1;
+        hb.damage = Math.floor(hb.damage * masteryMult * chargeDmgMult);
         hb.hitEnemies = cast._hitEnemies || null;  // ★ 冲刺技去重
         return hb;
       }
@@ -533,7 +611,8 @@ class SkillManager {
 
     const masteryLevel = this.getMastery(cast.id);
     const masteryMult = 1 + (skill.masteryBonus || 0) * masteryLevel;
-    const finalDamage = Math.floor(phase.damage * masteryMult);
+    const chargeDmgMult = (cast._chargeDmgMult != null) ? cast._chargeDmgMult : 1;
+    const finalDamage = Math.floor(phase.damage * masteryMult * chargeDmgMult);
 
     return {
       x, y, w: hb.width, h: hb.height,
@@ -570,7 +649,8 @@ class SkillManager {
 
     const masteryLevel = this.getMastery(cast.id);
     const masteryMult = 1 + (skill.masteryBonus || 0) * masteryLevel;
-    const finalDamage = Math.floor(phase.damage * masteryMult);
+    const chargeDmgMult = (cast._chargeDmgMult != null) ? cast._chargeDmgMult : 1;
+    const finalDamage = Math.floor(phase.damage * masteryMult * chargeDmgMult);
 
     return {
       shape: "circle",
@@ -787,10 +867,11 @@ class SkillManager {
     // ★ v6 蓄力条 UI（角色头顶）
     if (this.chargeState && this.chargeState.active) {
       this._drawChargeBar(ctx);
-      // ★ 按蓄力技能的元素类型分派专属蓄力特效（火≠土，严禁混用）
-      if (this.vfxRenderer) {
+      // ★ 蓄力 VFX：墨龙冲跳过程序化火焰（精灵图已替代）
+      const chargeSkill = this.skills[this.chargeState.skillId];
+      const isMolongCharge = chargeSkill && chargeSkill.id === 'fire_dragon' && this.molong && this.molong.isActive;
+      if (this.vfxRenderer && !isMolongCharge) {
         const cs = this.chargeState;
-        const chargeSkill = this.skills[cs.skillId];
         const elem = chargeSkill ? chargeSkill.element : null;
         this.vfxRenderer.renderCharge(ctx, this.player, elem, this.getChargeProgress(),
           cs._meteorSpawnX, cs._meteorSpawnY, cs._targetLockX, cs._targetLockY);
@@ -802,12 +883,15 @@ class SkillManager {
       const cast = this.active;
       const skill = this.skills[cast.id];
 
+      // ★ 墨龙冲动画播放期间跳过程序化 VFX（精灵图已替代）
+      const isMolongActive = cast.id === 'fire_dragon' && this.molong && this.molong.isActive;
+
       if (skill && skill.phases) {
         const phase = skill.phases[cast.phaseIndex];
         const progress = phase ? (cast.phaseTimer / phase.durationMs || 0) : 0;
 
-        // ★ v4：优先使用 VFXRenderer 绘制水墨特效
-        if (this.vfxRenderer && skill.element && skill.element !== "none") {
+        if (phase && this.vfxRenderer && skill.element && skill.element !== "none" && !isMolongActive) {
+          // ★ v4：优先使用 VFXRenderer 绘制水墨特效
           this.vfxRenderer.render(ctx, skill, cast, this.player, progress);
 
           // 调试模式：叠加碰撞箱可视化
@@ -815,15 +899,10 @@ class SkillManager {
             const hb = this.hitboxSystem.getCurrentHitbox(skill, cast, this.player)
               || this.hitboxSystem.getCurrentFrameData(skill, cast);
             if (hb) {
-              // 为非命中帧也构建一个调试用的矩形区域
               const debugHb = hb.isHitFrame ? hb : {
                 ...hb,
-                isHitFrame: false,
-                damage: 0,
-                knockback: 0,
-                frameIndex: cast.frameIndex,
-                element: skill.element,
-                skillId: cast.id
+                isHitFrame: false, damage: 0, knockback: 0,
+                frameIndex: cast.frameIndex, element: skill.element, skillId: cast.id
               };
               if (!debugHb.w) { debugHb.w = debugHb.width; debugHb.h = debugHb.height; }
               this.hitboxSystem.drawDebug(ctx, debugHb, this.player, null);
@@ -833,8 +912,8 @@ class SkillManager {
 
           // 渲染粒子效果
           this.vfxRenderer.renderParticles(ctx);
-        } else {
-          // 向后兼容：旧版占位符渲染
+        } else if (phase && !isMolongActive) {
+          // 向后兼容：旧版占位符渲染（非墨龙冲）
           this._drawPlaceholderLegacy(ctx, phase);
         }
       }

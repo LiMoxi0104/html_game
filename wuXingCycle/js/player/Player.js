@@ -83,6 +83,9 @@ class Player {
     // —— 弹反系统引用（由 GameMain 注入）——
     this.parrySystem = null;
 
+    // —— 墨龙冲动画引用（由 GameMain 注入）——
+    this._molongAnim = null;
+
     // ★ DEBUG 飞行模式（Tab 切换，后续可整块删除）——
     this.isFlying = false;
     this.flySpeed = 300;               // 飞行速度 px/s
@@ -106,6 +109,9 @@ class Player {
   setParrySystem(ps) { this.parrySystem = ps; }
 
   setAssetManager(asset) { this.asset = asset; }
+
+  /** ★ 注入墨龙冲动画状态机 */
+  setMolongAnim(molong) { this._molongAnim = molong; }
 
   // ★ DEBUG 飞行模式切换
   toggleFly() {
@@ -674,6 +680,19 @@ class Player {
     // —— ★ 死亡视觉：已完全移除 → 不绘制 ——
     if (this._deathRemoved) return;
 
+    // ★ 墨龙冲动画渲染（优先级最高，替换角色精灵）
+    if (this._molongAnim && this._molongAnim.isActive) {
+      ctx.save();
+      this._drawMolongFrame(ctx);
+      // 闪避残影
+      if (this._ghostSnapshots.length > 0) {
+        this._drawGhostSnapshots(ctx);
+      }
+      ctx.globalAlpha = 1;
+      ctx.restore();
+      return;
+    }
+
     const c = this.consts;
 
     // —— ★ 死亡尸体 + 淡出 ——
@@ -800,9 +819,12 @@ class Player {
       const chargeSkill = chargeSkillId ? (this.skill.skills[chargeSkillId] || {}) : {};
       const elem = chargeSkill.element || "fire";
 
-      // ★ 按元素选择配色
+      // ★ 按元素选择配色（五行全覆盖）
       const elemColors = {
         fire:  { inner: "rgba(255,100,20,0)", mid: "rgba(255,60,10,#)", outer: "rgba(200,30,5,#)" },
+        water: { inner: "rgba(30,120,220,0)", mid: "rgba(20,90,190,#)", outer: "rgba(10,60,150,#)" },
+        wood:  { inner: "rgba(30,160,60,0)", mid: "rgba(20,130,50,#)", outer: "rgba(10,90,30,#)" },
+        metal: { inner: "rgba(190,190,210,0)", mid: "rgba(160,160,180,#)", outer: "rgba(120,120,150,#)" },
         earth: { inner: "rgba(180,140,70,0)", mid: "rgba(150,100,40,#)", outer: "rgba(100,60,30,#)" }
       };
       const pal = elemColors[elem] || elemColors.fire;
@@ -861,6 +883,48 @@ class Player {
   }
 
   // ═══════ 渲染辅助 ═══════
+
+  /**
+   * ★ 绘制墨龙冲当前帧精灵图。
+   *    molong 帧图默认朝右，左朝向时水平翻转。
+   *    蓄力缩放 1x→4x 通过 displayScale 动态应用。
+   */
+  _drawMolongFrame(ctx) {
+    const frame = this._molongAnim.currentFrame;
+    if (!frame) return;
+
+    const chargeScale = this._molongAnim.displayScale;
+
+    const frameW = frame.width;
+    const frameH = frame.height;
+    const scale = Math.min(this.w / frameW, this.h / frameH) * chargeScale;
+    const drawW = frameW * scale;
+    const drawH = frameH * scale;
+    // 居中绘制（缩小时保持视觉中心不变）
+    const drawX = this.x + (this.w - drawW) / 2;
+    const drawY = this.y + (this.h - drawH) / 2;
+
+    // ★ 帧图默认朝右，只有左朝向时才翻转
+    if (this.facing === "left") {
+      ctx.translate(drawX + drawW, drawY);
+      ctx.scale(-1, 1);
+      ctx.drawImage(frame, 0, 0, drawW, drawH);
+    } else {
+      ctx.drawImage(frame, drawX, drawY, drawW, drawH);
+    }
+  }
+
+  /**
+   * ★ 绘制闪避残影拖尾（从 _ghostSnapshots 提取复用）
+   */
+  _drawGhostSnapshots(ctx) {
+    for (const ghost of this._ghostSnapshots) {
+      const progress = ghost.timer / ghost.lifetime;
+      const ghostAlpha = progress * progress * this._ghostMaxAlpha;
+      ctx.globalAlpha = ghostAlpha;
+      ctx.drawImage(ghost.image, ghost.x, ghost.y, this.w, this.h);
+    }
+  }
 
   // 根据当前状态获取精灵图与源裁剪区域
   // 返回 { img, sx, sy, sw, sh } 或 null

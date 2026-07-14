@@ -426,6 +426,18 @@
       "baseDamage": 38,
       "maxMastery": 5,
       "masteryBonus": 0.12,
+      "charge": {
+        "enabled": true,
+        "maxMs": 2000,
+        "description": "按住蓄力，松开释放巨剑；蓄力越长威力越大"
+      },
+      "groundLock": true,
+      "targetSearch": {
+        "enabled": true,
+        "radius": 350,
+        "lockAtPhase": "windup",
+        "description": "自动锁定范围内最近敌人，天剑精准劈落"
+      },
       "phases": [
         {
           "id": "windup",
@@ -522,6 +534,11 @@
       "baseDamage": 52,
       "maxMastery": 5,
       "masteryBonus": 0.1,
+      "charge": {
+        "enabled": true,
+        "maxMs": 2000,
+        "description": "按住蓄力，松开释放刃风暴；蓄力越长威力越大"
+      },
       "phases": [
         {
           "id": "windup",
@@ -705,6 +722,18 @@
       "baseDamage": 60,
       "maxMastery": 5,
       "masteryBonus": 0.1,
+      "charge": {
+        "enabled": true,
+        "maxMs": 2000,
+        "description": "按住蓄力，松开释放烈焰爆炸；蓄力越长范围越广"
+      },
+      "groundLock": true,
+      "targetSearch": {
+        "enabled": true,
+        "radius": 400,
+        "lockAtPhase": "windup",
+        "description": "自动锁定范围内最近敌人，烈焰精准爆破"
+      },
       "phases": [
         {
           "id": "windup",
@@ -936,6 +965,18 @@
       "baseDamage": 70,
       "maxMastery": 5,
       "masteryBonus": 0.09,
+      "charge": {
+        "enabled": true,
+        "maxMs": 2000,
+        "description": "按住蓄力，松开释放裂地震击；蓄力越长范围越广"
+      },
+      "groundLock": true,
+      "targetSearch": {
+        "enabled": true,
+        "radius": 450,
+        "lockAtPhase": "windup",
+        "description": "自动锁定范围内最近敌人，裂隙精准崩裂"
+      },
       "phases": [
         {
           "id": "windup",

@@ -934,6 +934,8 @@ class SkillVFXRenderer {
     switch (element) {
       case "fire":  this._renderChargeFire(ctx, player, progress); break;
       case "earth": this._renderChargeEarth(ctx, player, progress, spawnX, spawnY, targetX, targetY); break;
+      case "water": case "wood": case "metal":
+        this._renderChargeGeneric(ctx, player, element, progress); break;
       default: break;
     }
   }
@@ -1186,6 +1188,93 @@ class SkillVFXRenderer {
     ctx.restore();
   }
 
+  // ── 水/木/金 通用蓄力：元素光环 + 粒子飘散 ──
+  _renderChargeGeneric(ctx, player, element, progress) {
+    if (!player) return;
+    const pcx = player.x + player.w / 2;
+    const pcy = player.y + player.h / 2;
+    const footY = player.y + player.h;
+
+    // ★ 五行元素配色（光环/粒子统一使用）
+    const elemPalette = {
+      water: { inner: "rgba(40,140,240,", mid: "rgba(30,100,200,", outer: "rgba(15,60,150,", r: 40, g: 140, b: 240 },
+      wood:  { inner: "rgba(40,170,60,",  mid: "rgba(25,130,45,",  outer: "rgba(15,90,30,",  r: 40, g: 170, b: 60  },
+      metal: { inner: "rgba(200,200,220,",mid: "rgba(170,170,190,",outer: "rgba(130,130,160,",r: 200,g: 200, b: 220 }
+    };
+    const pal = elemPalette[element] || elemPalette.metal;
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    // ★ 元素光环层数随蓄力进度增加（1~4层）
+    const layers = Math.floor(1 + progress * 3);
+    for (let l = 0; l < layers; l++) {
+      const lt = l / Math.max(1, layers - 1);
+      const baseR = 16 + progress * 28;
+      const angleOff = this._globalTime * 0.004 + l * 2.1;
+      const r = baseR + lt * 12 + Math.sin(angleOff) * 5;
+      const alpha = (0.25 + progress * 0.45) * (1 - lt * 0.5);
+
+      ctx.beginPath();
+      ctx.arc(pcx, pcy, r, 0, Math.PI * 2);
+
+      const grad = ctx.createRadialGradient(pcx, pcy, r * 0.15, pcx, pcy, r);
+      grad.addColorStop(0,   pal.inner + "0)");
+      grad.addColorStop(0.35, pal.inner + (alpha * 0.7) + ")");
+      grad.addColorStop(0.7,  pal.mid   + (alpha * 0.35) + ")");
+      grad.addColorStop(1,   pal.outer + "0)");
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // 光环描边
+      ctx.strokeStyle = pal.inner + (alpha * 0.5) + ")";
+      ctx.lineWidth = 1.5 + progress * 1.5;
+      ctx.setLineDash([6 + progress * 4, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // ★ 中心光核
+    const coreGrad = ctx.createRadialGradient(pcx, pcy, 2, pcx, pcy, 12 + progress * 8);
+    coreGrad.addColorStop(0, `rgba(255,255,255,${0.3 + progress * 0.4})`);
+    coreGrad.addColorStop(0.5, pal.inner + (0.15 + progress * 0.25) + ")");
+    coreGrad.addColorStop(1, pal.inner + "0)");
+    ctx.fillStyle = coreGrad;
+    ctx.beginPath();
+    ctx.arc(pcx, pcy, 12 + progress * 8, 0, Math.PI * 2);
+    ctx.fill();
+
+    // ★ 元素粒子生成
+    if (Math.random() < 0.2 + progress * 0.5) {
+      this._spawnChargeElementParticles(pcx, footY, progress, pal);
+    }
+
+    ctx.restore();
+  }
+
+  // 通用蓄力元素粒子（水/木/金）
+  _spawnChargeElementParticles(x, y, progress, pal) {
+    const key = "charge_elem";
+    if (!this._particles[key]) this._particles[key] = [];
+    if (this._particles[key].length > 30) return;
+    for (let i = 0; i < 2; i++) {
+      const spreadX = (Math.random() - 0.5) * (25 + progress * 35);
+      this._particles[key].push({
+        x: x + spreadX,
+        y: y - Math.random() * 6,
+        vx: (Math.random() - 0.5) * (0.6 + progress * 1),
+        vy: -Math.random() * (0.5 + progress * 1.8) - 0.2,
+        life: 35 + Math.random() * 25,
+        maxLife: 60,
+        size: 1.5 + Math.random() * 2.5 + progress * 2,
+        r: pal.r, g: pal.g, b: pal.b,
+        rotation: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.03,
+        type: "charge_elem"
+      });
+    }
+  }
+
   // 蓄力尘沙粒子（earth 专属）
   _spawnChargeDust(x, y, progress) {
     const key = "charge_dust";
@@ -1278,6 +1367,19 @@ class SkillVFXRenderer {
             // 外围微光晕
             ctx.fillStyle = `rgba(200,160,90,${alpha * 0.25})`;
             ctx.fillRect(-p.size, -p.size * 0.7, p.size * 2, p.size * 1.4);
+            break;
+
+          case "charge_elem":
+            // 通用蓄力元素粒子（水/木/金）：发光光点 + 微光晕
+            const cr = p.r != null ? p.r : 180;
+            const cg = p.g != null ? p.g : 180;
+            const cb = p.b != null ? p.b : 200;
+            const elemGrad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 2);
+            elemGrad.addColorStop(0, `rgba(${cr},${cg},${cb},${alpha * 0.9})`);
+            elemGrad.addColorStop(0.4, `rgba(${cr},${cg},${cb},${alpha * 0.5})`);
+            elemGrad.addColorStop(1, `rgba(${cr},${cg},${cb},0)`);
+            ctx.fillStyle = elemGrad;
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.size * 2, 0, Math.PI * 2); ctx.fill();
             break;
         }
 

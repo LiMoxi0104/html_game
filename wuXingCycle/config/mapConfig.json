@@ -60,7 +60,12 @@
     "height": 540,
     "groundY": 520,
     "spawn": { "x": 150, "y": 436 },
-    "enemies": [],
+    "enemies": [
+      { "id": "thorn_0", "type": "thornSeed", "x": 350, "y": 460, "w": 50, "h": 60, "hp": 80, "renderW": 72, "renderH": 72, "damage": 15, "attackCooldownMs": 1500 },
+      { "id": "thorn_1", "type": "thornSeed", "x": 700, "y": 440, "w": 50, "h": 60, "hp": 90, "renderW": 72, "renderH": 72, "damage": 18, "attackCooldownMs": 1400 },
+      { "id": "thorn_2", "type": "thornSeed", "x": 1100, "y": 450, "w": 55, "h": 65, "hp": 100, "renderW": 76, "renderH": 76, "damage": 20, "attackCooldownMs": 1200 },
+      { "id": "thorn_3", "type": "thornSeed", "x": 1500, "y": 460, "w": 50, "h": 60, "hp": 90, "renderW": 72, "renderH": 72, "damage": 18, "attackCooldownMs": 1400 }
+    ],
     "traps": [
       { "id":"ts_1","type":"spike","variant":"thorn","x":120,"y":480,"width":60,"height":20,"damage":12,"intervalMs":2000,"activeMs":800,"knockback":12 },
       { "id":"ts_2","type":"spike","variant":"thorn","x":220,"y":480,"width":60,"height":20,"damage":12,"intervalMs":2000,"activeMs":800,"knockback":12 },
@@ -104,7 +109,11 @@
     "height": 540,
     "groundY": 520,
     "spawn": { "x": 150, "y": 436 },
-    "enemies": [],
+    "enemies": [
+      { "id": "tide_0", "type": "tideSpirit", "x": 300, "y": 360, "w": 44, "h": 54, "hp": 60, "renderW": 72, "renderH": 72, "moveSpeed": 0.8, "detectRadius": 380, "attackRange": 280, "attackCooldownMs": 1800, "damage": 12 },
+      { "id": "tide_1", "type": "tideSpirit", "x": 900, "y": 320, "w": 44, "h": 54, "hp": 60, "renderW": 72, "renderH": 72, "moveSpeed": 1.0, "detectRadius": 350, "attackRange": 300, "attackCooldownMs": 1600, "damage": 14 },
+      { "id": "tide_2", "type": "tideSpirit", "x": 1500, "y": 380, "w": 44, "h": 54, "hp": 70, "renderW": 72, "renderH": 72, "moveSpeed": 1.2, "detectRadius": 400, "attackRange": 320, "attackCooldownMs": 1400, "damage": 16 }
+    ],
     "traps": [
       { "id":"ig_1","type":"spike","variant":"icegate","x":710,"y":480,"width":40,"height":30,"damage":20,"intervalMs":2500,"activeMs":700,"knockback":18 },
       { "id":"ig_2","type":"spike","variant":"icegate","x":1440,"y":480,"width":40,"height":30,"damage":20,"intervalMs":2500,"activeMs":700,"knockback":18 }
@@ -148,7 +157,11 @@
     "height": 540,
     "groundY": 520,
     "spawn": { "x": 150, "y": 436 },
-    "enemies": [],
+    "enemies": [
+      { "id": "ember_0", "type": "emberSpirit", "x": 250, "y": 400, "w": 44, "h": 54, "hp": 80, "renderW": 72, "renderH": 72, "chaseSpeed": 2.0, "detectRadius": 320, "proximityRadius": 55, "explodeRadius": 38, "damage": 16, "reviveRange": 400 },
+      { "id": "ember_1", "type": "emberSpirit", "x": 500, "y": 380, "w": 44, "h": 54, "hp": 80, "renderW": 72, "renderH": 72, "chaseSpeed": 2.4, "detectRadius": 300, "proximityRadius": 55, "explodeRadius": 38, "damage": 18, "reviveRange": 380 },
+      { "id": "ember_2", "type": "emberSpirit", "x": 1200, "y": 340, "w": 44, "h": 54, "hp": 80, "renderW": 72, "renderH": 72, "chaseSpeed": 2.2, "detectRadius": 280, "proximityRadius": 60, "explodeRadius": 40, "damage": 20, "reviveRange": 400 }
+    ],
     "traps": [
       { "id":"le_1","type":"spike","variant":"lava","x":350,"y":460,"width":30,"height":30,"damage":25,"intervalMs":2400,"activeMs":900,"knockback":20 },
       { "id":"fd_1","type":"spike","variant":"dragon","x":920,"y":470,"width":40,"height":30,"damage":25,"intervalMs":2000,"activeMs":700,"knockback":18 },
