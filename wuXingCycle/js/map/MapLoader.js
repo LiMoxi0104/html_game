@@ -198,43 +198,27 @@ class MapLoader {
 
       const t = p.type || "";
       if (t.startsWith("metal_"))        { fill = "#6b6b70"; stroke = "#4a4a4f"; }
-      else if (t === "bridge" || t === "bridge_break") { fill = "#8b6914"; stroke = "#5c4510"; }
-      else if (t === "gear_floor")       { fill = "#8a7d50"; stroke = "#5c5436"; }
-      else if (t.startsWith("glass_"))    { fill = "rgba(160,200,220,0.65)"; stroke = "rgba(120,160,180,0.8)"; }
-      else if (t.startsWith("floating_")) { fill = "#7a7664"; stroke = "#555248"; }
-      else if (t === "small_block")      { fill = "#8c8c92"; stroke = "#5e5e64"; }
+      else if (t === "bridge")           { fill = "#8b6914"; stroke = "#5c4510"; }
       else if (t === "pipe_floor")       { fill = "#5a5a5e"; stroke = "#3a3a3e"; }
       // —— 木之域 ——
       else if (t === "wood_floor")       { fill = "#8b7355"; stroke = "#5c4836"; }
-      else if (t === "log_bridge")        { fill = "#6b5a3a"; stroke = "#4a3a20"; }
-      else if (t === "leaf_platform")     { fill = "#6aaa50"; stroke = "#4a8a30"; }
-      else if (t.startsWith("vine_"))     { fill = "#5a9040"; stroke = "#3a6820"; }
-      else if (t === "root_floor" || t === "root_step") { fill = "#7a5a3a"; stroke = "#5a3a20"; }
-      else if (t === "hollow_log_floor") { fill = "#8a6a4a"; stroke = "#6a4a2a"; }
-      else if (t.startsWith("mushroom_")) { fill = "#c8a060"; stroke = "#a08040"; }
-      else if (t === "thin_log_bridge")   { fill = "#6a5a38"; stroke = "#4a3a20"; }
+      else if (t === "leaf_platform")    { fill = "#6aaa50"; stroke = "#4a8a30"; }
+      else if (t.startsWith("vine_"))    { fill = "#5a9040"; stroke = "#3a6820"; }
+      else if (t === "root_floor")       { fill = "#7a5a3a"; stroke = "#5a3a20"; }
       // —— 水之域 ——
-      else if (t.startsWith("ice_"))      { fill = "rgba(180,220,240,0.85)"; stroke = "rgba(140,190,220,0.9)"; }
-      else if (t === "ice_pillar")        { fill = "rgba(170,215,235,0.9)"; stroke = "#80b0c8"; }
-      else if (t === "stalagmite")        { fill = "#8098a8"; stroke = "#587080"; }
+      else if (t.startsWith("ice_"))     { fill = "rgba(180,220,240,0.85)"; stroke = "rgba(140,190,220,0.9)"; }
+      else if (t === "ice_pillar")       { fill = "rgba(170,215,235,0.9)"; stroke = "#80b0c8"; }
+      else if (t === "stalagmite")       { fill = "#8098a8"; stroke = "#587080"; }
       // —— 火之域 ——
-      else if (t === "basalt_floor")      { fill = "#484448"; stroke = "#302830"; }
-      else if (t === "firebrick")         { fill = "#9a5030"; stroke = "#6a3020"; }
-      else if (t === "obsidian_ridge")    { fill = "#282028"; stroke = "#181018"; }
-      else if (t.startsWith("charred_"))  { fill = "#3a2820"; stroke = "#201810"; }
-      else if (t === "sliding_slope")     { fill = "#6a4028"; stroke = "#4a2818"; }
-      else if (t === "metal_grate")       { fill = "#58585c"; stroke = "#38383c"; }
-      else if (t === "volcanic_step")     { fill = "#5a3830"; stroke = "#3a2018"; }
+      else if (t === "basalt_floor")     { fill = "#484448"; stroke = "#302830"; }
+      else if (t === "firebrick")        { fill = "#9a5030"; stroke = "#6a3020"; }
+      else if (t === "obsidian_ridge")   { fill = "#282028"; stroke = "#181018"; }
+      else if (t === "volcanic_step")    { fill = "#5a3830"; stroke = "#3a2018"; }
       // —— 土之域 ——
-      else if (t === "sand_floor")        { fill = "#c8b898"; stroke = "#a89868"; }
+      else if (t === "sand_floor")       { fill = "#c8b898"; stroke = "#a89868"; }
       else if (t.startsWith("sandstone_")) { fill = "#b8a878"; stroke = "#887858"; }
-      else if (t === "ruin_step")         { fill = "#a89878"; stroke = "#787868"; }
-      else if (t === "clay_floor")        { fill = "#a88860"; stroke = "#806840"; }
-      else if (t === "buried_floor")      { fill = "#988868"; stroke = "#786850"; }
-      else if (t.startsWith("crack_"))    { fill = "#b09870"; stroke = "#887050"; }
-      else if (t === "sandstone_slope")   { fill = "#c0a880"; stroke = "#988860"; }
-      else if (t === "stone_slab")        { fill = "#a09888"; stroke = "#787868"; }
-      else if (t === "earth_platform")    { fill = "#988060"; stroke = "#706050"; }
+      else if (t === "ruin_step")        { fill = "#a89878"; stroke = "#787868"; }
+      else if (t === "stone_slab")       { fill = "#a09888"; stroke = "#787868"; }
       // 默认
       else                                { fill = "#6b6b70"; stroke = "#4a4a4f"; }
 
