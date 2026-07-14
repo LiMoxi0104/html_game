@@ -198,10 +198,8 @@
     "spawn": { "x": 200, "y": 436 },
     "enemies": [],
     "traps": [
-      { "id":"pc_1","type":"spike","variant":"pillar","x":420,"y":420,"width":90,"height":100,"damage":22,"intervalMs":2800,"activeMs":1000,"knockback":20 },
       { "id":"rb_1","type":"spike","variant":"boulder","x":630,"y":420,"width":40,"height":20,"damage":30,"intervalMs":3000,"activeMs":800,"knockback":24 },
-      { "id":"rb_2","type":"spike","variant":"boulder","x":1220,"y":380,"width":80,"height":15,"damage":30,"intervalMs":3000,"activeMs":800,"knockback":24 },
-      { "id":"pc_2","type":"spike","variant":"pillar","x":1400,"y":380,"width":75,"height":140,"damage":22,"intervalMs":2800,"activeMs":1000,"knockback":20 }
+      { "id":"rb_2","type":"spike","variant":"boulder","x":1220,"y":380,"width":80,"height":15,"damage":30,"intervalMs":3000,"activeMs":800,"knockback":24 }
     ],
     "platforms": [
       { "x": 0, "y": 500, "w": 300, "h": 20, "type": "sand_floor" },

@@ -22,7 +22,6 @@ class TrapSystem {
       case "icegate":        return new IceGateTrap(cfg);
       case "firewall":       return new FireWallTrap(cfg);
       case "lava":           return new LavaTrap(cfg);
-      case "pillar":         return new PillarTrap(cfg);
       case "thorn_vine":     return new ThornVineTrap(cfg);
       default:
         console.warn(`[TrapSystem] 未识别的陷阱类型 "${cfg.type}" (variant="${cfg.variant}")，已忽略`);
