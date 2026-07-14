@@ -372,7 +372,6 @@ class GameMain {
     // —— 世界层（相机平移）——
     this.renderer.beginWorld(this.cameraX);
     this.map.drawBackground(ctx, this.cameraX);
-    MapLoader.drawParallaxImages(ctx, this.consts, this.cameraX, this.map, this.asset);
     this.map.drawGround(ctx, this.cameraX);
     this.map.drawPlatforms(ctx);
     this.map.drawPortals(ctx);
@@ -383,7 +382,6 @@ class GameMain {
     this.parry.draw(ctx);
     this._drawHitboxes(ctx);
     this.renderer.endWorld();
-    MapLoader.drawForegroundOverlay(ctx, this.consts, this.cameraX, this.map, this.asset);
 
     // —— UI 层（屏幕空间）：状态栏 + 技能面板 + 浮动文字 ——
     this.ui.render(ctx);              // 含 StatusBar / SkillPanel / FloatTexts
