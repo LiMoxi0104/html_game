@@ -14,6 +14,15 @@
   "timeScale": { "normal": 1, "hitFreeze": 0.1, "parryFreeze": 0.2 },
   "freeze": { "hitMs": 100, "parryMs": 67 },
   "camera": { "lerp": 0.12 },
+  "dodge": {
+    "distance": 140,
+    "duration": 250,
+    "cooldownMs": 800,
+    "ghostLifetime": 450,
+    "ghostInterval": 45,
+    "ghostMaxAlpha": 0.55,
+    "collisionWindowMs": 200
+  },
   "colors": {
     "paper": "#f5f0e6",
     "ink": "#1a1a1a",

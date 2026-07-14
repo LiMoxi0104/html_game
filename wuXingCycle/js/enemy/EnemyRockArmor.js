@@ -441,14 +441,15 @@ class EnemyRockArmor extends EnemyBase {
       this._drawFallback(ctx);
     }
 
-    // 受击闪白（source-atop 仅染精灵非透明像素）
+    // 受击闪白（source-atop 仅染精灵非透明像素；重置变换确保坐标正确）
     if (this.flash > 0) {
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.globalCompositeOperation = "source-atop";
       ctx.globalAlpha = Math.min(0.6, this.flash / 120);
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(this.x, this.y, this._renderW, this._renderH);
-      ctx.globalAlpha = 1;
-      ctx.globalCompositeOperation = "source-over";
+      ctx.restore();
     }
     ctx.restore();
 
