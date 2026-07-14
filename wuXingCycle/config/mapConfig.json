@@ -6,16 +6,12 @@
     "groundY": 472,
     "spawn": { "x": 120, "y": 410 },
     "enemies": [
-      { "id":"iron_0","type":"ironSoldier","x":350,"y":286,"w":40,"h":62,"hp":30,
-        "damage":12,"chaseSpeed":0.35,"detectRadius":60,"cooldownMs":400,"modelScale":3.0 },
-      { "id": "dummy_1", "type": "dummy", "x": 560, "y": 410, "w": 40, "h": 62, "hp": 80 },
-      { "id":"rock_0","type":"rockArmor","x":1200,"y":410,"w":40,"h":62,"hp":100,
-        "damage":15,"patrolSpeed":0.8,"detectRadius":260,"cooldownMs":1000,
-        "attackSpeedX":2.4,"rotationSpeed":6.0,"gravity":0.62 }
+      { "id": "iron_1", "type": "ironSoldier", "x": 560, "y": 410, "w": 60, "h": 80, "hp": 200, "modelScale": 2.5, "chaseSpeed": 0.5, "detectRadius": 180, "damage": 15, "cooldownMs": 500 },
+      { "id": "rock_1", "type": "rockArmor", "x": 1200, "y": 410, "w": 50, "h": 55, "hp": 150, "patrolSpeed": 1.0, "detectRadius": 250, "damage": 18, "cooldownMs": 800 }
     ],
     "traps": [
       {
-        "id": "spike_1", "type": "thorn",
+        "id": "spike_1", "type": "spike", "variant": "thorn",
         "x": 820, "y": 442, "width": 46, "height": 30,
         "damage": 12, "intervalMs": 1600, "activeMs": 520, "knockback": 16
       }
@@ -75,12 +71,11 @@
     "spawn": { "x": 150, "y": 436 },
     "enemies": [],
     "traps": [
-      { "id":"ts_1","type":"thorn","x":120,"y":480,"width":60,"height":20,"damage":12,"knockback":12 },
-      { "id":"ts_2","type":"thorn","x":220,"y":480,"width":60,"height":20,"damage":12,"knockback":12 },
-      { "id":"ts_3","type":"thorn","x":320,"y":480,"width":60,"height":20,"damage":12,"knockback":12 },
-      { "id":"ft_1","type":"flytrap","x":770,"y":460,"width":40,"height":30,"damage":18,"knockback":14,"renderScaleX":3.0,"renderScaleY":3.0,"flipH":true },
-      { "id":"ts_4","type":"thorn","x":1670,"y":450,"width":50,"height":20,"damage":12,"knockback":12 },
-      { "id":"tv_1","type":"thorn_vine","x":1930,"y":470,"width":120,"height":30,"damage":14,"knockback":10,"renderScaleX":1.0,"renderScaleY":4.0 }
+      { "id":"ts_1","type":"spike","variant":"thorn","x":120,"y":480,"width":60,"height":20,"damage":12,"intervalMs":2000,"activeMs":800,"knockback":12 },
+      { "id":"ts_2","type":"spike","variant":"thorn","x":220,"y":480,"width":60,"height":20,"damage":12,"intervalMs":2000,"activeMs":800,"knockback":12 },
+      { "id":"ts_3","type":"spike","variant":"thorn","x":320,"y":480,"width":60,"height":20,"damage":12,"intervalMs":2000,"activeMs":800,"knockback":12 },
+      { "id":"ts_4","type":"spike","variant":"thorn","x":1670,"y":450,"width":50,"height":20,"damage":12,"intervalMs":2000,"activeMs":800,"knockback":12 },
+      { "id":"tv_1","type":"spike","variant":"thorn_vine","x":1980,"y":480,"width":20,"height":20,"damage":14,"intervalMs":1800,"activeMs":500,"knockback":10 }
     ],
     "platforms": [
       { "x": 0, "y": 500, "w": 350, "h": 20, "type": "wood_floor" },
@@ -122,8 +117,8 @@
     "spawn": { "x": 150, "y": 436 },
     "enemies": [],
     "traps": [
-      { "id":"ig_1","type":"icegate","x":710,"y":480,"width":40,"height":30,"damage":20,"knockback":18 },
-      { "id":"ig_2","type":"icegate","x":1440,"y":480,"width":40,"height":30,"damage":20,"knockback":18 }
+      { "id":"ig_1","type":"spike","variant":"icegate","x":710,"y":480,"width":40,"height":30,"damage":20,"intervalMs":2500,"activeMs":700,"knockback":18 },
+      { "id":"ig_2","type":"spike","variant":"icegate","x":1440,"y":480,"width":40,"height":30,"damage":20,"intervalMs":2500,"activeMs":700,"knockback":18 }
     ],
     "platforms": [
       { "x": 0, "y": 500, "w": 280, "h": 15, "type": "ice_floor" },
@@ -166,12 +161,12 @@
     "spawn": { "x": 150, "y": 436 },
     "enemies": [],
     "traps": [
-      { "id":"le_1","type":"lava","x":350,"y":460,"width":60,"height":120,"damage":25,"intervalMs":2400,"activeMs":900,"knockback":20 },
-      { "id":"fd_1","type":"dragon","x":920,"y":470,"width":40,"height":30,"damage":25,"intervalMs":2000,"activeMs":700,"knockback":18 },
-      { "id":"le_2","type":"lava","x":1060,"y":460,"width":50,"height":120,"damage":25,"intervalMs":2200,"activeMs":800,"knockback":20 },
-      { "id":"le_3","type":"lava","x":1140,"y":460,"width":50,"height":120,"damage":25,"intervalMs":2200,"activeMs":800,"knockback":20 },
-      { "id":"fd_2","type":"dragon","x":1640,"y":480,"width":40,"height":30,"damage":25,"intervalMs":2000,"activeMs":700,"knockback":18 },
-      { "id":"fw_1","type":"firewall","x":1800,"y":440,"width":80,"height":80,"damage":35,"knockback":24 }
+      { "id":"le_1","type":"spike","variant":"lava","x":350,"y":460,"width":30,"height":30,"damage":25,"intervalMs":2400,"activeMs":900,"knockback":20 },
+      { "id":"fd_1","type":"spike","variant":"dragon","x":920,"y":470,"width":40,"height":30,"damage":25,"intervalMs":2000,"activeMs":700,"knockback":18 },
+      { "id":"le_2","type":"spike","variant":"lava","x":1060,"y":460,"width":25,"height":30,"damage":25,"intervalMs":2200,"activeMs":800,"knockback":20 },
+      { "id":"le_3","type":"spike","variant":"lava","x":1140,"y":460,"width":25,"height":30,"damage":25,"intervalMs":2200,"activeMs":800,"knockback":20 },
+      { "id":"fd_2","type":"spike","variant":"dragon","x":1640,"y":480,"width":40,"height":30,"damage":25,"intervalMs":2000,"activeMs":700,"knockback":18 },
+      { "id":"fw_1","type":"spike","variant":"firewall","x":1800,"y":500,"width":80,"height":40,"damage":35,"intervalMs":3000,"activeMs":1200,"knockback":24 }
     ],
     "platforms": [
       { "x": 0, "y": 500, "w": 250, "h": 20, "type": "basalt_floor" },
@@ -212,16 +207,12 @@
     "height": 540,
     "groundY": 520,
     "spawn": { "x": 200, "y": 436 },
-    "enemies": [
-      { "id":"rock_1","type":"rockArmor","x":1750,"y":388,"w":40,"h":62,"hp":120,
-        "damage":18,"patrolSpeed":1.0,"detectRadius":280,"cooldownMs":1000,
-        "attackSpeedX":2.8,"rotationSpeed":6.5,"gravity":0.62 }
-    ],
+    "enemies": [],
     "traps": [
-      { "id":"pc_1","type":"pillar","x":420,"y":420,"width":30,"height":100,"damage":22,"intervalMs":2800,"activeMs":1000,"knockback":20 },
-      { "id":"rb_1","type":"boulder","x":630,"y":228,"width":192,"height":192,"damage":30,"travelDistance":200,"travelTime":1500,"knockback":24 },
-      { "id":"rb_2","type":"boulder","x":1220,"y":124,"width":256,"height":256,"damage":30,"travelDistance":250,"travelTime":1800,"knockback":24 },
-      { "id":"pc_2","type":"pillar","x":1400,"y":380,"width":25,"height":140,"damage":22,"intervalMs":2800,"activeMs":1000,"knockback":20 }
+      { "id":"pc_1","type":"spike","variant":"pillar","x":420,"y":420,"width":90,"height":100,"damage":22,"intervalMs":2800,"activeMs":1000,"knockback":20 },
+      { "id":"rb_1","type":"spike","variant":"boulder","x":630,"y":420,"width":40,"height":20,"damage":30,"intervalMs":3000,"activeMs":800,"knockback":24 },
+      { "id":"rb_2","type":"spike","variant":"boulder","x":1220,"y":380,"width":80,"height":15,"damage":30,"intervalMs":3000,"activeMs":800,"knockback":24 },
+      { "id":"pc_2","type":"spike","variant":"pillar","x":1400,"y":380,"width":75,"height":140,"damage":22,"intervalMs":2800,"activeMs":1000,"knockback":20 }
     ],
     "platforms": [
       { "x": 0, "y": 500, "w": 300, "h": 20, "type": "sand_floor" },

@@ -4,36 +4,36 @@
 class TrapSystem {
   constructor(mapConfig, collision) {
     this.collision = collision;
-    this.traps = (mapConfig.traps || []).map(cfg => TrapSystem.create(cfg));
+    this.traps = (mapConfig.traps || [])
+      .map(cfg => TrapSystem.create(cfg))
+      .filter(Boolean);  // 过滤掉 create() 返回的 falsy 值
   }
 
-  // 按 type 工厂创建陷阱实例（预留扩展点）
+  // 按 type/variant 工厂创建陷阱实例（预留扩展点）
+  // cfg.type 为顶层分类（spike/poison/electricGrid 等），cfg.variant 为具体变体名
   static create(cfg) {
-    switch (cfg.type) {
-      // 滚石：帧动画 + 水平往复移动
+    // 优先使用 variant（精灵动画陷阱），其次使用 type（通用类陷阱）
+    const lookup = cfg.variant || cfg.type;
+
+    switch (lookup) {
       case "boulder":        return new BoulderTrap(cfg);
-      // 龙首喷火：4帧精灵动画，仅帧3产生伤害
       case "dragon":         return new DragonTrap(cfg);
-      // 捕蝇草：4帧精灵动画，帧1/3半伤，帧2满伤，帧0无伤
-      case "flytrap":        return new FlytrapTrap(cfg);
-      // 荆棘尖刺：4帧精灵动画，帧1/3半伤，帧2满伤
       case "thorn":          return new ThornTrap(cfg);
-      // 冰闸：3帧精灵动画，帧1半伤，帧2满伤
       case "icegate":        return new IceGateTrap(cfg);
-      // 火墙：2帧精灵动画，ping-pong 往复，帧1满伤
       case "firewall":       return new FireWallTrap(cfg);
-      // 熔岩喷发：3帧精灵动画，ping-pong 往复，帧1半伤，帧2满伤
       case "lava":           return new LavaTrap(cfg);
-      // 崩塌石柱：3帧精灵动画，帧1半伤，帧2满伤
       case "pillar":         return new PillarTrap(cfg);
-      // 荆棘藤蔓：2帧精灵动画，帧1满伤
       case "thorn_vine":     return new ThornVineTrap(cfg);
+      default:
+        console.warn(`[TrapSystem] 未识别的陷阱类型 "${cfg.type}" (variant="${cfg.variant}")，已忽略`);
+        return null;
     }
   }
 
   // dt: 帧间隔 ms；player: 玩家对象（需实现 getRect() 与 takeDamage(d)）；onTrigger: 触发回调
   update(dt, player, onTrigger) {
     for (const t of this.traps) {
+      if (!t) continue;
       t.update(dt, player);
       const result = t.check(player, dt);
       if (result && onTrigger) onTrigger(result, t);

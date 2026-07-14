@@ -7,11 +7,8 @@
     "skill_wood_light": "assets/img/skill_effect/wood_light.png",
     "water_flow_effect": "assets/img/water_flow_effect.png",
     "earth_meteor_ink": "xianjingUI/boulder_trap_frame_02.png",
-    "bg_parallax_far":  "assets/img/bg/1.png",
-    "bg_parallax_mid":  "assets/img/bg/2.png",
-    "bg_parallax_near": "assets/img/bg/3.png",
-    "bg_parallax_fore": "assets/img/bg/4.png",
-    "ground_tile":      "assets/img/bg/ground_tile.png"
+    "bg_zhuling": "assets/img/bg/zhulingtu.png",
+    "ground_tile": "assets/img/bg/mud_road.png"
   },
   "audio": {}
 }

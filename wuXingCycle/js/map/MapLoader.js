@@ -1,6 +1,6 @@
-// MapLoader：横版卷轴地图加载 + 视差滚动框架。
+// MapLoader：横版卷轴地图加载。
 // v3 升级：支持多平台（platforms）碰撞体，替代单一 groundY。
-// v4 升级：多传送门数组（portals），五行主题背景/平台渲染。
+// v4 升级：多传送门数组（portals），zhuling 图像无缝平铺背景。
 // 从 config/mapConfig.json 读取地图数据，构建 enemies/platforms，并提供分层绘制方法。
 class MapLoader {
   // cfg 为 mapConfig.json 中对应地图节点
@@ -43,7 +43,7 @@ class MapLoader {
       map.portals = [cfg.portal];
     }
 
-    map.drawBackground = (ctx, camX) => MapLoader.drawParallax(ctx, consts, camX, map);
+    map.drawBackground = (ctx, camX) => MapLoader.drawZhulingBg(ctx, consts, camX, map, asset);
     map.drawGround    = (ctx, camX) => MapLoader.drawGround(ctx, consts, map, camX, asset);
     map.drawPlatforms = (ctx)       => MapLoader.renderPlatforms(ctx, consts, map);
     map.drawPortals   = (ctx, t)    => MapLoader.renderPortals(ctx, map, t);  // ★ v4
@@ -112,114 +112,60 @@ class MapLoader {
 
   // —— 渲染 ——
 
-  // 分层视差背景：远景/近景以不同速率随相机平移（★ v4 五行主题）
-  static drawParallax(ctx, c, camX, map) {
-    const W = c.canvas.width, H = c.canvas.height;
-    const id = map.id;
+  // zhuling 渐显式整图平铺背景
+  static _bgFadeAlpha = 0;        // 背景透明度（0→1 渐显）
+  static _bgFadeSpeed = 0.015;    // 每帧增量（约 67 帧 ≈ 1.1 秒完成渐显）
 
-    // 主题背景色
-    const bgColors = {
-      jinDomain:  "#d4cfc4",    // 金属灰
-      muDomain:   "#d4e8cc",    // 林木绿
-      shuiDomain: "#c8dced",    // 冰湖蓝
-      huoDomain:  "#ead8c8",    // 熔岩橙
-      tuDomain:   "#e8dfc8",    // 沙漠黄
-    };
-    ctx.fillStyle = bgColors[id] || c.colors.paper;
-    ctx.fillRect(camX, 0, W, H);
+  // 图片高度适配画布、宽度保持宽高比，从 x=0 起紧密排列填满地图全宽
+  static drawZhulingBg(ctx, c, camX, map, asset) {
+    const H = c.canvas.height;
+    const mapW = map.width;
+    const img = asset ? asset.getImage("bg_zhuling") : null;
 
-    // 远山颜色
-    const farColors = {
-      jinDomain: "#a8a49b", muDomain: "#9ab89a", shuiDomain: "#90b4c8",
-      huoDomain: "#c89070", tuDomain: "#c8b898",
-    };
-    ctx.fillStyle = farColors[id] || c.colors.mountainFar;
-    const off1 = (camX * 0.2) % W;
-    MapLoader.hills(ctx, camX - off1 - W, H, 130, 6);
-    MapLoader.hills(ctx, camX - off1, H, 130, 6);
+    // 底色兜底（始终不透明，杜绝白屏）
+    ctx.fillStyle = "#1a1410";
+    ctx.fillRect(0, 0, mapW, H);
 
-    // 近山
-    const nearColors = {
-      jinDomain: "#7a7672", muDomain: "#6a8e5a", shuiDomain: "#5a8498",
-      huoDomain: "#986050", tuDomain: "#987858",
-    };
-    ctx.fillStyle = nearColors[id] || c.colors.mountain;
-    const off2 = (camX * 0.45) % W;
-    MapLoader.hills(ctx, camX - off2 - W, H, 86, 8);
-    MapLoader.hills(ctx, camX - off2, H, 86, 8);
-
-    // 地图专属装饰纹理
-    if (id === "jinDomain") {
-      ctx.fillStyle = "rgba(100,95,88,0.12)";
-      for (let bx = 0; bx < map.width; bx += 120)
-        ctx.fillRect(bx - camX * 0.15, H - 160, 8, 160);
-    } else if (id === "muDomain") {
-      ctx.fillStyle = "rgba(50,120,50,0.06)";
-      for (let bx = 0; bx < map.width; bx += 160)
-        ctx.fillRect(bx - camX * 0.12, H - 180, 6, 180);
-    } else if (id === "shuiDomain") {
-      ctx.fillStyle = "rgba(40,100,160,0.06)";
-      for (let bx = 0; bx < map.width; bx += 100)
-        ctx.fillRect(bx - camX * 0.1, H - 140, 4, 140);
-    } else if (id === "huoDomain") {
-      ctx.fillStyle = "rgba(180,80,20,0.06)";
-      for (let bx = 0; bx < map.width; bx += 140)
-        ctx.fillRect(bx - camX * 0.14, H - 200, 5, 200);
-    } else if (id === "tuDomain") {
-      ctx.fillStyle = "rgba(140,110,50,0.07)";
-      for (let bx = 0; bx < map.width; bx += 110)
-        ctx.fillRect(bx - camX * 0.13, H - 150, 5, 150);
+    // 图片未就绪：保持纯色底，alpha 归零等待下次
+    if (!img || !img.complete || img.naturalWidth <= 0) {
+      this._bgFadeAlpha = 0;
+      return;
     }
-  }
 
-  static hills(ctx, x, H, height, count) {
-    const span = 960;
-    ctx.beginPath();
-    ctx.moveTo(x, H);
-    const step = span / count;
-    for (let i = 0; i <= count; i++) {
-      const bx = x + i * step;
-      const peak = H - height * (0.6 + 0.4 * Math.sin(i * 1.7));
-      ctx.quadraticCurveTo(bx - step / 2, peak, bx, H - height * 0.4 * Math.abs(Math.sin(i)));
+    // 单张瓦片：高度 = 画布高，宽度按原始宽高比自动计算
+    const tileH = H;
+    const tileW = tileH * (img.naturalWidth / img.naturalHeight);
+    if (tileW <= 0) return;
+
+    // 渐显推进
+    if (this._bgFadeAlpha < 1) {
+      this._bgFadeAlpha = Math.min(1, this._bgFadeAlpha + this._bgFadeSpeed);
     }
-    ctx.lineTo(x + span, H);
-    ctx.closePath();
-    ctx.fill();
+    if (this._bgFadeAlpha <= 0) return;
+
+    // 紧密排列：从 x=0 到 mapW，无间隙、无重叠、无遗漏
+    const count = Math.ceil(mapW / tileW);
+
+    ctx.save();
+    ctx.globalAlpha = this._bgFadeAlpha;
+    for (let i = 0; i < count; i++) {
+      ctx.drawImage(img, i * tileW, 0, tileW, tileH);
+    }
+    ctx.restore();
   }
 
-  // ★ v5 地面精灵图无缝平铺：用 dimain.png 横向重复覆盖地面区域。
-  // 物理碰撞仍由 map.groundY 与 platforms 决定（渲染与物理解耦）。
-  // 滚动速度 = 1.0x 相机速度（即"贴地"滚动），最右与最左之间做边缘 alpha 融合以消除接缝。
-  static _groundSeamMask = null;   // 缓存的左右接缝 mask（横向渐变）
-
-  static _buildGroundSeamMask(w, h) {
-    const c = document.createElement("canvas");
-    c.width = w; c.height = h;
-    const cx = c.getContext("2d");
-    // 渐变：左侧 alpha 从 0 升到 1，右侧从 1 降到 0 —— 让首尾相接时无可见缝隙
-    const grad = cx.createLinearGradient(0, 0, w, 0);
-    grad.addColorStop(0.0,  "rgba(0,0,0,0)");
-    grad.addColorStop(0.5,  "rgba(0,0,0,1)");
-    grad.addColorStop(1.0,  "rgba(0,0,0,0)");
-    cx.fillStyle = grad;
-    cx.fillRect(0, 0, w, h);
-    return c;
-  }
-
+  // mud_road 地面贴图：铺满地图全宽，1px重叠消黑缝
   static drawGround(ctx, c, map, camX = 0, asset = null) {
-    // —— 有 platforms 的地图：地面纹理只画最低坠落线区域（角色脚底以下）
     const groundTopY = map.groundY;
     const groundH    = map.height - groundTopY;
     if (groundH <= 0) return;
 
-    // 1) 底色兜底（防止图片未加载完时黑屏）
+    // 底色兜底
     ctx.fillStyle = "#1a1814";
     ctx.fillRect(0, groundTopY, map.width, groundH);
 
-    // 2) 精灵图平铺
     const img = asset ? asset.getImage("ground_tile") : null;
     if (!img || !img.complete || img.naturalWidth <= 0) {
-      // 回退：原色块渲染
       ctx.fillStyle = "#6b5b4a";
       ctx.fillRect(0, groundTopY, map.width, groundH);
       ctx.fillStyle = "#4f4234";
@@ -227,37 +173,18 @@ class MapLoader {
       return;
     }
 
-    // 地面区域高 = map.height - groundY（用此高度做贴图高度，保持宽高比）
-    const drawH = groundH;
-    const drawW = drawH * (img.naturalWidth / img.naturalHeight);
-    if (drawW <= 0) return;
+    // 单张瓦片：高度 = 地面区域高，宽度按宽高比自动计算
+    const tileH = groundH;
+    const tileW = tileH * (img.naturalWidth / img.naturalHeight);
+    if (tileW <= 0) return;
 
-    // ★ 无缝拼接：横向滚动时使用相位偏移，首尾通过 alpha mask 融合
-    // 3) 缓存接缝 mask
-    if (!this._groundSeamMask || this._groundSeamMask.width !== Math.ceil(drawW)) {
-      this._groundSeamMask = this._buildGroundSeamMask(Math.ceil(drawW), drawH);
-    }
-    const mask = this._groundSeamMask;
-
-    // 4) 离屏 canvas：先把整张图绘制，再叠 mask 乘到 alpha
-    const tile = document.createElement("canvas");
-    tile.width = Math.ceil(drawW); tile.height = drawH;
-    const tctx = tile.getContext("2d");
-    tctx.drawImage(img, 0, 0, drawW, drawH);
-    tctx.globalCompositeOperation = "destination-in";
-    tctx.drawImage(mask, 0, 0, drawW, drawH);
-    tctx.globalCompositeOperation = "source-over";
-
-    // 5) 平铺：横向 count 张，速度 1.0x 相机（贴地）
-    const W = c.canvas.width;
-    const count = Math.ceil(W / drawW) + 2;
-    const baseOffset = -(camX * 1.0) % drawW;
-    const startX = baseOffset - drawW;
+    // 铺满整张地图，相邻 1px 重叠消除接缝
+    const count = Math.ceil(map.width / (tileW - 1));
     for (let i = 0; i < count; i++) {
-      ctx.drawImage(tile, startX + i * drawW, groundTopY, drawW, drawH);
+      ctx.drawImage(img, i * (tileW - 1), groundTopY, tileW, tileH);
     }
 
-    // 6) 顶部接缝暗线（视觉强化地表边界）
+    // 顶部边界暗线
     ctx.fillStyle = "rgba(0,0,0,0.35)";
     ctx.fillRect(0, groundTopY, map.width, 2);
   }
@@ -370,59 +297,6 @@ class MapLoader {
 
       ctx.restore();
     }
-  }
-
-  // ═══════════════ 四层视差背景图片渲染 ═══════════════
-  // Z序（后画盖前画）：天空色底 → 1.png → 2.png → 3.png(背景) → 地面+角色+敌人 → 4.png(前景遮罩)
-  // 3.png 在背景层最上方但不遮挡游戏对象
-
-  static _parallaxLayers = {
-    woodValley: [
-      { key: "bg_parallax_far",  speed: 0.18, drawH: 0.72, align: "bottom", alpha: 1.0 },
-      { key: "bg_parallax_mid",  speed: 0.45, drawH: 0.78, align: "bottom", alpha: 1.0 },
-      { key: "bg_parallax_near", speed: 0.80, drawH: 0.82, align: "bottom", alpha: 1.0 }
-    ],
-    _foreground: { key: "bg_parallax_fore", speed: 1.25, drawH: 0.55, alpha: 1.0, align: "top" }
-  };
-
-  static drawParallaxImages(ctx, c, camX, map, asset) {
-    const layers = this._parallaxLayers[map.id];
-    if (!layers || !asset) return;
-    const W = c.canvas.width, H = c.canvas.height;
-    for (const lay of layers) {
-      const img = asset.getImage(lay.key);
-      if (!img || !img.complete || img.naturalWidth <= 0) continue;
-      const drawH = H * lay.drawH;
-      const drawW = drawH * (img.naturalWidth / img.naturalHeight);
-      if (drawW <= 0) continue;
-      const count = Math.ceil(W / drawW) + 2;
-      const baseOffset = -(camX * lay.speed) % drawW;
-      const startX = baseOffset - drawW;
-      ctx.save();
-      ctx.globalAlpha = lay.alpha || 1;
-      const y = lay.align === "top" ? 0 : H - drawH;
-      for (let i = 0; i < count; i++) ctx.drawImage(img, startX + i * drawW, y, drawW, drawH);
-      ctx.restore();
-    }
-  }
-
-  static drawForegroundOverlay(ctx, c, camX, map, asset) {
-    const fg = this._parallaxLayers._foreground;
-    const layers = this._parallaxLayers[map.id];
-    if (!layers || !asset) return;
-    const img = asset.getImage(fg.key);
-    if (!img || !img.complete || img.naturalWidth <= 0) return;
-    const W = c.canvas.width, H = c.canvas.height;
-    const drawH = H * fg.drawH;
-    const drawW = drawH * (img.naturalWidth / img.naturalHeight);
-    if (drawW <= 0) return;
-    const count = Math.ceil(W / drawW) + 2;
-    const baseOffset = -(camX * fg.speed) % drawW;
-    const startX = baseOffset - drawW;
-    ctx.save();
-    ctx.globalAlpha = fg.alpha;
-    for (let i = 0; i < count; i++) ctx.drawImage(img, startX + i * drawW, -drawH * 0.1, drawW, drawH);
-    ctx.restore();
   }
 
   // ★ v4 传送门碰撞检测：圆形碰撞体（圆心=视觉中心，半径=min(w,h)/2）
