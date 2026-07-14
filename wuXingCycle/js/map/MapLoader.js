@@ -43,9 +43,20 @@ class MapLoader {
       map.portals = [cfg.portal];
     }
 
+    // 地图 → 背景 key 映射
+    const BG_MAP = {
+      woodValley: "bg_zhuling",
+      jinDomain:  "bg_metal",
+      muDomain:   "bg_wood",
+      shuiDomain: "bg_water",
+      huoDomain:  "bg_fire",
+      tuDomain:   "bg_earth"
+    };
+    map.bgKey = BG_MAP[mapId] || "bg_zhuling";
+
     map.drawBackground = (ctx, camX) => MapLoader.drawZhulingBg(ctx, consts, camX, map, asset);
     map.drawGround    = (ctx, camX) => MapLoader.drawGround(ctx, consts, map, camX, asset);
-    map.drawPlatforms = (ctx)       => MapLoader.renderPlatforms(ctx, consts, map);
+    map.drawPlatforms = (ctx)       => MapLoader.renderPlatforms(ctx, consts, map, asset);
     map.drawPortals   = (ctx, t)    => MapLoader.renderPortals(ctx, map, t);  // ★ v4
     return map;
   }
@@ -120,7 +131,7 @@ class MapLoader {
   static drawZhulingBg(ctx, c, camX, map, asset) {
     const H = c.canvas.height;
     const mapW = map.width;
-    const img = asset ? asset.getImage("bg_zhuling") : null;
+    const img = asset ? asset.getImage(map.bgKey) : null;
 
     // 底色兜底（始终不透明，杜绝白屏）
     ctx.fillStyle = "#1a1410";
@@ -132,25 +143,29 @@ class MapLoader {
       return;
     }
 
-    // 单张瓦片：高度 = 画布高，宽度按原始宽高比自动计算
-    const tileH = H;
-    const tileW = tileH * (img.naturalWidth / img.naturalHeight);
-    if (tileW <= 0) return;
-
-    // 渐显推进
+    // 图片已就绪，计算渐变
     if (this._bgFadeAlpha < 1) {
       this._bgFadeAlpha = Math.min(1, this._bgFadeAlpha + this._bgFadeSpeed);
     }
     if (this._bgFadeAlpha <= 0) return;
 
-    // 紧密排列：从 x=0 到 mapW，无间隙、无重叠、无遗漏
-    const count = Math.ceil(mapW / tileW);
-
     ctx.save();
     ctx.globalAlpha = this._bgFadeAlpha;
-    for (let i = 0; i < count; i++) {
-      ctx.drawImage(img, i * tileW, 0, tileW, tileH);
+
+    if (map.bgKey === "bg_zhuling") {
+      // 木幽谷竹林图：保持平铺
+      const tileH = H;
+      const tileW = tileH * (img.naturalWidth / img.naturalHeight);
+      if (tileW <= 0) { ctx.restore(); return; }
+      const count = Math.ceil(mapW / tileW);
+      for (let i = 0; i < count; i++) {
+        ctx.drawImage(img, i * tileW, 0, tileW, tileH);
+      }
+    } else {
+      // 五行域长图：一次性拉伸适配全图
+      ctx.drawImage(img, 0, 0, mapW, H);
     }
+
     ctx.restore();
   }
 
@@ -189,44 +204,55 @@ class MapLoader {
     ctx.fillRect(0, groundTopY, map.width, 2);
   }
 
-  // ★ v4 多主题平台渲染（覆盖在地面之上）
-  static renderPlatforms(ctx, c, map) {
+  // ★ v4 多主题平台渲染（覆盖在地面之上）—— 优先使用精灵图，图片未就绪时回退纯色
+  static renderPlatforms(ctx, c, map, asset) {
     if (!map.hasPlatforms) return;
 
     for (const p of map.platforms) {
-      let fill, stroke;
-
       const t = p.type || "";
-      if (t.startsWith("metal_"))        { fill = "#6b6b70"; stroke = "#4a4a4f"; }
-      else if (t === "bridge")           { fill = "#8b6914"; stroke = "#5c4510"; }
-      else if (t === "pipe_floor")       { fill = "#5a5a5e"; stroke = "#3a3a3e"; }
-      // —— 木之域 ——
-      else if (t === "wood_floor")       { fill = "#8b7355"; stroke = "#5c4836"; }
-      else if (t === "leaf_platform")    { fill = "#6aaa50"; stroke = "#4a8a30"; }
-      else if (t.startsWith("vine_"))    { fill = "#5a9040"; stroke = "#3a6820"; }
-      else if (t === "root_floor")       { fill = "#7a5a3a"; stroke = "#5a3a20"; }
-      // —— 水之域 ——
-      else if (t.startsWith("ice_"))     { fill = "rgba(180,220,240,0.85)"; stroke = "rgba(140,190,220,0.9)"; }
-      else if (t === "ice_pillar")       { fill = "rgba(170,215,235,0.9)"; stroke = "#80b0c8"; }
-      else if (t === "stalagmite")       { fill = "#8098a8"; stroke = "#587080"; }
-      // —— 火之域 ——
-      else if (t === "basalt_floor")     { fill = "#484448"; stroke = "#302830"; }
-      else if (t === "firebrick")        { fill = "#9a5030"; stroke = "#6a3020"; }
-      else if (t === "obsidian_ridge")   { fill = "#282028"; stroke = "#181018"; }
-      else if (t === "volcanic_step")    { fill = "#5a3830"; stroke = "#3a2018"; }
-      // —— 土之域 ——
-      else if (t === "sand_floor")       { fill = "#c8b898"; stroke = "#a89868"; }
-      else if (t.startsWith("sandstone_")) { fill = "#b8a878"; stroke = "#887858"; }
-      else if (t === "ruin_step")        { fill = "#a89878"; stroke = "#787868"; }
-      else if (t === "stone_slab")       { fill = "#a09888"; stroke = "#787868"; }
-      // 默认
-      else                                { fill = "#6b6b70"; stroke = "#4a4a4f"; }
+      const img = asset ? asset.getImage("plat_" + t) : null;
 
-      ctx.fillStyle = fill;
-      ctx.fillRect(p.x, p.y, p.w, p.h);
-      ctx.fillStyle = stroke;
-      ctx.fillRect(p.x, p.y, p.w, 3);
-      ctx.fillRect(p.x, p.y + p.h - 2, p.w, 2);
+      if (img && img.complete && img.naturalWidth > 0) {
+        // 精灵图：高度 = 平台高，宽度按比例自动计算，平铺覆盖全宽
+        const tileH = p.h;
+        const tileW = tileH * (img.naturalWidth / img.naturalHeight);
+        if (tileW > 0) {
+          const count = Math.ceil(p.w / tileW);
+          for (let i = 0; i < count; i++) {
+            ctx.drawImage(img, p.x + i * tileW, p.y, tileW, tileH);
+          }
+        }
+      } else {
+        // 回退纯色方块
+        let fill, stroke;
+
+        if (t.startsWith("metal_"))        { fill = "#6b6b70"; stroke = "#4a4a4f"; }
+        else if (t === "pipe_floor")       { fill = "#5a5a5e"; stroke = "#3a3a3e"; }
+        // —— 木之域 ——
+        else if (t === "wood_floor")       { fill = "#8b7355"; stroke = "#5c4836"; }
+        else if (t === "leaf_platform")    { fill = "#6aaa50"; stroke = "#4a8a30"; }
+        else if (t.startsWith("vine_"))    { fill = "#5a9040"; stroke = "#3a6820"; }
+        // —— 水之域 ——
+        else if (t.startsWith("ice_"))     { fill = "rgba(180,220,240,0.85)"; stroke = "rgba(140,190,220,0.9)"; }
+        else if (t === "ice_pillar")       { fill = "rgba(170,215,235,0.9)"; stroke = "#80b0c8"; }
+        // —— 火之域 ——
+        else if (t === "basalt_floor")     { fill = "#484448"; stroke = "#302830"; }
+        else if (t === "firebrick")        { fill = "#9a5030"; stroke = "#6a3020"; }
+        else if (t === "volcanic_step")    { fill = "#5a3830"; stroke = "#3a2018"; }
+        // —— 土之域 ——
+        else if (t === "sand_floor")       { fill = "#c8b898"; stroke = "#a89868"; }
+        else if (t.startsWith("sandstone_")) { fill = "#b8a878"; stroke = "#887858"; }
+        else if (t === "ruin_step")        { fill = "#a89878"; stroke = "#787868"; }
+        else if (t === "stone_slab")       { fill = "#a09888"; stroke = "#787868"; }
+        // 默认
+        else                                { fill = "#6b6b70"; stroke = "#4a4a4f"; }
+
+        ctx.fillStyle = fill;
+        ctx.fillRect(p.x, p.y, p.w, p.h);
+        ctx.fillStyle = stroke;
+        ctx.fillRect(p.x, p.y, p.w, 3);
+        ctx.fillRect(p.x, p.y + p.h - 2, p.w, 2);
+      }
     }
   }
 
