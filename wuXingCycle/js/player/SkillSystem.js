@@ -304,6 +304,9 @@ class SkillManager {
     this.player.state = "attack";
     this.player.facingLock = true;
 
+    // ★ 轻攻击动画：除"木行·荆棘牢笼"外，播放 attack1/ 序列帧
+    this._triggerLightAttackAnim(s);
+
     if (s.element && s.element !== "none") {
       AudioManager.play("skill_" + s.element);
     }
@@ -361,6 +364,9 @@ class SkillManager {
 
     this.player.state = "attack";
     this.player.facingLock = true;
+
+    // ★ 轻攻击动画：除"木行·荆棘牢笼"外，播放 attack1/ 序列帧
+    this._triggerLightAttackAnim(s);
 
     // 播放元素音效（非弹反时）
     if (s.element && s.element !== "none") {
@@ -858,6 +864,17 @@ class SkillManager {
       ctx.fillRect(sx, p.y + 10, 6, p.h - 20);
     }
     ctx.restore();
+  }
+
+  /**
+   * ★ 轻攻击动画触发：type="light" 且非"木行·荆棘牢笼"时，
+   *    根据技能 phases 总时长，驱动 attack1/ 序列帧一次性播放。
+   */
+  _triggerLightAttackAnim(s) {
+    if (s.type !== "light" || s.id === "wood_thorn") return;
+    if (typeof this.player.startAttackAnim !== 'function') return;
+    const totalMs = s.phases.reduce((sum, p) => sum + (p.durationMs || 0), 0);
+    this.player.startAttackAnim(totalMs);
   }
 
   // —— 水墨风解锁提示 Toast ——

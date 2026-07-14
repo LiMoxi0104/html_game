@@ -171,9 +171,9 @@ class SkillVFXRenderer {
 
     ctx.restore();
 
-    // 水花飞溅粒子（命中帧触发）
-    if (frameData && frameData.isHitFrame && Math.random() > 0.5) {
-      this._spawnWaterDroplets(pc.cx + dir * 30, pc.cy - 10);
+    // ★ 水花飞溅粒子：命中帧必定触发，围绕碰撞体矩形表面分布
+    if (frameData && frameData.isHitFrame) {
+      this._spawnWaterDroplets(area, 28);
     }
   }
 
@@ -227,26 +227,81 @@ class SkillVFXRenderer {
 
     ctx.restore();
 
-    if (frameData && frameData.isHitFrame && Math.random() > 0.5) {
-      this._spawnWaterDroplets(pc.cx + dir * 30, pc.cy - 10);
+    // ★ 水花飞溅粒子：命中帧必定触发，围绕碰撞体矩形表面分布
+    if (frameData && frameData.isHitFrame) {
+      this._spawnWaterDroplets(area, 28);
     }
   }
 
-  // 水滴粒子
-  _spawnWaterDroplets(x, y) {
+  /**
+   * ★ 水滴粒子生成：围绕碰撞体矩形表面环状分布，
+   *    粒子从碰撞体边缘向外飞溅，避免穿模或漂移过远。
+   * @param {Object} area - {x, y, w, h} 碰撞体世界坐标区域（已含 padding）
+   * @param {number} count - 本次生成数量（默认 16）
+   */
+  _spawnWaterDroplets(area, count = 28) {  // ★ 增加密度
     const key = "water_drops";
     if (!this._particles[key]) this._particles[key] = [];
-    for (let i = 0; i < 4; i++) {
+    if (!area) return;
+
+    const cx = area.x + area.w / 2;
+    const cy = area.y + area.h / 2;
+
+    for (let i = 0; i < count; i++) {
+      // ★ 在碰撞体矩形表面上均匀采样生成位置
+      const pos = this._sampleRectEdge(
+        area.x, area.y, area.w, area.h,
+        (i * 1.61803398875) % 1  // 黄金角度分散，避免扎堆
+      );
+
+      // 从碰撞体中心指向生成位置的径向速度（向外飞溅）
+      const dx = pos.x - cx;
+      const dy = pos.y - cy;
+      const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+      const baseSpeed = 0.6 + Math.random() * 1.8;  // 飞溅速度
+
       this._particles[key].push({
-        x, y,
-        vx: (Math.random() - 0.5) * 3,
-        vy: -Math.random() * 4 - 1,
-        life: 300 + Math.random() * 200,
+        x: pos.x, y: pos.y,
+        vx: (dx / dist) * baseSpeed + (Math.random() - 0.5) * 1.2,
+        vy: (dy / dist) * baseSpeed - Math.random() * 2.0 - 0.3,  // 略向上偏
+        life: 280 + Math.random() * 220,   // 生命周期 280-500ms
         maxLife: 500,
-        size: 2 + Math.random() * 3,
+        size: 0.8 + Math.random() * 2.0,   // 0.8-2.8px（缩小）
         type: "water_drop"
       });
     }
+  }
+
+  /**
+   * 在矩形边缘均匀采样一个随机位置。
+   * 四条边等概率，边长越长权重越大，避免角点过度集中。
+   * @param {number} t - [0,1) 归一化采样参数
+   * @returns {{x:number, y:number}}
+   */
+  _sampleRectEdge(rx, ry, rw, rh, t) {
+    // 四条边按周长加权
+    const topLen    = rw;            // 顶边
+    const bottomLen = rw;            // 底边
+    const leftLen   = rh;            // 左边
+    const rightLen  = rh;            // 右边
+    const total     = topLen + bottomLen + leftLen + rightLen;
+
+    let d = t * total;
+
+    // 顶边：从左到右
+    if (d < topLen) return { x: rx + d, y: ry };
+    d -= topLen;
+
+    // 右边：从上到下
+    if (d < rightLen) return { x: rx + rw, y: ry + d };
+    d -= rightLen;
+
+    // 底边：从右到左
+    if (d < bottomLen) return { x: rx + rw - d, y: ry + rh };
+    d -= bottomLen;
+
+    // 左边：从下到上
+    return { x: rx, y: ry + rh - d };
   }
 
   // ==================== 木 Wood：藤蔓破土而出 ====================
@@ -1180,7 +1235,7 @@ class SkillVFXRenderer {
       for (const p of arr) {
         const alpha = Math.min(1, p.life / (p.maxLife * 0.4));
         ctx.save();
-        ctx.globalAlpha = alpha * 0.8;
+        ctx.globalAlpha = alpha * 0.80;  // ★ Alpha 精确 80%
 
         switch (p.type) {
           case "water_drop":

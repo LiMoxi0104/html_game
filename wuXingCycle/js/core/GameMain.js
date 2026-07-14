@@ -102,10 +102,29 @@ class GameMain {
       }
     }
 
+    // ■ 加载主角跳跃序列帧（assets/img/player/jump/）
+    const jumpFrames = await this.asset.loadFrameSequence(
+      "assets/img/player/jump", "frame_", 138, "_nobg.png"
+    );
+
+    // ■ 加载奔跑序列帧（assets/img/player/run/，空文件夹时自动降级）
+    const runFrames = await this.asset.loadFrameSequence(
+      "assets/img/player/run", "frame_", 120, "_nobg.png"
+    );
+
+    // ■ 加载轻攻击序列帧（assets/img/player/attack1/，默认朝左）
+    const attackFrames = await this.asset.loadFrameSequence(
+      "assets/img/player/attack1", "frame_", 135, "_nobg.png"
+    );
+
     // 玩家
     this.player = new Player(mapCfg.spawn.x, mapCfg.spawn.y, consts);
     this.player.setAssetManager(this.asset);
     this.player.setAnimFrames(seqFrames);
+    this.player.setJumpFrames(jumpFrames);
+    this.player.setRunStartupFrames(seqFrames);    // move_frames = 起跑帧
+    this.player.setRunLoopFrames(runFrames);
+    this.player.setAttackFrames(attackFrames);     // ★ 轻攻击动画帧（attack1/）
 
     // —— 动态招式管理器（v2）——
     this.skill = new SkillManager(this.player, this.asset, this.data);
@@ -117,6 +136,9 @@ class GameMain {
     // 弹反系统
     this.parry = new ParrySystem(this.player, consts);
     this.player.setParrySystem(this.parry);       // ★ v4 注入弹反引用，供 takeDamage 检测
+
+    // ★ 暴露到全局，供 Player.verifyHitTint() 等调试验证使用
+    window._player = this.player;
 
     // ★ v4 战斗系统组件
     this.hitboxSys = new HitboxSystem();
