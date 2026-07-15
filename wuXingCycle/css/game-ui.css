@@ -81,3 +81,70 @@
 }
 .wx-dialog-close:hover { background: #a31515; }
 .wx-dialog-close:active { transform: scale(0.97); }
+
+/* === Loading 进度遮罩层 === */
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(18, 15, 12, 0.92);
+  z-index: 100;
+  transition: opacity 0.4s ease;
+  opacity: 1;
+}
+.loading-overlay.show { display: flex; }
+.loading-overlay.hide { opacity: 0; pointer-events: none; }
+
+.loading-box {
+  width: 50%;
+  max-width: 480px;
+  text-align: center;
+  color: #f5f0e6;
+}
+
+.loading-title {
+  font-family: "STXingkai", "华文行楷", "STKaiti", "KaiTi", serif;
+  font-size: clamp(24px, 3.5vw, 38px);
+  font-weight: 400;
+  color: #c0392b;
+  letter-spacing: 6px;
+  margin-bottom: 4px;
+  text-shadow: 0 0 16px rgba(192, 57, 43, 0.5);
+}
+
+.loading-subtitle {
+  font-family: "STXingkai", "华文行楷", "STKaiti", "KaiTi", serif;
+  font-size: clamp(12px, 1.5vw, 16px);
+  color: #8a7a6a;
+  letter-spacing: 4px;
+  margin-bottom: 32px;
+}
+
+.loading-bar-track {
+  width: 100%;
+  height: 8px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.loading-bar-fill {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, #8b0000, #c0392b, #e74c3c);
+  border-radius: 4px;
+  transition: width 0.15s ease;
+  box-shadow: 0 0 10px rgba(192, 57, 43, 0.5);
+}
+
+.loading-info {
+  display: flex;
+  justify-content: space-between;
+  font-family: "STXingkai", "华文行楷", "STKaiti", "KaiTi", serif;
+  font-size: clamp(11px, 1.2vw, 14px);
+  color: #a09080;
+  letter-spacing: 1px;
+}

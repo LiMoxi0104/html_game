@@ -42,173 +42,102 @@ class GameMain {
     this._mapConfigs = null;        // 缓存地图配置 JSON
   }
 
+  /**
+   * ★ v3 分层加载：Phase 0 只加载核心资源（3 秒内可玩），
+   * Phase 1 在游戏循环启动后后台加载其余内容。
+   * 进度条预计算总量，6 路流水线并发，绝不回退。
+   */
   async start() {
     this.canvas = document.getElementById("game");
     this._container = document.getElementById("game-container");
+    this._showLoading();
 
-    // 配置加载
+    // ==================== Step 1：配置加载 ====================
     const consts = await this.loadConsts();
     this.consts = consts;
 
-    // ■ 动态设置 canvas 物理分辨率（CSS 尺寸 × devicePixelRatio）
-    // 游戏逻辑坐标保持 960×540 不变，Renderer 内做 DPR 缩放变换
     const containerW = this._container.clientWidth;
     const containerH = this._container.clientHeight;
     this.renderer = new Renderer(this.canvas, consts);
     this.renderer.applyDPR(containerW, containerH);
 
-    // 存档加载（含 v1→v2 自动迁移）
     this.data = GameData.load();
     window.__WX_SAVE__ = this.data;
 
-    // 资源预加载
+    // 并行预取 JSON 配置
+    this._updateLoadingText("加载配置", "读取配置文件...");
+    const [mapConfigs, skillCfg, assetList] = await Promise.all([
+      fetch("config/mapConfig.json").then(r => r.json()),
+      fetch("config/skillConfig.json").then(r => r.json()),
+      fetch("config/assetList.json").then(r => r.json()).catch(() => ({ images: {} })),
+    ]);
+    this._mapConfigs = mapConfigs;
+    const staticCount = Object.keys(assetList.images || {}).length;
+
+    // ==================== Step 2：Phase 0 核心资源 ====================
     this.asset = new AssetManager(consts);
-    await this.asset.preload();
 
-    // ■ 加载角色序列帧
-    const seqFrames = await this.asset.loadFrameSequence(
-      "assets/img/player/move_frames", "frame_", 120, "_nobg.png"
-    );
+    // 预计算 Phase 0 总量（进度条从 0→100% 平滑走，永不回退）
+    const PHASE0_FRAMES = {
+      move:  121,    // player/move_frames
+      stop:  106,    // player/stop (空闲)
+      jump:  139,    // player/jump
+      run:   121,    // player/run
+      atk1:  136,    // player/attack1 (轻攻击)
+    };
+    const phase0FrameTotal = Object.values(PHASE0_FRAMES).reduce((a, b) => a + b, 0);
+    const PHASE0_TOTAL = staticCount + phase0FrameTotal;
 
-    // 输入系统
+    this.asset.setPhaseCallback((label, completed, total, pct) => {
+      this._updateLoadingBar(pct);
+      this._updateLoadingText(label, `${completed}/${total}`);
+    });
+    this.asset.initLoadSession("加载核心资源", PHASE0_TOTAL);
+
+    // 加载静态图片（并入进度会话）
+    await this.asset.preloadInSession();
+
+    // 加载主角核心动画帧：5 组并行，每组内部 6 路流水线并发
+    this._updateLoadingText("加载核心资源", "加载角色动画...");
+    const [moveFrames, stopFrames, jumpFrames, runFrames, attackFrames] = await Promise.all([
+      this.asset.loadFrameSequenceStreamed("assets/img/player/move_frames", "frame_", 120, "_nobg.png"),
+      this.asset.loadFrameSequenceStreamed("assets/img/player/stop", "frame_", 105, "_nobg.png"),
+      this.asset.loadFrameSequenceStreamed("assets/img/player/jump", "frame_", 138, "_nobg.png"),
+      this.asset.loadFrameSequenceStreamed("assets/img/player/run", "frame_", 120, "_nobg.png"),
+      this.asset.loadFrameSequenceStreamed("assets/img/player/attack1", "frame_", 135, "_nobg.png"),
+    ]);
+
+    // ==================== Step 3：初始化游戏系统 ====================
+    this._updateLoadingText("加载核心资源", "初始化游戏系统...");
+
     this.input = new InputManager();
-
-    // 地图加载
-    const mapConfigs = await fetch("config/mapConfig.json").then(r => r.json());
-    this._mapConfigs = mapConfigs;  // ★ v4 缓存用于转场
     const mapCfg = mapConfigs[this.data.currentMap] || mapConfigs.wuxingVillage;
     this.map = MapLoader.load(this.data.currentMap, consts, mapCfg, this.asset);
 
-    // ■ 加载岩甲蛰序列帧（assets/img/xiaoguai/5/）
-    this._rockFrames = await this.asset.loadFrameSequence(
-      "assets/img/xiaoguai/5", "frame_", 120, "_nobg.png"
-    );
-    // 注入精灵帧到所有 rockArmor 类型敌人
-    for (const e of this.map.enemies) {
-      if (e.type === "rockArmor" && e.setFrames) e.setFrames(this._rockFrames);
-    }
-
-    // ■ 加载玄铁卒序列帧（assets/img/xiaoguai/1/ move + hit）
-    this._ironMoveFrames = await this.asset.loadFrameSequence(
-      "assets/img/xiaoguai/1/move", "frame_", 71, "_nobg.png"
-    );
-    this._ironHitFrames = await this.asset.loadFrameSequence(
-      "assets/img/xiaoguai/1/hit", "frame_", 120, "_nobg.png"
-    );
-    // 注入到 ironSoldier 类型敌人
-    for (const e of this.map.enemies) {
-      if (e.type === "ironSoldier") {
-        if (e.setMoveFrames) e.setMoveFrames(this._ironMoveFrames);
-        if (e.setHitFrames)  e.setHitFrames(this._ironHitFrames);
-      }
-    }
-
-    // ■ 加载烬火游灵序列帧（assets/img/xiaoguai/4/ move + hit）
-    this._emberMoveFrames = await this.asset.loadFrameSequence(
-      "assets/img/xiaoguai/4/move", "frame_", 51, "_nobg.png"
-    );
-    this._emberHitFrames = await this.asset.loadFrameSequence(
-      "assets/img/xiaoguai/4/hit", "frame_", 101, "_nobg.png"
-    );
-    // 注入到 emberSpirit 类型敌人
-    for (const e of this.map.enemies) {
-      if (e.type === "emberSpirit") {
-        if (e.setMoveFrames) e.setMoveFrames(this._emberMoveFrames);
-        if (e.setHitFrames)  e.setHitFrames(this._emberHitFrames);
-      }
-    }
-
-    // ■ 加载凝汐灵序列帧（assets/img/xiaoguai/3/ move + hit）
-    this._tideMoveFrames = await this.asset.loadFrameSequence(
-      "assets/img/xiaoguai/3/move", "frame_", 27, "_nobg.png"
-    );
-    this._tideHitFrames = await this.asset.loadFrameSequence(
-      "assets/img/xiaoguai/3/hit", "frame_", 71, "_nobg.png"
-    );
-    // 注入到 tideSpirit 类型敌人
-    for (const e of this.map.enemies) {
-      if (e.type === "tideSpirit") {
-        if (e.setMoveFrames) e.setMoveFrames(this._tideMoveFrames);
-        if (e.setHitFrames)  e.setHitFrames(this._tideHitFrames);
-        if (e.setProjectileImage) e.setProjectileImage(this.asset.getImage("water_orb"));
-      }
-    }
-
-    // ■ 加载棘藤种序列帧（assets/img/xiaoguai/2/ shake + hit）
-    this._thornShakeFrames = await this.asset.loadFrameSequence(
-      "assets/img/xiaoguai/2/shake", "frame_", 47, "_nobg.png"
-    );
-    this._thornHitFrames = await this.asset.loadFrameSequence(
-      "assets/img/xiaoguai/2/hit", "frame_", 107, "_nobg.png"
-    );
-    // 注入到 thornSeed 类型敌人
-    for (const e of this.map.enemies) {
-      if (e.type === "thornSeed") {
-        if (e.setShakeFrames) e.setShakeFrames(this._thornShakeFrames);
-        if (e.setHitFrames)   e.setHitFrames(this._thornHitFrames);
-      }
-    }
-
-    // ■ 加载主角跳跃序列帧（assets/img/player/jump/）
-    const jumpFrames = await this.asset.loadFrameSequence(
-      "assets/img/player/jump", "frame_", 138, "_nobg.png"
-    );
-
-    // ■ 加载奔跑序列帧（assets/img/player/run/，空文件夹时自动降级）
-    const runFrames = await this.asset.loadFrameSequence(
-      "assets/img/player/run", "frame_", 120, "_nobg.png"
-    );
-
-    // ■ 加载轻攻击序列帧（assets/img/player/attack1/，默认朝左）
-    const attackFrames = await this.asset.loadFrameSequence(
-      "assets/img/player/attack1", "frame_", 135, "_nobg.png"
-    );
-
-    // ■ ★ 加载荆棘牢笼攻击序列帧（assets/img/player/attack3/attack3/）
-    const attack3Frames = await this.asset.loadFrameSequence(
-      "assets/img/player/attack3/attack3", "frame_", 54, "_nobg.png"
-    );
-
-    // ★ 加载墨龙冲三段式动画帧（molong/xuli + molong/weiyi）
-    this._molongAnim = new MolongAnimState(this.asset);
-    await this._molongAnim.load();
-
-    // 玩家
+    // 玩家（核心帧已就绪）
     this.player = new Player(mapCfg.spawn.x, mapCfg.spawn.y, consts);
     this.player.setAssetManager(this.asset);
-    this.player.setAnimFrames(seqFrames);
+    this.player.setAnimFrames(moveFrames);
+    this.player.setStopFrames(stopFrames);
     this.player.setJumpFrames(jumpFrames);
-    this.player.setRunStartupFrames(seqFrames);    // move_frames = 起跑帧
+    this.player.setRunStartupFrames(moveFrames);
     this.player.setRunLoopFrames(runFrames);
-    this.player.setAttackFrames(attackFrames);     // ★ 轻攻击动画帧（attack1/）
-    this.player.setAttack3Frames(attack3Frames);   // ★ 荆棘牢笼攻击动画帧（attack3/）
-    this.player.setMolongAnim(this._molongAnim);   // ★ 墨龙冲动画引用
-    this.player.setParryImage(this.asset.getImage("player_parry")); // ★ 弹反精灵图
+    this.player.setAttackFrames(attackFrames);
+    this.player.setParryImage(this.asset.getImage("player_parry"));
 
-    // ■ 加载空闲动画序列帧（assets/img/player/stop/）
-    const stopFrames = await this.asset.loadFrameSequence(
-      "assets/img/player/stop", "frame_", 105, "_nobg.png"
-    );
-    this.player.setStopFrames(stopFrames);         // ★ 空闲动画帧
-
-    // —— 动态招式管理器（v2）——
+    // 动态招式管理器
     this.skill = new SkillManager(this.player, this.asset, this.data);
-    const skillCfg = await fetch("config/skillConfig.json").then(r => r.json());
     this.skill.registerConfig(skillCfg);
     this.skill.initFromSave();
     this.player.setSkillSystem(this.skill);
-    this.skill.setMolongAnim(this._molongAnim);   // ★ 注入墨龙冲动画状态机
 
-    // ★ 加载荆棘牢笼草对象序列帧（assets/img/player/attack3/hit/）
-    this._thornTrapHitFrames = await this.asset.loadFrameSequence(
-      "assets/img/player/attack3/hit", "frame_", 120, "_nobg.png"
-    );
-    this.skill.setThornTrapFrames(this._thornTrapHitFrames);
+    // 墨龙冲 / 天剑坠 占位（动画帧 Phase 1 后台加载）
+    this._molongAnim = new MolongAnimState(this.asset);
+    this.player.setMolongAnim(this._molongAnim);
+    this.skill.setMolongAnim(this._molongAnim);
 
-    // ★ 加载金行·天剑坠 动画资源
     this._jianrenAnim = new JianrenAnimState(
-      this.asset,
-      this.player,
+      this.asset, this.player,
       (enemy) => {
         const skill = this.skill.skills['metal_sword'];
         const dmg = skill ? (skill.baseDamage || 38) : 38;
@@ -216,54 +145,164 @@ class GameMain {
         if (this.vfxRenderer) this.vfxRenderer.spawnHitSpark?.(enemy.x + enemy.w / 2, enemy.y + enemy.h / 2);
       }
     );
-    this._jianrenAnim.load();
     this.skill.setJianrenAnim(this._jianrenAnim);
     this.player.setJianrenAnim(this._jianrenAnim);
     this.player.setSkillJianImage(this.asset.getImage('player_jian'));
 
-    // 弹反系统
+    // 弹反
     this.parry = new ParrySystem(this.player, consts);
-    this.player.setParrySystem(this.parry);       // ★ v4 注入弹反引用，供 takeDamage 检测
+    this.player.setParrySystem(this.parry);
 
-    // ★ 暴露到全局，供 Player.verifyHitTint() 等调试验证使用
     window._player = this.player;
 
-    // ★ v4 战斗系统组件
+    // 战斗系统
     this.hitboxSys = new HitboxSystem();
     this.vfxRenderer = new SkillVFXRenderer(this.hitboxSys, this.asset);
-    // 注入到 SkillManager
     this.skill.setCombatSystems(this.hitboxSys, this.vfxRenderer);
 
-    // 陷阱系统
+    // 陷阱
     this.trap = new TrapSystem(mapCfg, Collision);
 
-    // UI（含技能面板入口 + 浮动文字渲染）
+    // UI
     this.ui = new UIManager(consts, this.data, this.player, this.skill, this.parry);
-    // 将浮动文字引用注入 UIManager，使其能绘制
-    if (this.ui.setFloatTexts) {
-      this.ui.setFloatTexts(this.floatTexts);
-    }
+    if (this.ui.setFloatTexts) this.ui.setFloatTexts(this.floatTexts);
 
     AudioManager.initOnGesture();
 
-    // 后台切页暂停
     document.addEventListener("visibilitychange", () => {
       this.paused = document.hidden;
       if (this.paused) AudioManager.pauseAll(); else AudioManager.resumeAll();
     });
 
-    // 首次操作说明弹窗
+    // ==================== Step 4：启动游戏循环 ====================
+    this._hideLoading();
     this.ui.showIntro();
 
     this.running = true;
     this.lastTime = performance.now();
     requestAnimationFrame(this.loop.bind(this));
+
+    // ==================== Step 5：后台加载剩余资源（不阻塞） ====================
+    this._loadBackground();
+  }
+
+  /**
+   * ★ v3 后台加载：特殊技能 + 全部怪物帧。
+   * 游戏已运行，用户可操作，所有资源后台静默载入。
+   */
+  async _loadBackground() {
+    console.log("[GameMain] 后台加载启动...");
+
+    // —— Phase 1.1：墨龙冲 + 荆棘攻击/受击帧
+    try { await this._molongAnim.load(); } catch (e) { console.warn("[GameMain] 墨龙冲加载失败", e); }
+
+    const [jingjiFrames, thornHitFrames] = await Promise.all([
+      this.asset.loadFrameSequenceBg("assets/img/player/attack3/attack3", "frame_", 54, "_nobg.png"),
+      this.asset.loadFrameSequenceBg("assets/img/player/attack3/hit", "frame_", 120, "_nobg.png"),
+    ]);
+    this.player.setAttack3Frames(jingjiFrames);
+    this.skill.setThornTrapFrames(thornHitFrames);
+
+    // 天剑坠
+    try { this._jianrenAnim.load(); } catch (e) { console.warn("[GameMain] 天剑坠加载失败", e); }
+
+    // —— Phase 1.2：全部怪物帧（9 组并行，每组 6 路流水线）
+    console.log("[GameMain] 后台加载怪物精灵...");
+    const [
+      rockF, ironM, ironH, emberM, emberH, tideM, tideH, thornS, thornH,
+    ] = await Promise.all([
+      this.asset.loadFrameSequenceBg("assets/img/xiaoguai/5",          "frame_", 120, "_nobg.png"),
+      this.asset.loadFrameSequenceBg("assets/img/xiaoguai/1/move",    "frame_", 71,  "_nobg.png"),
+      this.asset.loadFrameSequenceBg("assets/img/xiaoguai/1/hit",     "frame_", 120, "_nobg.png"),
+      this.asset.loadFrameSequenceBg("assets/img/xiaoguai/4/move",    "frame_", 51,  "_nobg.png"),
+      this.asset.loadFrameSequenceBg("assets/img/xiaoguai/4/hit",     "frame_", 101, "_nobg.png"),
+      this.asset.loadFrameSequenceBg("assets/img/xiaoguai/3/move",    "frame_", 27,  "_nobg.png"),
+      this.asset.loadFrameSequenceBg("assets/img/xiaoguai/3/hit",     "frame_", 71,  "_nobg.png"),
+      this.asset.loadFrameSequenceBg("assets/img/xiaoguai/2/shake",   "frame_", 47,  "_nobg.png"),
+      this.asset.loadFrameSequenceBg("assets/img/xiaoguai/2/hit",     "frame_", 107, "_nobg.png"),
+    ]);
+
+    this._rockFrames = rockF;
+    this._ironMoveFrames = ironM; this._ironHitFrames = ironH;
+    this._emberMoveFrames = emberM; this._emberHitFrames = emberH;
+    this._tideMoveFrames = tideM; this._tideHitFrames = tideH;
+    this._thornShakeFrames = thornS; this._thornHitFrames = thornH;
+
+    // 注入到当前地图已有敌人（如果有的话）
+    this._injectEnemyFrames();
+
+    console.log("[GameMain] 后台加载全部完成");
+  }
+
+  /** ★ v3：向当前地图注入已加载的怪物精灵帧 */
+  _injectEnemyFrames() {
+    if (!this.map || !this.map.enemies) return;
+    for (const e of this.map.enemies) {
+      switch (e.type) {
+        case "rockArmor":
+          if (this._rockFrames && e.setFrames) e.setFrames(this._rockFrames);
+          break;
+        case "ironSoldier":
+          if (this._ironMoveFrames && e.setMoveFrames) e.setMoveFrames(this._ironMoveFrames);
+          if (this._ironHitFrames && e.setHitFrames) e.setHitFrames(this._ironHitFrames);
+          break;
+        case "emberSpirit":
+          if (this._emberMoveFrames && e.setMoveFrames) e.setMoveFrames(this._emberMoveFrames);
+          if (this._emberHitFrames && e.setHitFrames) e.setHitFrames(this._emberHitFrames);
+          break;
+        case "tideSpirit":
+          if (this._tideMoveFrames && e.setMoveFrames) e.setMoveFrames(this._tideMoveFrames);
+          if (this._tideHitFrames && e.setHitFrames) e.setHitFrames(this._tideHitFrames);
+          if (e.setProjectileImage) e.setProjectileImage(this.asset.getImage("water_orb"));
+          break;
+        case "thornSeed":
+          if (this._thornShakeFrames && e.setShakeFrames) e.setShakeFrames(this._thornShakeFrames);
+          if (this._thornHitFrames && e.setHitFrames) e.setHitFrames(this._thornHitFrames);
+          break;
+      }
+    }
   }
 
   async loadConsts() {
     if (this._consts) return this._consts;
     this._consts = await fetch("config/gameConst.json").then(r => r.json());
     return this._consts;
+  }
+
+  // ═════════════ Loading 进度界面 ═════════════
+  _showLoading() {
+    const overlay = document.getElementById("loading-overlay");
+    if (overlay) overlay.classList.add("show");
+    this._updateLoadingBar(0);
+  }
+
+  /** ★ v3：支持双参数 — label = 阶段名称，detail = 计数/补充说明 */
+  _updateLoadingText(label, detail) {
+    const el = document.getElementById("loading-text");
+    if (el) {
+      el.textContent = detail ? `${label} · ${detail}` : label;
+    }
+  }
+
+  _updateLoadingBar(pct) {
+    const bar = document.getElementById("loading-bar-fill");
+    if (bar) bar.style.width = `${Math.round(pct * 100)}%`;
+    const pctEl = document.getElementById("loading-pct");
+    if (pctEl) pctEl.textContent = `${Math.round(pct * 100)}%`;
+  }
+
+  _hideLoading() {
+    this._updateLoadingBar(1);
+    // 延迟一帧让 100% 渲染出来
+    requestAnimationFrame(() => {
+      const overlay = document.getElementById("loading-overlay");
+      if (overlay) {
+        overlay.classList.add("hide");
+        overlay.addEventListener("transitionend", () => {
+          overlay.classList.remove("show", "hide");
+        }, { once: true });
+      }
+    });
   }
 
   loop(now) {
@@ -627,45 +666,8 @@ class GameMain {
     // 2. 重新载入新地图
     this.map = MapLoader.load(t.mapId, this.consts, newCfg, this.asset);
 
-    // ★ 注入岩甲蛰 + 玄铁卒精灵帧到新地图
-    if (this._rockFrames) {
-      for (const e of this.map.enemies) {
-        if (e.type === "rockArmor" && e.setFrames) e.setFrames(this._rockFrames);
-      }
-    }
-    if (this._ironMoveFrames || this._ironHitFrames) {
-      for (const e of this.map.enemies) {
-        if (e.type === "ironSoldier") {
-          if (e.setMoveFrames) e.setMoveFrames(this._ironMoveFrames);
-          if (e.setHitFrames)  e.setHitFrames(this._ironHitFrames);
-        }
-      }
-    }
-    if (this._emberMoveFrames || this._emberHitFrames) {
-      for (const e of this.map.enemies) {
-        if (e.type === "emberSpirit") {
-          if (e.setMoveFrames) e.setMoveFrames(this._emberMoveFrames);
-          if (e.setHitFrames)  e.setHitFrames(this._emberHitFrames);
-        }
-      }
-    }
-    if (this._tideMoveFrames || this._tideHitFrames) {
-      for (const e of this.map.enemies) {
-        if (e.type === "tideSpirit") {
-          if (e.setMoveFrames) e.setMoveFrames(this._tideMoveFrames);
-          if (e.setHitFrames)  e.setHitFrames(this._tideHitFrames);
-          if (e.setProjectileImage) e.setProjectileImage(this.asset.getImage("water_orb"));
-        }
-      }
-    }
-    if (this._thornShakeFrames || this._thornHitFrames) {
-      for (const e of this.map.enemies) {
-        if (e.type === "thornSeed") {
-          if (e.setShakeFrames) e.setShakeFrames(this._thornShakeFrames);
-          if (e.setHitFrames)   e.setHitFrames(this._thornHitFrames);
-        }
-      }
-    }
+    // ★ v3：注入精灵帧（复用统一的注入逻辑）
+    this._injectEnemyFrames();
 
     // 3. 重设玩家位置（传送至目标坐标，Y 轴上浮 40px 防止卡入地形）
     const SPAWN_LIFT_Y = 40;

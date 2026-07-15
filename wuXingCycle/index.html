@@ -14,6 +14,21 @@
     <div id="game-container">
       <canvas id="game"></canvas>
 
+      <!-- ★ loading 进度遮罩层 -->
+      <div id="loading-overlay" class="loading-overlay show">
+        <div class="loading-box">
+          <div class="loading-title">五行轮回</div>
+          <div class="loading-subtitle">烛龙囚笼</div>
+          <div class="loading-bar-track">
+            <div id="loading-bar-fill" class="loading-bar-fill"></div>
+          </div>
+          <div class="loading-info">
+            <span id="loading-text">正在加载...</span>
+            <span id="loading-pct">0%</span>
+          </div>
+        </div>
+      </div>
+
       <!-- 操作说明 / 提示弹窗（DOM 层，基于 #game-container 绝对定位，随画面缩放） -->
       <div id="wx-dialog" class="wx-dialog">
         <div class="wx-dialog-box">
@@ -84,7 +99,5 @@
   <!-- 音频 -->
   <script src="js/audio/AudioList.js"></script>
   <script src="js/audio/AudioManager.js"></script>
-  <!-- 测试 -->
-  <script src="tests/skillSystem_test.js"></script>
 </body>
 </html>
