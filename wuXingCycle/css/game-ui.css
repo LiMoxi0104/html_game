@@ -89,7 +89,7 @@
   display: none;
   align-items: center;
   justify-content: center;
-  background: rgba(18, 15, 12, 0.92);
+  background: url("../assets/img/loading_bg.jpg") center/cover no-repeat;
   z-index: 100;
   transition: opacity 0.4s ease;
   opacity: 1;
@@ -102,24 +102,10 @@
   max-width: 480px;
   text-align: center;
   color: #f5f0e6;
-}
-
-.loading-title {
-  font-family: "STXingkai", "华文行楷", "STKaiti", "KaiTi", serif;
-  font-size: clamp(24px, 3.5vw, 38px);
-  font-weight: 400;
-  color: #c0392b;
-  letter-spacing: 6px;
-  margin-bottom: 4px;
-  text-shadow: 0 0 16px rgba(192, 57, 43, 0.5);
-}
-
-.loading-subtitle {
-  font-family: "STXingkai", "华文行楷", "STKaiti", "KaiTi", serif;
-  font-size: clamp(12px, 1.5vw, 16px);
-  color: #8a7a6a;
-  letter-spacing: 4px;
-  margin-bottom: 32px;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 28px 24px;
+  border-radius: 8px;
+  backdrop-filter: blur(4px);
 }
 
 .loading-bar-track {
@@ -145,6 +131,6 @@
   justify-content: space-between;
   font-family: "STXingkai", "华文行楷", "STKaiti", "KaiTi", serif;
   font-size: clamp(11px, 1.2vw, 14px);
-  color: #a09080;
+  color: #c0b0a0;
   letter-spacing: 1px;
 }

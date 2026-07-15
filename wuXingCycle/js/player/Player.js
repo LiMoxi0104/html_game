@@ -657,6 +657,58 @@ class Player {
     return true;
   }
 
+  /**
+   * ★ v4 重生：在指定坐标满状态复活，并重置所有战斗/视觉状态。
+   */
+  respawn(x, y) {
+    this.x = x;
+    this.y = y;
+    this.vx = 0;
+    this.vy = 0;
+    this.hp = this.maxHp;
+    this.mp = this.maxMp;
+    this.state = "idle";
+    this.invuln = 2000;            // 重生后短暂无敌
+
+    // —— 重置死亡视觉 ——
+    this._deathTimer = 0;
+    this._deathRemoved = false;
+
+    // —— 重置战斗与运动状态 ——
+    this.clearCombatMarks();
+    this.onGround = false;
+    this.jumpCount = 0;
+    this.isJumpHolding = false;
+    this.jumpHoldTimer = 0;
+    this.dodgeTimer = 0;
+    this.dodgeCooldown = 0;
+    this.facingLock = false;
+    this.canCounter = false;
+    this.canExecute = false;
+
+    // —— 重置视觉/残影 ——
+    this._ghostSnapshots = [];
+    this.ghostRect = null;
+    this.ghostTimer = 0;
+    this._idleTimer = 0;
+    this._idleAnimActive = false;
+    this._jumpAnimDone = false;
+
+    // —— 重置攻击动画 ——
+    this._attackFrameIdx = 0;
+    this._attackFrameTotalMs = 0;
+    this._attack3Active = false;
+    this._attack3FrameIdx = 0;
+    this._attack3TotalMs = 0;
+
+    // —— 重置状态效果 ——
+    this.slowTimer = 0;
+    this.blindTimer = 0;
+    this.speedMultiplier = 1;
+
+    console.log(`[Player] 已重生至 (${Math.round(x)}, ${Math.round(y)})，HP=${this.maxHp}`);
+  }
+
   // ==================== 跳跃序列帧动画 ====================
 
   /**

@@ -55,6 +55,11 @@ const DEFAULT_SAVE = {
   mapExplore: {
     wuxingVillage: { unlock: true, box: [false, false] }
   },
+
+  // ★ v4 地图专属存档点：首次进入地图时记录坐标，死亡后原地重生
+  // 结构: { mapId: { x, y } }
+  mapSaves: {},
+
   timeScale: 1,
   freezeTimer: 0
 };
@@ -77,6 +82,7 @@ function migrateSaveV1(oldData) {
   data.mp = oldData.mp ?? DEFAULT_SAVE.mp;
   data.maxMp = oldData.maxMp ?? DEFAULT_SAVE.maxMp;
   data.mapExplore = oldData.mapExplore || DEFAULT_SAVE.mapExplore;
+  data.mapSaves   = oldData.mapSaves   || DEFAULT_SAVE.mapSaves;   // ★ v4
 
   // 旧 unlockSkill 迁移：将已解锁元素名映射为对应基础招式ID，装入技能池并自动装备
   const elementSkillMap = {
@@ -147,8 +153,11 @@ class GameData {
         data.equippedSkills = Object.assign({}, DEFAULT_SAVE.equippedSkills, data.equippedSkills);
         data.skillMastery = Object.assign({}, DEFAULT_SAVE.skillMastery, data.skillMastery);
       }
-      // 补全 mapExplore 中缺失的条目（全部五行地图）
-      if (!data.mapExplore) data.mapExplore = {};
+        // ★ v4 补全 mapSaves 字段
+        data.mapSaves = data.mapSaves || DEFAULT_SAVE.mapSaves;
+
+        // 补全 mapExplore 中缺失的条目（全部五行地图）
+        if (!data.mapExplore) data.mapExplore = {};
       if (!data.mapExplore.wuxingVillage) data.mapExplore.wuxingVillage = { unlock: true, box: [false, false] };
       const allMaps = ["jinDomain","muDomain","shuiDomain","huoDomain","tuDomain"];
       for (const m of allMaps) {

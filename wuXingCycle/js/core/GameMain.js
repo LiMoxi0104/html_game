@@ -37,6 +37,11 @@ class GameMain {
     this.inputFreezeTimer = 0;      // ★ 传送后输入冻结计时器 ms
     this.transitionTarget = null;   // { mapId, targetX, targetY }
     this._mapConfigs = null;        // 缓存地图配置 JSON
+
+    // ★ v4 重生系统
+    this._respawnState = null;      // null | "delay" | "fadeOut" | "resetting" | "fadeIn"
+    this._respawnTimer = 0;
+    this._respawnAlpha = 0;
   }
 
   /**
@@ -159,6 +164,9 @@ class GameMain {
 
     // 陷阱
     this.trap = new TrapSystem(mapCfg, Collision);
+
+    // ★ v4：记录初始地图存档点
+    this._recordMapSavePoint(this.data.currentMap, mapCfg.spawn.x, mapCfg.spawn.y);
 
     // UI
     this.ui = new UIManager(consts, this.data, this.player, this.skill, this.parry);
@@ -332,6 +340,12 @@ class GameMain {
   }
 
   update(dt) {
+    // ==================== ★ v4 重生状态处理 ====================
+    if (this._respawnState) {
+      this._updateRespawn(dt);
+      return;  // 重生期间暂停游戏逻辑
+    }
+
     // ==================== ★ v4 转场状态处理 ====================
     if (this.transitionState) {
       this._updateTransition(dt);
@@ -408,6 +422,11 @@ class GameMain {
 
     // ==================== 2. 玩家更新 ====================
     this.player.update(dt, this.input, this.map);
+
+    // ★ v4 死亡检测 → 触发重生流程
+    if (this.player.state === "dead" && this.player._deathRemoved) {
+      this._startRespawn();
+    }
 
     // ==================== 3. 敌人更新 ====================
     for (const e of this.map.enemies) {
@@ -635,6 +654,9 @@ class GameMain {
     this.player.jumpHoldTimer = 0;
     this.player.clearCombatMarks();
 
+    // ★ v4：记录新地图专属存档点（首次进入时自动记录当前位置）
+    this._recordMapSavePoint(t.mapId, this.player.x, this.player.y);
+
     // 4. 重建陷阱系统（绑定新地图的陷阱配置）
     try {
       this.trap = new TrapSystem(newCfg, Collision);
@@ -664,11 +686,146 @@ class GameMain {
 
   // 转场遮罩层绘制（屏幕空间）
   _drawTransitionOverlay(ctx) {
-    if (!this.transitionState) return;
+    if (!this.transitionState && !this._respawnState) return;
     const W = this.consts.canvas.width;
     const H = this.consts.canvas.height;
-    ctx.fillStyle = `rgba(0,0,0,${this.transitionAlpha})`;
+    // 重生遮罩优先于传送门转场遮罩
+    const alpha = this._respawnState ? this._respawnAlpha : this.transitionAlpha;
+    ctx.fillStyle = `rgba(0,0,0,${alpha})`;
     ctx.fillRect(0, 0, W, H);
+  }
+
+  // ═════════════ ★ v4 重生系统 ═════════════
+
+  /**
+   * 记录地图专属存档点：仅在首次进入该地图时写入。
+   * 不同地图之间的存档点互不干扰。
+   */
+  _recordMapSavePoint(mapId, x, y) {
+    if (!this.data.mapSaves) this.data.mapSaves = {};
+    if (!this.data.mapSaves[mapId]) {
+      this.data.mapSaves[mapId] = { x: Math.round(x), y: Math.round(y) };
+      GameData.save(this.data);
+      console.log(`[GameMain] 已记录地图存档点: ${mapId} (${Math.round(x)}, ${Math.round(y)})`);
+    }
+  }
+
+  /** 触发重生流程 */
+  _startRespawn() {
+    if (this._respawnState) return;  // 防止重复触发
+    console.log("[GameMain] 角色死亡，启动重生...");
+    this._respawnState = "delay";
+    this._respawnTimer = 600;   // 死亡后等待 600ms
+    this._respawnAlpha = 0;
+  }
+
+  /** 重生状态机：delay → fadeOut → resetting → fadeIn → done */
+  _updateRespawn(dt) {
+    const STAGE_MS = 400;  // 淡入/淡出各 400ms
+
+    switch (this._respawnState) {
+      case "delay":
+        this._respawnTimer -= dt;
+        if (this._respawnTimer <= 0) {
+          this._respawnState = "fadeOut";
+          this._respawnTimer = 0;
+        }
+        break;
+
+      case "fadeOut":
+        this._respawnTimer += dt;
+        this._respawnAlpha = Math.min(1, this._respawnTimer / STAGE_MS);
+        if (this._respawnAlpha >= 1) {
+          this._executeRespawn();
+          this._respawnState = "fadeIn";
+          this._respawnTimer = 0;
+          this._respawnAlpha = 1;
+        }
+        break;
+
+      case "fadeIn":
+        this._respawnTimer += dt;
+        this._respawnAlpha = Math.max(0, 1 - this._respawnTimer / STAGE_MS);
+        if (this._respawnAlpha <= 0) {
+          // 重生完成
+          this._respawnState = null;
+          this._respawnAlpha = 0;
+          if (this.input) this.input.reset();
+          this.inputFreezeTimer = 300;  // 短暂输入冻结
+          console.log("[GameMain] 重生完成");
+        }
+        break;
+
+      case "resetting":
+      default:
+        // 不应停留在此状态，强制结束
+        this._respawnState = "fadeIn";
+        this._respawnTimer = 0;
+        break;
+    }
+  }
+
+  /**
+   * 执行重生：读取当前地图存档点，重置玩家/怪物/陷阱。
+   * 地图切换时也复用此逻辑作为"软重置"。
+   */
+  _executeRespawn() {
+    const mapId = this.data.currentMap;
+    const mapCfg = this._mapConfigs[mapId];
+    if (!mapCfg) {
+      console.error(`[GameMain] 重生失败：地图 ${mapId} 配置不存在`);
+      return;
+    }
+
+    // 读取该地图的专属存档点
+    const savePt = (this.data.mapSaves && this.data.mapSaves[mapId])
+      || { x: mapCfg.spawn.x, y: mapCfg.spawn.y };
+    const sx = savePt.x;
+    const sy = savePt.y;
+
+    console.log(`[GameMain] 重生地点: ${mapId} (${sx}, ${sy})`);
+
+    // —— 1. 复活玩家 ——
+    this.player.respawn(sx, sy);
+
+    // —— 2. 重置地图（重建敌人实例 + 陷阱系统）——
+    this.map = MapLoader.load(mapId, this.consts, mapCfg, this.asset);
+    this._injectEnemyFrames();
+
+    try {
+      this.trap = new TrapSystem(mapCfg, Collision);
+    } catch (e) {
+      console.error("[GameMain] 陷阱重建失败:", e);
+      this.trap = new TrapSystem({ traps: [] }, Collision);
+    }
+
+    // —— 3. 重置相机到玩家位置 ——
+    const halfW = this.consts.canvas.width / 2;
+    this.cameraX = Math.max(0,
+      Math.min(sx + this.player.w / 2 - halfW,
+        this.map.width - this.consts.canvas.width));
+    this.cameraX = Math.max(0, this.cameraX);
+
+    // —— 4. 取消所有进行中的技能 ——
+    if (this.skill) {
+      this.skill.cancelCharge();
+      if (this.skill.active) this.skill.active = null;
+    }
+    this._chargeSlot = null;
+
+    // —— 5. 浮动提示 ——
+    this.floatTexts.push({
+      text: "轮回重生",
+      x: this.consts.canvas.width / 2,
+      y: 100, startY: 100,
+      color: "#caa64a",
+      timer: 2000, duration: 2000
+    });
+
+    // —— 6. 保存状态 ——
+    GameData.save(this.data);
+
+    console.log("[GameMain] 复活完成：HP已满，敌人已重生，陷阱已重置");
   }
 
 }
