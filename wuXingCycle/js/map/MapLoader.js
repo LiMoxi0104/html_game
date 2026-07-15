@@ -220,13 +220,16 @@ class MapLoader {
       const img = asset ? asset.getImage("plat_" + t) : null;
 
       if (img && img.complete && img.naturalWidth > 0) {
-        // 精灵图：高度 = 平台高，宽度按比例自动计算，平铺覆盖全宽
-        const tileH = p.h;
-        const tileW = tileH * (img.naturalWidth / img.naturalHeight);
+        // 精灵图：高 = 碰撞高 × renderScaleY，宽 = 碰撞高按原始比例 × renderScaleX（宽高独立缩放）
+        const scaleY = p.renderScaleY || 1.0;
+        const scaleX = p.renderScaleX || 1.0;
+        const tileH = p.h * scaleY;
+        const tileW = p.h * (img.naturalWidth / img.naturalHeight) * scaleX;
         if (tileW > 0) {
+          const drawY = p.y - (tileH - p.h); // 向上延伸不改变碰撞区
           const count = Math.ceil(p.w / tileW);
           for (let i = 0; i < count; i++) {
-            ctx.drawImage(img, p.x + i * tileW, p.y, tileW, tileH);
+            ctx.drawImage(img, p.x + i * tileW, drawY, tileW, tileH);
           }
         }
       } else {

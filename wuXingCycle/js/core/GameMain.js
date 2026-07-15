@@ -449,8 +449,8 @@ class GameMain {
     this.map.drawBackground(ctx, this.cameraX);
     this.map.drawGround(ctx, this.cameraX);
     this.map.drawPlatforms(ctx);
+    this.map.drawStructures(ctx);   // ★ 建筑/装饰（平台之上、传送门之下）
     this.map.drawPortals(ctx);
-    this.map.drawStructures(ctx);   // ★ 建筑/装饰（背景之上、角色之下）
     this.trap.draw(ctx);
     for (const e of this.map.enemies) e.draw(ctx);
     this.player.draw(ctx);
