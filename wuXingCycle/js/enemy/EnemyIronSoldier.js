@@ -53,6 +53,9 @@ class EnemyIronSoldier extends EnemyBase {
     this._map = null;
     this._mapInjected = false;
 
+    // ★ v4 地面吸附粘滞状态
+    this._currentSurfaceY = null;   // null=站在 groundY，否则为当前站立平台的 y
+
     // —— 序列帧 ——
     this._moveFrames = [];
     this._hitFrames = [];
@@ -134,29 +137,68 @@ class EnemyIronSoldier extends EnemyBase {
   /** 脚底中心 X（缩放后） */
   _feetCx()   { return this.x + this._scaledW() / 2; }
 
+  /**
+   * ★ 查找脚底所站立面的 Y 坐标。
+   * 引入 _currentSurfaceY 粘滞：当敌人已在平台上时，短暂离开平台边缘
+   * 不会被误判为落到 groundY，避免因平台间隙造成的 y 跳变。
+   */
   _getStandSurfaceY() {
     if (!this._map) return this.y + this._scaledH();
     const fx = this._feetCx();
     let sy = this._map.groundY;
-    if (this._map.platforms)
-      for (const p of this._map.platforms)
+
+    if (this._map.platforms) {
+      for (const p of this._map.platforms) {
         if (fx >= p.x && fx <= p.x + p.w && p.y < sy) sy = p.y;
+      }
+    }
+
+    // ★ 粘滞：若当前站在平台上而脚底所在位置无任何平台覆盖，
+    //   则保持上一个表面的 Y（防止因空隙瞬间掉到 groundY）
+    if (sy === this._map.groundY
+        && this._currentSurfaceY !== null
+        && this._currentSurfaceY < this._map.groundY) {
+      return this._currentSurfaceY;
+    }
+
+    this._currentSurfaceY = sy;
     return sy;
   }
+
+  /**
+   * ★ 前探点是否有地面/平台支撑。
+   * 敌人站在 groundY 上时 → 全图有支撑。
+   * 敌人站在平台上时 → 仅当探点落在任意平台上时才有支撑，防止走出平台边缘。
+   */
   _hasSupportAt(fx) {
     if (!this._map) return true;
-    if (this._map.platforms)
-      for (const p of this._map.platforms)
+    if (this._map.platforms) {
+      for (const p of this._map.platforms) {
         if (fx >= p.x && fx <= p.x + p.w) return true;
-    return true;
+      }
+    }
+    // 只在站在 groundY（非平台）上时，groundY 才提供支撑
+    return (this._currentSurfaceY === null || this._currentSurfaceY >= this._map.groundY);
   }
+
+  /**
+   * ★ 平滑地面吸附：使用渐进逼近代替硬赋值 this.y = cy，
+   *   消除因平台间隙导致 surfaceY 突变时的视觉瞬移。
+   *   仅在 chase/cooldown 状态下吸附（攻击时保持原地）。
+   */
   _snapToGround() {
     const sy = this._getStandSurfaceY();
-    const cy = sy - this._scaledH();
-    if (Math.abs(this.y - cy) > 1) {
-      console.log(`[IronSoldier] ${this.id} snap: ${this.y.toFixed(1)} → ${cy.toFixed(1)}`);
-      this.y = cy;
+    const targetY = sy - this._scaledH();
+    const diff = targetY - this.y;
+
+    if (Math.abs(diff) < 0.3) {
+      this.y = targetY;
+      return;
     }
+
+    // 平滑逼近：速度与距离成正比（距离越大逼近越快），最低 2px/帧。
+    const speed = Math.max(2, Math.abs(diff) * 0.25);
+    this.y += Math.sign(diff) * Math.min(speed, Math.abs(diff));
   }
 
   // ════════════════════ 主更新 ════════════════════
@@ -181,8 +223,10 @@ class EnemyIronSoldier extends EnemyBase {
       if (this.x < pad) this.x = pad;
       if (this.x > this._map.width - this._scaledW() - pad)
         this.x = this._map.width - this._scaledW() - pad;
-      // ★ 持续地面吸附：防止受击击退导致浮空
-      this._snapToGround();
+      // ★ 吸附仅限 chase/cooldown 状态，避免攻击瞬间跳位
+      if (this._state === "chase" || this._state === "cooldown") {
+        this._snapToGround();
+      }
     }
   }
 
