@@ -350,18 +350,4 @@ class EnemyEmberSpirit extends EnemyBase {
     ctx.fill();
   }
 
-  // ═══════════════ 调试信息 ═══════════════
-
-  getDebugInfo() {
-    return {
-      id: this.id,
-      type: this.type,
-      state: this._state,
-      hp: this.hp,
-      maxHp: this.maxHp,
-      explosionCount: this._explosionCount,
-      pos: `(${this.x.toFixed(0)}, ${this.y.toFixed(0)})`,
-      direction: this._direction > 0 ? "right" : "left"
-    };
-  }
 }

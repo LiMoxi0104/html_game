@@ -29,9 +29,6 @@ class GameMain {
     // 数组：[{text, x, y, color, timer, duration}]
     this.floatTexts = [];
 
-    // —— 碰撞箱可视化调试 ——
-    this.showHitboxes = false;
-
     // ★ v4 传送门 / 转场系统
     this.transitionState = null;    // null | "fadeOut" | "switching" | "fadeIn"
     this.transitionAlpha = 0;       // 0=透明 1=全黑
@@ -155,7 +152,7 @@ class GameMain {
 
     window._player = this.player;
 
-    // 战斗系统
+    // ★ v4 战斗系统组件
     this.hitboxSys = new HitboxSystem();
     this.vfxRenderer = new SkillVFXRenderer(this.hitboxSys, this.asset);
     this.skill.setCombatSystems(this.hitboxSys, this.vfxRenderer);
@@ -347,43 +344,6 @@ class GameMain {
     }
     const inputFrozen = this.inputFreezeTimer > 0;
 
-    // ==================== 0. 碰撞箱可视化切换（H 键） ====================
-    if (!inputFrozen && this.input) {
-      const hNow = this.input.isDown("h");
-      if (hNow && !this._wasHDown) {
-        this.showHitboxes = !this.showHitboxes;
-        this.addFloatText(this.showHitboxes ? "碰撞箱 ON" : "碰撞箱 OFF", "#88ddff");
-      }
-      this._wasHDown = hNow;
-    }
-
-    // ★ DEBUG 飞行模式（Q 键切换，后续整块可删除）——
-    if (!inputFrozen && this.player && this.input.flyTogglePressed()) {
-      this.player.toggleFly();
-      this.addFloatText(this.player.isFlying ? "飞行 ON" : "飞行 OFF", "#88ddff");
-    }
-
-    // ★ v5 调试：U 键解锁全部技能
-    if (!inputFrozen && this.input && this.input._wasUDown === undefined) this.input._wasUDown = false;
-    const uDown = !inputFrozen && !!(this.input && this.input.down && this.input.down["u"]);
-    if (this.skill && uDown && !this.input._wasUDown) {
-      const result = this.skill.unlockAllSkills();
-      if (result.unlocked > 0) {
-        if (this.ui && this.ui.skillPanel) {
-          this.ui.skillPanel._invalidateFilterCache();
-        }
-        this.floatTexts.push({
-          text: `已解锁 ${result.unlocked} 个新技能（共 ${result.total}）`,
-          x: this.consts.canvas.width / 2,
-          y: 120,
-          color: "#caa64a",
-          timer: 3000,
-          duration: 3000
-        });
-      }
-    }
-    if (this.input) this.input._wasUDown = uDown;
-
     // ★ v4 VFX 粒子更新（每帧驱动）
     if (this.vfxRenderer) this.vfxRenderer.update(dt);
 
@@ -392,7 +352,7 @@ class GameMain {
       this._jianrenAnim.update(dt, this.map.enemies);
     }
 
-    // ==================== 0.1 闪避触发（Shift，优先于攻击）====================
+    // ==================== 0. 闪避触发（Shift，优先于攻击）====================
     if (!inputFrozen && this.input.dodgePressed()) {
       if (this.player.startDodge(this.input, this.map.width)) {
         AudioManager.play && AudioManager.play("dodge");
@@ -484,7 +444,6 @@ class GameMain {
       const perfectDodge = this.trap.checkAtPosition(ghost);
       if (perfectDodge) {
         // 完美闪避成功！
-        console.log("[GameMain] 完美闪避！陷阱:", perfectDodge.type);
         // 延长无敌至 500ms
         this.player.invuln = Math.max(this.player.invuln, 500);
         // 设置反击标记
@@ -532,14 +491,13 @@ class GameMain {
     this.map.drawBackground(ctx, this.cameraX);
     this.map.drawGround(ctx, this.cameraX);
     this.map.drawPlatforms(ctx);
+    this.map.drawStructures(ctx);   // ★ 建筑/装饰（平台之上、传送门之下）
     this.map.drawPortals(ctx);
-    this.map.drawStructures(ctx);   // ★ 建筑/装饰（背景之上、角色之下）
     this.trap.draw(ctx);
     for (const e of this.map.enemies) e.draw(ctx);
     this.player.draw(ctx);
     this.skill.draw(ctx);
     this.parry.draw(ctx);
-    this._drawHitboxes(ctx);
     this.renderer.endWorld();
 
     // —— UI 层（屏幕空间）：状态栏 + 技能面板 + 浮动文字 ——
@@ -580,7 +538,6 @@ class GameMain {
 
   // 触发传送门
   _triggerPortal(portalCfg) {
-    console.log(`[GameMain] 进入传送门 → ${portalCfg.targetMap}`);
     this.portalCooldown = 1500;               // 1.5 秒冷却
     this.transitionTarget = {
       mapId:   portalCfg.targetMap,
@@ -637,7 +594,6 @@ class GameMain {
         if (this.input) this.input.reset();
         // ★ 启动 0.5 秒操作冻结期，避免动作残留
         this.inputFreezeTimer = 500;
-        console.log("[GameMain] 转场完成，输入已重置 + 冻结 1s");
       }
     }
   }
@@ -653,8 +609,6 @@ class GameMain {
       this.transitionState = null;
       return;
     }
-
-    console.log(`[GameMain] 切换至地图: ${newCfg.name}`, `坐标:(${t.targetX},${t.targetY})`);
 
     // 1. 保存当前地图到存档
     this.data.currentMap = t.mapId;
@@ -706,8 +660,6 @@ class GameMain {
       timer: 1800,
       duration: 1800
     });
-
-    console.log("[GameMain] 地图 + 陷阱 + 玩家位置已重置");
   }
 
   // 转场遮罩层绘制（屏幕空间）
@@ -719,83 +671,6 @@ class GameMain {
     ctx.fillRect(0, 0, W, H);
   }
 
-  // ==================== 碰撞箱可视化调试 ====================
-  // 在世界空间中以半透明线框叠加渲染所有物体的碰撞矩形
-  _drawHitboxes(ctx) {
-    if (!this.showHitboxes) return;
-
-    const fillA = 0.12;     // 填充透明度
-    const strokeA = 0.65;   // 边框透明度
-    const lw = 1.5;         // 线宽
-
-    // 辅助：绘制一个 AABB 矩形
-    const drawBox = (rect) => {
-      if (!rect) return;
-      ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
-      ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
-    };
-
-    // 1. 玩家 — 青色
-    ctx.strokeStyle = `rgba(0,230,200,${strokeA})`;
-    ctx.fillStyle   = `rgba(0,230,200,${fillA})`;
-    ctx.lineWidth   = lw;
-    drawBox(this.player.getRect());
-
-    // 2. 敌人 — 红色
-    ctx.strokeStyle = `rgba(255,70,70,${strokeA})`;
-    ctx.fillStyle   = `rgba(255,70,70,${fillA})`;
-    for (const e of this.map.enemies) {
-      if (!e.alive) continue;
-      drawBox(e.getRect());
-    }
-
-    // 3. 陷阱 — 橙色（圆形碰撞体用圆绘制，矩形用框绘制）
-    ctx.strokeStyle = `rgba(255,160,40,${strokeA})`;
-    ctx.fillStyle   = `rgba(255,160,40,${fillA})`;
-    for (const t of this.trap.traps) {
-      const c = t.getCircle && t.getCircle();
-      if (c) {
-        ctx.beginPath();
-        ctx.arc(c.cx, c.cy, c.r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-      } else {
-        drawBox(t.getRect());
-      }
-    }
-
-    // 4. 平台 — 蓝色
-    if (this.map.platforms) {
-      ctx.strokeStyle = `rgba(80,160,255,${strokeA})`;
-      ctx.fillStyle   = `rgba(80,160,255,${fillA})`;
-      for (const p of this.map.platforms) {
-        drawBox(p);
-      }
-    }
-
-    // 5. 传送门 — 紫色（圆形碰撞体，与 checkPortalCollision 圆心/半径一致）
-    if (this.map.portals) {
-      ctx.strokeStyle = `rgba(200,90,255,${strokeA})`;
-      ctx.fillStyle   = `rgba(200,90,255,${fillA})`;
-      for (const p of this.map.portals) {
-        const cx = p.x + p.w / 2;
-        const cy = p.y + p.h / 2;
-        const r  = Math.min(p.w, p.h) / 2;
-        ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-      }
-    }
-
-    // 6. 当前攻击判定箱 — 黄色
-    const activeHb = this.skill && this.skill.getActiveHitbox && this.skill.getActiveHitbox();
-    if (activeHb) {
-      ctx.strokeStyle = `rgba(255,255,60,${strokeA})`;
-      ctx.fillStyle   = `rgba(255,255,60,${fillA * 1.5})`;
-      drawBox(activeHb);
-    }
-  }
 }
 
 window.addEventListener("DOMContentLoaded", () => {

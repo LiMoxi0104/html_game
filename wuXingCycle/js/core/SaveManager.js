@@ -318,17 +318,6 @@ class SaveManager {
     }
     return null;
   }
-
-  // 导出当前状态（调试用）
-  debugInfo() {
-    return {
-      currentSlot: this.currentSlot,
-      maxSlots: this._MAX_SLOTS,
-      slots: this.getAllSlotMetas(),
-      migrated: this._migrated,
-      storageAvailable: StorageUtil.available()
-    };
-  }
 }
 
 // ======================== 全局单例导出 ========================

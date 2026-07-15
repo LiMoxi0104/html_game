@@ -57,8 +57,6 @@ class MolongAnimState {
     this._chargeInterval = MolongAnimState.CHARGE_MS / n;
     this._endInterval    = MolongAnimState.END_MS / n;
     this._loaded = true;
-    console.log(`[MolongAnim] 加载完成 xuli=${n} weiyi=${this._weiyi.length} ` +
-      `chargeInt=${this._chargeInterval.toFixed(2)}ms endInt=${this._endInterval.toFixed(2)}ms`);
     return this;
   }
 
@@ -88,7 +86,6 @@ class MolongAnimState {
     this._frameIdx = 0;
     this._currentFrame = this._xuliFwd[0] || null;
     this._displayScale = MolongAnimState.SCALE_MIN;  // ★ 初始 1x
-    console.log('[MolongAnim] → CHARGE 蓄力阶段 scale=1x');
     return true;
   }
 
@@ -101,7 +98,6 @@ class MolongAnimState {
     // 否则从 weiyi[0] 开始
     this._frameIdx = 0;
     this._currentFrame = this._weiyi[0] || this._xuliFwd[this._xuliFwd.length - 1] || null;
-    console.log('[MolongAnim] → DASH 位移阶段');
     return true;
   }
 
@@ -112,7 +108,6 @@ class MolongAnimState {
     this._timer = 0;
     this._frameIdx = 0;
     this._currentFrame = this._xuliRev[0] || null;
-    console.log('[MolongAnim] → END 收尾阶段');
   }
 
   /** 强制重置 */
@@ -170,7 +165,6 @@ class MolongAnimState {
           this._state = MolongAnimState.DONE;
           this._currentFrame = null;
           this._displayScale = 1;  // ★ 确保收尾后复位
-          console.log('[MolongAnim] → DONE 完成 scale=1x');
           if (typeof this._onDone === 'function') this._onDone();
         }
         break;

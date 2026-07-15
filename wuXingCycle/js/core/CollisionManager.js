@@ -93,10 +93,7 @@ class CollisionManager {
       exitEvents: 0
     };
 
-    // 调试模式
-    this.debugMode = false;
-
-    // 缓存上一帧的 pair key → pair 映射
+  // 缓存上一帧的 pair key → pair 映射
     this._prevKeys = new Set();
   }
 
@@ -259,11 +256,6 @@ class CollisionManager {
     this._prevPairs.clear();
     for (const p of this.currentPairs) {
       this._prevPairs.set(this._pairKey(p.entityA, p.entityB), p);
-    }
-
-    if (this.debugMode) {
-      console.log(`[CollisionManager] checks=${this.stats.totalChecks}, hits=${this.stats.collisionsFound}, ` +
-                  `enter=${this.stats.enterEvents}, stay=${this.stats.stayEvents}, exit=${this.stats.exitEvents}`);
     }
   }
 

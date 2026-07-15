@@ -1040,37 +1040,8 @@ class SkillManager {
     }
   }
 
+
   // ======================== 技能池：学习 / 查询 ========================
-
-  // ★ v5 新增：解锁所有未拥有的技能（调试/测试用途）
-  // 遍历 skills 配置表，对每个 isOwned()==false 的技能执行 learnSkill()
-  // 返回统计：{ total: 总数, unlocked: 本次新解锁数量, skipped: 已拥有跳过数量 }
-  unlockAllSkills() {
-    const allSkillIds = Object.keys(this.skills);
-    let unlocked = 0;
-    let skipped = 0;
-
-    for (const skillId of allSkillIds) {
-      const skillCfg = this.skills[skillId];
-      if (skillCfg && skillCfg.unlockMode === "locked") {
-        skipped++;
-        continue;                    // ★ 锁定技能不可解锁，跳过
-      }
-      if (this.isOwned(skillId)) {
-        skipped++;
-        continue;                    // 已拥有，跳过避免重复操作
-      }
-      const success = this.learnSkill(skillId);  // 调用标准学习流程（含自动装备+存档）
-      if (success) {
-        unlocked++;
-        console.log(`[SkillManager] 批量解锁 → ${this.skills[skillId]?.name || skillId}`);
-      }
-    }
-
-    const result = { total: allSkillIds.length, unlocked, skipped };
-    console.log(`[SkillManager] unlockAllSkills 完成: ${result.unlocked} 个新解锁, ${result.skipped} 个已有, 共 ${result.total} 个技能`);
-    return result;
-  }
 
   // 是否已拥有某招式
   isOwned(skillId) {
@@ -1236,22 +1207,6 @@ class SkillManager {
         if (phase && this.vfxRenderer && skill.element && skill.element !== "none" && !isMolongActive && !isJianrenActive) {
           // ★ v4：优先使用 VFXRenderer 绘制水墨特效
           this.vfxRenderer.render(ctx, skill, cast, this.player, progress);
-
-          // 调试模式：叠加碰撞箱可视化
-          if (this.hitboxSystem && this.hitboxSystem.debugMode) {
-            const hb = this.hitboxSystem.getCurrentHitbox(skill, cast, this.player)
-              || this.hitboxSystem.getCurrentFrameData(skill, cast);
-            if (hb) {
-              const debugHb = hb.isHitFrame ? hb : {
-                ...hb,
-                isHitFrame: false, damage: 0, knockback: 0,
-                frameIndex: cast.frameIndex, element: skill.element, skillId: cast.id
-              };
-              if (!debugHb.w) { debugHb.w = debugHb.width; debugHb.h = debugHb.height; }
-              this.hitboxSystem.drawDebug(ctx, debugHb, this.player, null);
-            }
-            this.hitboxSystem.drawPlayerAnchor(ctx, this.player);
-          }
 
           // 渲染粒子效果
           this.vfxRenderer.renderParticles(ctx);

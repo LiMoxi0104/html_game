@@ -22,35 +22,35 @@
     "width": 2000,
     "height": 540,
     "groundY": 520,
-    "spawn": { "x": 150, "y": 436 },
+    "spawn": { "x": 150, "y": 430 },
     "enemies": [
-      { "id": "iron_0", "type": "ironSoldier", "x": 120, "y": 440, "w": 40, "h": 62, "hp": 150, "renderW": 120, "renderH": 186, "chaseSpeed": 0.4, "detectRadius": 60, "damage": 14 },
-      { "id": "iron_1", "type": "ironSoldier", "x": 580, "y": 440, "w": 40, "h": 62, "hp": 180, "renderW": 120, "renderH": 186, "chaseSpeed": 0.45, "detectRadius": 60, "damage": 16 },
-      { "id": "iron_2", "type": "ironSoldier", "x": 1750, "y": 440, "w": 40, "h": 62, "hp": 220, "renderW": 120, "renderH": 186, "chaseSpeed": 0.5, "detectRadius": 65, "damage": 20 }
+      { "id": "iron_0", "type": "ironSoldier", "x": 120, "y": 428, "w": 40, "h": 62, "hp": 150, "renderW": 120, "renderH": 186, "chaseSpeed": 0.4, "detectRadius": 60, "damage": 14 },
+      { "id": "iron_1", "type": "ironSoldier", "x": 1100, "y": 238, "w": 40, "h": 62, "hp": 180, "renderW": 120, "renderH": 186, "chaseSpeed": 0.45, "detectRadius": 65, "damage": 16 },
+      { "id": "iron_2", "type": "ironSoldier", "x": 1750, "y": 428, "w": 40, "h": 62, "hp": 220, "renderW": 120, "renderH": 186, "chaseSpeed": 0.5, "detectRadius": 65, "damage": 20 }
     ],
     "traps": [],
     "platforms": [
-      { "x": 0, "y": 500, "w": 320, "h": 20, "type": "metal_floor" },
-      { "x": 340, "y": 500, "w": 25, "h": 10, "type": "metal_floor" },
-      { "x": 370, "y": 500, "w": 25, "h": 10, "type": "metal_floor" },
-      { "x": 400, "y": 500, "w": 25, "h": 10, "type": "metal_floor" },
-      { "x": 430, "y": 500, "w": 25, "h": 10, "type": "metal_floor" },
-      { "x": 460, "y": 500, "w": 25, "h": 10, "type": "metal_floor" },
-      { "x": 500, "y": 500, "w": 200, "h": 20, "type": "metal_floor" },
-      { "x": 700, "y": 480, "w": 60, "h": 20, "type": "metal_step" },
-      { "x": 770, "y": 450, "w": 60, "h": 20, "type": "metal_step" },
-      { "x": 840, "y": 420, "w": 60, "h": 20, "type": "metal_step" },
-      { "x": 900, "y": 420, "w": 60, "h": 20, "type": "metal_step" },
-      { "x": 970, "y": 420, "w": 200, "h": 20, "type": "pipe_floor" },
-      { "x": 1180, "y": 450, "w": 60, "h": 20, "type": "metal_step" },
-      { "x": 1250, "y": 480, "w": 60, "h": 20, "type": "metal_step" },
-      { "x": 1320, "y": 500, "w": 180, "h": 20, "type": "metal_floor" },
-      { "x": 1520, "y": 460, "w": 130, "h": 20, "type": "metal_floor" },
-      { "x": 1670, "y": 500, "w": 330, "h": 20, "type": "metal_floor" }
+      { "x": 0,   "y": 490, "w": 350, "h": 60, "type": "metal_floor", "renderScaleY": 2.0 },
+      { "x": 370, "y": 490, "w": 35,  "h": 24, "type": "metal_floor", "renderScaleY": 2.0 },
+      { "x": 430, "y": 490, "w": 35,  "h": 24, "type": "metal_floor", "renderScaleY": 2.0 },
+      { "x": 490, "y": 490, "w": 35,  "h": 24, "type": "metal_floor", "renderScaleY": 2.0 },
+      { "x": 550, "y": 490, "w": 35,  "h": 24, "type": "metal_floor", "renderScaleY": 2.0 },
+      { "x": 610, "y": 490, "w": 35,  "h": 24, "type": "metal_floor", "renderScaleY": 2.0 },
+      { "x": 670, "y": 460, "w": 80,  "h": 52, "type": "metal_step", "renderScaleY": 2.0 },
+      { "x": 760, "y": 422, "w": 80,  "h": 52, "type": "metal_step", "renderScaleY": 2.0 },
+      { "x": 850, "y": 384, "w": 80,  "h": 52, "type": "metal_step", "renderScaleY": 2.0 },
+      { "x": 940, "y": 346, "w": 80,  "h": 52, "type": "metal_step", "renderScaleY": 2.0 },
+      { "x": 1030,"y": 346, "w": 280, "h": 60, "type": "pipe_floor", "renderScaleY": 2.0 },
+      { "x": 1320,"y": 316, "w": 80,  "h": 52, "type": "metal_step", "renderScaleY": 2.0 },
+      { "x": 1410,"y": 286, "w": 80,  "h": 52, "type": "metal_step", "renderScaleY": 2.0 },
+      { "x": 1500,"y": 286, "w": 260, "h": 60, "type": "pipe_floor", "renderScaleY": 2.0 },
+      { "x": 1770,"y": 324, "w": 80,  "h": 52, "type": "metal_step", "renderScaleY": 2.0 },
+      { "x": 1860,"y": 370, "w": 80,  "h": 52, "type": "metal_step", "renderScaleY": 2.0 },
+      { "x": 1900,"y": 416, "w": 100, "h": 52, "type": "metal_step", "renderScaleY": 2.0 }
     ],
     "portals": [
-      { "x": 10, "y": 438, "w": 50, "h": 60, "targetMap": "wuxingVillage", "targetX": 2000, "targetY": 410, "label": "返回·五行村" },
-      { "x": 1930, "y": 438, "w": 50, "h": 60, "targetMap": "muDomain", "targetX": 150, "targetY": 436, "label": "木之域" }
+      { "x": 10, "y": 428, "w": 50, "h": 60, "targetMap": "wuxingVillage", "targetX": 2000, "targetY": 410, "label": "返回·五行村" },
+      { "x": 1920, "y": 344, "w": 50, "h": 60, "targetMap": "muDomain", "targetX": 150, "targetY": 436, "label": "木之域" }
     ]
   },
 
@@ -59,47 +59,39 @@
     "width": 2000,
     "height": 540,
     "groundY": 520,
-    "spawn": { "x": 150, "y": 436 },
+    "spawn": { "x": 150, "y": 430 },
     "enemies": [
-      { "id": "thorn_0", "type": "thornSeed", "x": 350, "y": 460, "w": 50, "h": 60, "hp": 80, "renderW": 72, "renderH": 72, "damage": 15, "attackCooldownMs": 1500 },
-      { "id": "thorn_1", "type": "thornSeed", "x": 700, "y": 440, "w": 50, "h": 60, "hp": 90, "renderW": 72, "renderH": 72, "damage": 18, "attackCooldownMs": 1400 },
-      { "id": "thorn_2", "type": "thornSeed", "x": 1100, "y": 450, "w": 55, "h": 65, "hp": 100, "renderW": 76, "renderH": 76, "damage": 20, "attackCooldownMs": 1200 },
-      { "id": "thorn_3", "type": "thornSeed", "x": 1500, "y": 460, "w": 50, "h": 60, "hp": 90, "renderW": 72, "renderH": 72, "damage": 18, "attackCooldownMs": 1400 }
+      { "id": "thorn_0", "type": "thornSeed", "x": 300, "y": 428, "w": 50, "h": 60, "hp": 80, "renderW": 72, "renderH": 72, "damage": 15, "attackCooldownMs": 1500 },
+      { "id": "thorn_1", "type": "thornSeed", "x": 950, "y": 318, "w": 50, "h": 60, "hp": 90, "renderW": 72, "renderH": 72, "damage": 18, "attackCooldownMs": 1400 },
+      { "id": "thorn_2", "type": "thornSeed", "x": 1700, "y": 428, "w": 55, "h": 65, "hp": 100, "renderW": 76, "renderH": 76, "damage": 20, "attackCooldownMs": 1200 }
     ],
     "traps": [
-      { "id":"ts_1","type":"spike","variant":"thorn","x":120,"y":480,"width":60,"height":20,"damage":12,"intervalMs":2000,"activeMs":800,"knockback":12 },
-      { "id":"ts_2","type":"spike","variant":"thorn","x":220,"y":480,"width":60,"height":20,"damage":12,"intervalMs":2000,"activeMs":800,"knockback":12 },
-      { "id":"ts_3","type":"spike","variant":"thorn","x":320,"y":480,"width":60,"height":20,"damage":12,"intervalMs":2000,"activeMs":800,"knockback":12 },
-      { "id":"ts_4","type":"spike","variant":"thorn","x":1670,"y":450,"width":50,"height":20,"damage":12,"intervalMs":2000,"activeMs":800,"knockback":12 },
-      { "id":"tv_1","type":"spike","variant":"thorn_vine","x":1980,"y":480,"width":20,"height":20,"damage":14,"intervalMs":1800,"activeMs":500,"knockback":10 }
+      { "id":"ts_1","type":"spike","variant":"thorn","x":380,"y":472,"width":40,"height":16,"renderScaleY":10.5,"damage":12,"intervalMs":2000,"activeMs":800,"knockback":12 },
+      { "id":"ts_2","type":"spike","variant":"thorn","x":750,"y":472,"width":40,"height":16,"renderScaleY":10.5,"damage":14,"intervalMs":1800,"activeMs":700,"knockback":12 },
+      { "id":"tv_1","type":"spike","variant":"thorn_vine","x":1600,"y":472,"width":24,"height":18,"renderScaleY":10.5,"damage":16,"intervalMs":1600,"activeMs":550,"knockback":12 }
     ],
     "platforms": [
-      { "x": 0, "y": 500, "w": 350, "h": 20, "type": "wood_floor" },
-      { "x": 380, "y": 480, "w": 40, "h": 15, "type": "leaf_platform" },
-      { "x": 435, "y": 480, "w": 40, "h": 15, "type": "leaf_platform" },
-      { "x": 490, "y": 480, "w": 40, "h": 15, "type": "leaf_platform" },
-      { "x": 560, "y": 500, "w": 30, "h": 8, "type": "vine_bridge" },
-      { "x": 600, "y": 500, "w": 30, "h": 8, "type": "vine_bridge" },
-      { "x": 640, "y": 500, "w": 30, "h": 8, "type": "vine_bridge" },
-      { "x": 680, "y": 500, "w": 30, "h": 8, "type": "vine_bridge" },
-      { "x": 720, "y": 500, "w": 30, "h": 8, "type": "vine_bridge" },
-      { "x": 760, "y": 500, "w": 30, "h": 8, "type": "vine_bridge" },
-      { "x": 800, "y": 460, "w": 150, "h": 20, "type": "wood_floor" },
-      { "x": 980, "y": 480, "w": 40, "h": 15, "type": "leaf_platform" },
-      { "x": 1035, "y": 480, "w": 40, "h": 15, "type": "leaf_platform" },
-      { "x": 1100, "y": 460, "w": 120, "h": 20, "type": "wood_floor" },
-      { "x": 1250, "y": 480, "w": 40, "h": 15, "type": "leaf_platform" },
-      { "x": 1310, "y": 460, "w": 130, "h": 20, "type": "wood_floor" },
-      { "x": 1470, "y": 500, "w": 30, "h": 8, "type": "vine_bridge" },
-      { "x": 1510, "y": 500, "w": 30, "h": 8, "type": "vine_bridge" },
-      { "x": 1550, "y": 500, "w": 30, "h": 8, "type": "vine_bridge" },
-      { "x": 1590, "y": 500, "w": 30, "h": 8, "type": "vine_bridge" },
-      { "x": 1640, "y": 460, "w": 120, "h": 20, "type": "wood_floor" },
-      { "x": 1800, "y": 500, "w": 200, "h": 20, "type": "wood_floor" }
+      { "x": 0,   "y": 490, "w": 320, "h": 60, "type": "wood_floor", "renderScaleY": 2.0 },
+      { "x": 340, "y": 468, "w": 60,  "h": 36, "type": "leaf_platform", "renderScaleY": 2.0 },
+      { "x": 420, "y": 468, "w": 60,  "h": 36, "type": "leaf_platform", "renderScaleY": 2.0 },
+      { "x": 500, "y": 490, "w": 200, "h": 60, "type": "wood_floor", "renderScaleY": 2.0 },
+      { "x": 720, "y": 468, "w": 60,  "h": 36, "type": "leaf_platform", "renderScaleY": 2.0 },
+      { "x": 800, "y": 468, "w": 60,  "h": 36, "type": "leaf_platform", "renderScaleY": 2.0 },
+      { "x": 880, "y": 380, "w": 220, "h": 60, "type": "wood_floor", "renderScaleY": 2.0 },
+      { "x": 1120,"y": 468, "w": 60,  "h": 36, "type": "leaf_platform", "renderScaleY": 2.0 },
+      { "x": 1200,"y": 468, "w": 60,  "h": 36, "type": "leaf_platform", "renderScaleY": 2.0 },
+      { "x": 1280,"y": 468, "w": 60,  "h": 36, "type": "leaf_platform", "renderScaleY": 2.0 },
+      { "x": 1360,"y": 490, "w": 200, "h": 60, "type": "wood_floor", "renderScaleY": 2.0 },
+      { "x": 1580,"y": 490, "w": 40,  "h": 24, "type": "vine_bridge", "renderScaleY": 2.0 },
+      { "x": 1640,"y": 490, "w": 40,  "h": 24, "type": "vine_bridge", "renderScaleY": 2.0 },
+      { "x": 1700,"y": 490, "w": 40,  "h": 24, "type": "vine_bridge", "renderScaleY": 2.0 },
+      { "x": 1760,"y": 490, "w": 40,  "h": 24, "type": "vine_bridge", "renderScaleY": 2.0 },
+      { "x": 1820,"y": 490, "w": 40,  "h": 24, "type": "vine_bridge", "renderScaleY": 2.0 },
+      { "x": 1880,"y": 490, "w": 120, "h": 60, "type": "wood_floor", "renderScaleY": 2.0 }
     ],
     "portals": [
-      { "x": 10, "y": 438, "w": 50, "h": 60, "targetMap": "jinDomain", "targetX": 1800, "targetY": 438, "label": "返回·金之域" },
-      { "x": 1940, "y": 438, "w": 50, "h": 60, "targetMap": "shuiDomain", "targetX": 150, "targetY": 436, "label": "水之域" }
+      { "x": 10, "y": 428, "w": 50, "h": 60, "targetMap": "jinDomain", "targetX": 1800, "targetY": 416, "label": "返回·金之域" },
+      { "x": 1940, "y": 428, "w": 50, "h": 60, "targetMap": "shuiDomain", "targetX": 150, "targetY": 436, "label": "水之域" }
     ]
   },
 
@@ -108,46 +100,43 @@
     "width": 2000,
     "height": 540,
     "groundY": 520,
-    "spawn": { "x": 150, "y": 436 },
+    "spawn": { "x": 150, "y": 430 },
     "enemies": [
-      { "id": "tide_0", "type": "tideSpirit", "x": 300, "y": 360, "w": 44, "h": 54, "hp": 60, "renderW": 72, "renderH": 72, "moveSpeed": 0.8, "detectRadius": 380, "attackRange": 280, "attackCooldownMs": 1800, "damage": 12 },
-      { "id": "tide_1", "type": "tideSpirit", "x": 900, "y": 320, "w": 44, "h": 54, "hp": 60, "renderW": 72, "renderH": 72, "moveSpeed": 1.0, "detectRadius": 350, "attackRange": 300, "attackCooldownMs": 1600, "damage": 14 },
-      { "id": "tide_2", "type": "tideSpirit", "x": 1500, "y": 380, "w": 44, "h": 54, "hp": 70, "renderW": 72, "renderH": 72, "moveSpeed": 1.2, "detectRadius": 400, "attackRange": 320, "attackCooldownMs": 1400, "damage": 16 }
+      { "id": "tide_0", "type": "tideSpirit", "x": 400, "y": 358, "w": 44, "h": 54, "hp": 60, "renderW": 72, "renderH": 72, "moveSpeed": 0.8, "detectRadius": 380, "attackRange": 280, "attackCooldownMs": 1800, "damage": 12 },
+      { "id": "tide_1", "type": "tideSpirit", "x": 1000, "y": 288, "w": 44, "h": 54, "hp": 60, "renderW": 72, "renderH": 72, "moveSpeed": 1.0, "detectRadius": 350, "attackRange": 300, "attackCooldownMs": 1600, "damage": 14 },
+      { "id": "tide_2", "type": "tideSpirit", "x": 1600, "y": 338, "w": 44, "h": 54, "hp": 70, "renderW": 72, "renderH": 72, "moveSpeed": 1.2, "detectRadius": 400, "attackRange": 320, "attackCooldownMs": 1400, "damage": 16 }
     ],
     "traps": [
-      { "id":"ig_1","type":"spike","variant":"icegate","x":710,"y":480,"width":40,"height":30,"damage":20,"intervalMs":2500,"activeMs":700,"knockback":18 },
-      { "id":"ig_2","type":"spike","variant":"icegate","x":1440,"y":480,"width":40,"height":30,"damage":20,"intervalMs":2500,"activeMs":700,"knockback":18 }
+      { "id":"ig_1","type":"spike","variant":"icegate","x":460,"y":472,"width":36,"height":18,"renderScaleY":11.4,"damage":20,"intervalMs":2500,"activeMs":700,"knockback":18 },
+      { "id":"ig_2","type":"spike","variant":"icegate","x":1080,"y":472,"width":36,"height":18,"renderScaleY":11.4,"damage":20,"intervalMs":2200,"activeMs":700,"knockback":18 },
+      { "id":"ig_3","type":"spike","variant":"icegate","x":1500,"y":472,"width":36,"height":18,"renderScaleY":11.4,"damage":22,"intervalMs":2000,"activeMs":650,"knockback":18 }
     ],
     "platforms": [
-      { "x": 0, "y": 500, "w": 280, "h": 15, "type": "ice_floor" },
-      { "x": 300, "y": 490, "w": 30, "h": 15, "type": "ice_floe" },
-      { "x": 340, "y": 480, "w": 25, "h": 15, "type": "ice_floe" },
-      { "x": 375, "y": 495, "w": 35, "h": 15, "type": "ice_floe" },
-      { "x": 420, "y": 485, "w": 30, "h": 15, "type": "ice_floe" },
-      { "x": 460, "y": 490, "w": 25, "h": 15, "type": "ice_floe" },
-      { "x": 495, "y": 480, "w": 35, "h": 15, "type": "ice_floe" },
-      { "x": 540, "y": 495, "w": 30, "h": 15, "type": "ice_floe" },
-      { "x": 580, "y": 500, "w": 120, "h": 15, "type": "ice_floor" },
-      { "x": 720, "y": 480, "w": 30, "h": 20, "type": "ice_pillar" },
-      { "x": 760, "y": 440, "w": 30, "h": 20, "type": "ice_pillar" },
-      { "x": 800, "y": 400, "w": 30, "h": 20, "type": "ice_pillar" },
-      { "x": 840, "y": 440, "w": 30, "h": 20, "type": "ice_pillar" },
-      { "x": 880, "y": 480, "w": 30, "h": 20, "type": "ice_pillar" },
-      { "x": 920, "y": 460, "w": 160, "h": 20, "type": "ice_floor" },
-      { "x": 1100, "y": 490, "w": 40, "h": 15, "type": "ice_floe" },
-      { "x": 1150, "y": 495, "w": 40, "h": 15, "type": "ice_floe" },
-      { "x": 1200, "y": 490, "w": 40, "h": 15, "type": "ice_floe" },
-      { "x": 1270, "y": 480, "w": 30, "h": 20, "type": "ice_pillar" },
-      { "x": 1320, "y": 450, "w": 25, "h": 20, "type": "ice_pillar" },
-      { "x": 1360, "y": 470, "w": 30, "h": 20, "type": "ice_pillar" },
-      { "x": 1410, "y": 440, "w": 25, "h": 20, "type": "ice_pillar" },
-      { "x": 1450, "y": 500, "w": 130, "h": 15, "type": "ice_floor" },
-      { "x": 1600, "y": 460, "w": 180, "h": 20, "type": "ice_floor" },
-      { "x": 1800, "y": 500, "w": 200, "h": 15, "type": "ice_floor" }
+      { "x": 0,   "y": 490, "w": 280, "h": 56, "type": "ice_floor", "renderScaleY": 2.0 },
+      { "x": 300, "y": 478, "w": 45,  "h": 40, "type": "ice_floe", "renderScaleY": 2.0 },
+      { "x": 360, "y": 470, "w": 40,  "h": 40, "type": "ice_floe", "renderScaleY": 2.0 },
+      { "x": 415, "y": 482, "w": 48,  "h": 40, "type": "ice_floe", "renderScaleY": 2.0 },
+      { "x": 480, "y": 490, "w": 140, "h": 56, "type": "ice_floor", "renderScaleY": 2.0 },
+      { "x": 640, "y": 468, "w": 40,  "h": 140,"type": "ice_pillar", "renderScaleY": 2.0 },
+      { "x": 690, "y": 428, "w": 40,  "h": 140,"type": "ice_pillar", "renderScaleY": 2.0 },
+      { "x": 740, "y": 388, "w": 40,  "h": 140,"type": "ice_pillar", "renderScaleY": 2.0 },
+      { "x": 790, "y": 348, "w": 40,  "h": 140,"type": "ice_pillar", "renderScaleY": 2.0 },
+      { "x": 840, "y": 348, "w": 200, "h": 56, "type": "ice_floor", "renderScaleY": 2.0 },
+      { "x": 1050,"y": 388, "w": 40,  "h": 140,"type": "ice_pillar", "renderScaleY": 2.0 },
+      { "x": 1100,"y": 428, "w": 40,  "h": 140,"type": "ice_pillar", "renderScaleY": 2.0 },
+      { "x": 1150,"y": 468, "w": 40,  "h": 140,"type": "ice_pillar", "renderScaleY": 2.0 },
+      { "x": 1200,"y": 490, "w": 180, "h": 56, "type": "ice_floor", "renderScaleY": 2.0 },
+      { "x": 1400,"y": 478, "w": 45,  "h": 40, "type": "ice_floe", "renderScaleY": 2.0 },
+      { "x": 1460,"y": 470, "w": 42,  "h": 40, "type": "ice_floe", "renderScaleY": 2.0 },
+      { "x": 1520,"y": 490, "w": 160, "h": 56, "type": "ice_floor", "renderScaleY": 2.0 },
+      { "x": 1700,"y": 460, "w": 42,  "h": 40, "type": "ice_floe", "renderScaleY": 2.0 },
+      { "x": 1760,"y": 460, "w": 42,  "h": 40, "type": "ice_floe", "renderScaleY": 2.0 },
+      { "x": 1820,"y": 460, "w": 42,  "h": 40, "type": "ice_floe", "renderScaleY": 2.0 },
+      { "x": 1880,"y": 490, "w": 120, "h": 56, "type": "ice_floor", "renderScaleY": 2.0 }
     ],
     "portals": [
-      { "x": 10, "y": 438, "w": 50, "h": 60, "targetMap": "muDomain", "targetX": 1800, "targetY": 438, "label": "返回·木之域" },
-      { "x": 1940, "y": 438, "w": 50, "h": 60, "targetMap": "huoDomain", "targetX": 150, "targetY": 436, "label": "火之域" }
+      { "x": 10, "y": 428, "w": 50, "h": 60, "targetMap": "muDomain", "targetX": 1800, "targetY": 428, "label": "返回·木之域" },
+      { "x": 1940, "y": 428, "w": 50, "h": 60, "targetMap": "huoDomain", "targetX": 150, "targetY": 436, "label": "火之域" }
     ]
   },
 
@@ -156,50 +145,44 @@
     "width": 2000,
     "height": 540,
     "groundY": 520,
-    "spawn": { "x": 150, "y": 436 },
+    "spawn": { "x": 150, "y": 430 },
     "enemies": [
-      { "id": "ember_0", "type": "emberSpirit", "x": 250, "y": 400, "w": 44, "h": 54, "hp": 80, "renderW": 72, "renderH": 72, "chaseSpeed": 2.0, "detectRadius": 320, "proximityRadius": 55, "explodeRadius": 38, "damage": 16, "reviveRange": 400 },
-      { "id": "ember_1", "type": "emberSpirit", "x": 500, "y": 380, "w": 44, "h": 54, "hp": 80, "renderW": 72, "renderH": 72, "chaseSpeed": 2.4, "detectRadius": 300, "proximityRadius": 55, "explodeRadius": 38, "damage": 18, "reviveRange": 380 },
-      { "id": "ember_2", "type": "emberSpirit", "x": 1200, "y": 340, "w": 44, "h": 54, "hp": 80, "renderW": 72, "renderH": 72, "chaseSpeed": 2.2, "detectRadius": 280, "proximityRadius": 60, "explodeRadius": 40, "damage": 20, "reviveRange": 400 }
+      { "id": "ember_0", "type": "emberSpirit", "x": 350, "y": 348, "w": 44, "h": 54, "hp": 80, "renderW": 72, "renderH": 72, "chaseSpeed": 2.0, "detectRadius": 320, "proximityRadius": 55, "explodeRadius": 38, "damage": 16, "reviveRange": 400 },
+      { "id": "ember_1", "type": "emberSpirit", "x": 1100, "y": 318, "w": 44, "h": 54, "hp": 80, "renderW": 72, "renderH": 72, "chaseSpeed": 2.4, "detectRadius": 300, "proximityRadius": 55, "explodeRadius": 38, "damage": 18, "reviveRange": 380 },
+      { "id": "ember_2", "type": "emberSpirit", "x": 1700, "y": 348, "w": 44, "h": 54, "hp": 85, "renderW": 72, "renderH": 72, "chaseSpeed": 2.2, "detectRadius": 280, "proximityRadius": 60, "explodeRadius": 40, "damage": 20, "reviveRange": 400 }
     ],
     "traps": [
-      { "id":"le_1","type":"spike","variant":"lava","x":350,"y":460,"width":30,"height":30,"damage":25,"intervalMs":2400,"activeMs":900,"knockback":20 },
-      { "id":"fd_1","type":"spike","variant":"dragon","x":920,"y":470,"width":40,"height":30,"damage":25,"intervalMs":2000,"activeMs":700,"knockback":18 },
-      { "id":"le_2","type":"spike","variant":"lava","x":1060,"y":460,"width":25,"height":30,"damage":25,"intervalMs":2200,"activeMs":800,"knockback":20 },
-      { "id":"le_3","type":"spike","variant":"lava","x":1140,"y":460,"width":25,"height":30,"damage":25,"intervalMs":2200,"activeMs":800,"knockback":20 },
-      { "id":"fd_2","type":"spike","variant":"dragon","x":1640,"y":480,"width":40,"height":30,"damage":25,"intervalMs":2000,"activeMs":700,"knockback":18 },
-      { "id":"fw_1","type":"spike","variant":"firewall","x":1800,"y":500,"width":80,"height":40,"damage":35,"intervalMs":3000,"activeMs":1200,"knockback":24 }
+      { "id":"le_1","type":"spike","variant":"lava","x":400,"y":472,"width":32,"height":18,"renderScaleX":4.5,"renderScaleY":4.5,"damage":25,"intervalMs":2400,"activeMs":900,"knockback":20 },
+      { "id":"le_2","type":"spike","variant":"lava","x":900,"y":472,"width":32,"height":18,"renderScaleX":4.5,"renderScaleY":4.5,"damage":25,"intervalMs":2200,"activeMs":800,"knockback":20 },
+      { "id":"le_3","type":"spike","variant":"lava","x":1260,"y":472,"width":32,"height":18,"renderScaleX":4.5,"renderScaleY":4.5,"damage":25,"intervalMs":2200,"activeMs":800,"knockback":20 },
+      { "id":"fd_1","type":"spike","variant":"dragon","x":700,"y":472,"width":34,"height":20,"renderScale":4.2,"damage":28,"intervalMs":2000,"activeMs":700,"knockback":20 },
+      { "id":"fw_1","type":"spike","variant":"firewall","x":1820,"y":472,"width":55,"height":18,"renderScaleX":1.0,"renderScaleY":4.8,"damage":35,"intervalMs":3000,"activeMs":1000,"knockback":24 }
     ],
     "platforms": [
-      { "x": 0, "y": 500, "w": 250, "h": 20, "type": "basalt_floor" },
-      { "x": 280, "y": 480, "w": 25, "h": 15, "type": "firebrick" },
-      { "x": 330, "y": 480, "w": 25, "h": 15, "type": "firebrick" },
-      { "x": 380, "y": 480, "w": 25, "h": 15, "type": "firebrick" },
-      { "x": 430, "y": 480, "w": 25, "h": 15, "type": "firebrick" },
-      { "x": 480, "y": 480, "w": 25, "h": 15, "type": "firebrick" },
-      { "x": 500, "y": 500, "w": 150, "h": 10, "type": "basalt_floor" },
-      { "x": 670, "y": 500, "w": 40, "h": 12, "type": "firebrick" },
-      { "x": 720, "y": 500, "w": 40, "h": 12, "type": "firebrick" },
-      { "x": 770, "y": 500, "w": 40, "h": 12, "type": "firebrick" },
-      { "x": 820, "y": 500, "w": 40, "h": 12, "type": "firebrick" },
-      { "x": 880, "y": 480, "w": 120, "h": 15, "type": "basalt_floor" },
-      { "x": 1020, "y": 480, "w": 25, "h": 15, "type": "firebrick" },
-      { "x": 1060, "y": 480, "w": 25, "h": 15, "type": "firebrick" },
-      { "x": 1100, "y": 480, "w": 25, "h": 15, "type": "firebrick" },
-      { "x": 1140, "y": 480, "w": 25, "h": 15, "type": "firebrick" },
-      { "x": 1180, "y": 480, "w": 25, "h": 15, "type": "firebrick" },
-      { "x": 1220, "y": 480, "w": 25, "h": 15, "type": "firebrick" },
-      { "x": 1260, "y": 480, "w": 25, "h": 15, "type": "firebrick" },
-      { "x": 1280, "y": 500, "w": 120, "h": 15, "type": "basalt_floor" },
-      { "x": 1420, "y": 500, "w": 130, "h": 10, "type": "basalt_floor" },
-      { "x": 1570, "y": 480, "w": 40, "h": 20, "type": "volcanic_step" },
-      { "x": 1620, "y": 450, "w": 40, "h": 20, "type": "volcanic_step" },
-      { "x": 1670, "y": 420, "w": 40, "h": 20, "type": "volcanic_step" },
-      { "x": 1720, "y": 500, "w": 280, "h": 20, "type": "basalt_floor" }
+      { "x": 0,   "y": 490, "w": 300, "h": 60, "type": "basalt_floor", "renderScaleY": 2.0 },
+      { "x": 320, "y": 468, "w": 42,  "h": 44, "type": "firebrick", "renderScaleY": 2.0 },
+      { "x": 380, "y": 468, "w": 42,  "h": 44, "type": "firebrick", "renderScaleY": 2.0 },
+      { "x": 440, "y": 468, "w": 42,  "h": 44, "type": "firebrick", "renderScaleY": 2.0 },
+      { "x": 500, "y": 468, "w": 42,  "h": 44, "type": "firebrick", "renderScaleY": 2.0 },
+      { "x": 560, "y": 490, "w": 200, "h": 60, "type": "basalt_floor", "renderScaleY": 2.0 },
+      { "x": 780, "y": 468, "w": 42,  "h": 44, "type": "firebrick", "renderScaleY": 2.0 },
+      { "x": 840, "y": 468, "w": 42,  "h": 44, "type": "firebrick", "renderScaleY": 2.0 },
+      { "x": 900, "y": 468, "w": 42,  "h": 44, "type": "firebrick", "renderScaleY": 2.0 },
+      { "x": 960, "y": 468, "w": 42,  "h": 44, "type": "firebrick", "renderScaleY": 2.0 },
+      { "x": 1020,"y": 468, "w": 42,  "h": 44, "type": "firebrick", "renderScaleY": 2.0 },
+      { "x": 1080,"y": 468, "w": 42,  "h": 44, "type": "firebrick", "renderScaleY": 2.0 },
+      { "x": 1140,"y": 468, "w": 42,  "h": 44, "type": "firebrick", "renderScaleY": 2.0 },
+      { "x": 1200,"y": 490, "w": 180, "h": 60, "type": "basalt_floor", "renderScaleY": 2.0 },
+      { "x": 1400,"y": 460, "w": 65,  "h": 48, "type": "volcanic_step", "renderScaleY": 2.0 },
+      { "x": 1480,"y": 420, "w": 65,  "h": 48, "type": "volcanic_step", "renderScaleY": 2.0 },
+      { "x": 1560,"y": 380, "w": 65,  "h": 48, "type": "volcanic_step", "renderScaleY": 2.0 },
+      { "x": 1640,"y": 340, "w": 65,  "h": 48, "type": "volcanic_step", "renderScaleY": 2.0 },
+      { "x": 1720,"y": 340, "w": 200, "h": 60, "type": "basalt_floor", "renderScaleY": 2.0 },
+      { "x": 1920,"y": 490, "w": 80,  "h": 60, "type": "basalt_floor", "renderScaleY": 2.0 }
     ],
     "portals": [
-      { "x": 10, "y": 438, "w": 50, "h": 60, "targetMap": "shuiDomain", "targetX": 1800, "targetY": 438, "label": "返回·水之域" },
-      { "x": 1940, "y": 438, "w": 50, "h": 60, "targetMap": "tuDomain", "targetX": 200, "targetY": 436, "label": "土之域" }
+      { "x": 10, "y": 428, "w": 50, "h": 60, "targetMap": "shuiDomain", "targetX": 1800, "targetY": 428, "label": "返回·水之域" },
+      { "x": 1920, "y": 420, "w": 50, "h": 60, "targetMap": "tuDomain", "targetX": 200, "targetY": 436, "label": "土之域" }
     ]
   },
 
@@ -208,45 +191,41 @@
     "width": 2000,
     "height": 540,
     "groundY": 520,
-    "spawn": { "x": 200, "y": 436 },
+    "spawn": { "x": 200, "y": 430 },
     "enemies": [
-      { "id": "rock_0", "type": "rockArmor", "x": 150, "y": 440, "w": 44, "h": 62, "hp": 100, "renderW": 72, "renderH": 72, "patrolSpeed": 1.0, "detectRadius": 280, "damage": 18 },
-      { "id": "rock_1", "type": "rockArmor", "x": 780, "y": 330, "w": 44, "h": 62, "hp": 130, "renderW": 72, "renderH": 72, "patrolSpeed": 1.2, "detectRadius": 280, "damage": 22 },
-      { "id": "rock_2", "type": "rockArmor", "x": 1280, "y": 320, "w": 44, "h": 62, "hp": 160, "renderW": 72, "renderH": 72, "patrolSpeed": 1.4, "detectRadius": 300, "damage": 26 }
+      { "id": "rock_0", "type": "rockArmor", "x": 300, "y": 428, "w": 44, "h": 62, "hp": 100, "renderW": 72, "renderH": 72, "patrolSpeed": 1.0, "detectRadius": 280, "damage": 18 },
+      { "id": "rock_1", "type": "rockArmor", "x": 950, "y": 298, "w": 44, "h": 62, "hp": 130, "renderW": 72, "renderH": 72, "patrolSpeed": 1.2, "detectRadius": 280, "damage": 22 },
+      { "id": "rock_2", "type": "rockArmor", "x": 1550, "y": 318, "w": 44, "h": 62, "hp": 160, "renderW": 72, "renderH": 72, "patrolSpeed": 1.4, "detectRadius": 300, "damage": 26 }
     ],
     "traps": [
-      { "id":"rb_1","type":"spike","variant":"boulder","x":630,"y":420,"width":40,"height":20,"damage":30,"intervalMs":3000,"activeMs":800,"knockback":24 },
-      { "id":"rb_2","type":"spike","variant":"boulder","x":1220,"y":380,"width":80,"height":15,"damage":30,"intervalMs":3000,"activeMs":800,"knockback":24 }
+      { "id":"rb_1","type":"spike","variant":"boulder","x":620,"y":472,"width":40,"height":18,"damage":30,"intervalMs":3000,"activeMs":800,"knockback":24 },
+      { "id":"rb_2","type":"spike","variant":"boulder","x":1200,"y":472,"width":40,"height":18,"damage":30,"intervalMs":2800,"activeMs":800,"knockback":24 },
+      { "id":"rb_3","type":"spike","variant":"boulder","x":1700,"y":472,"width":40,"height":18,"damage":32,"intervalMs":2600,"activeMs":750,"knockback":24 }
     ],
     "platforms": [
-      { "x": 0, "y": 500, "w": 300, "h": 20, "type": "sand_floor" },
-      { "x": 320, "y": 480, "w": 30, "h": 40, "type": "sandstone_pillar" },
-      { "x": 370, "y": 450, "w": 30, "h": 70, "type": "sandstone_pillar" },
-      { "x": 420, "y": 420, "w": 30, "h": 100, "type": "sandstone_pillar" },
-      { "x": 470, "y": 460, "w": 30, "h": 60, "type": "sandstone_pillar" },
-      { "x": 520, "y": 490, "w": 30, "h": 30, "type": "sandstone_pillar" },
-      { "x": 540, "y": 480, "w": 40, "h": 20, "type": "ruin_step" },
-      { "x": 585, "y": 450, "w": 40, "h": 20, "type": "ruin_step" },
-      { "x": 630, "y": 420, "w": 40, "h": 20, "type": "ruin_step" },
-      { "x": 675, "y": 390, "w": 40, "h": 20, "type": "ruin_step" },
-      { "x": 720, "y": 390, "w": 130, "h": 20, "type": "sand_floor" },
-      { "x": 870, "y": 400, "w": 130, "h": 15, "type": "sand_floor" },
-      { "x": 1020, "y": 400, "w": 30, "h": 15, "type": "stone_slab" },
-      { "x": 1070, "y": 400, "w": 30, "h": 15, "type": "stone_slab" },
-      { "x": 1120, "y": 400, "w": 30, "h": 15, "type": "stone_slab" },
-      { "x": 1170, "y": 400, "w": 30, "h": 15, "type": "stone_slab" },
-      { "x": 1200, "y": 380, "w": 120, "h": 15, "type": "stone_slab" },
-      { "x": 1340, "y": 420, "w": 25, "h": 100, "type": "sandstone_pillar" },
-      { "x": 1400, "y": 380, "w": 25, "h": 140, "type": "sandstone_pillar" },
-      { "x": 1460, "y": 430, "w": 25, "h": 90, "type": "sandstone_pillar" },
-      { "x": 1520, "y": 420, "w": 50, "h": 15, "type": "stone_slab" },
-      { "x": 1580, "y": 390, "w": 50, "h": 15, "type": "stone_slab" },
-      { "x": 1640, "y": 420, "w": 50, "h": 15, "type": "stone_slab" },
-      { "x": 1700, "y": 450, "w": 300, "h": 20, "type": "sand_floor" }
+      { "x": 0,   "y": 490, "w": 320, "h": 60,  "type": "sand_floor", "renderScaleY": 2.0 },
+      { "x": 340, "y": 460, "w": 75,  "h": 52,  "type": "ruin_step", "renderScaleY": 2.0 },
+      { "x": 430, "y": 422, "w": 75,  "h": 52,  "type": "ruin_step", "renderScaleY": 2.0 },
+      { "x": 520, "y": 384, "w": 75,  "h": 52,  "type": "ruin_step", "renderScaleY": 2.0 },
+      { "x": 610, "y": 346, "w": 75,  "h": 52,  "type": "ruin_step", "renderScaleY": 2.0 },
+      { "x": 700, "y": 346, "w": 200, "h": 60,  "type": "sand_floor", "renderScaleY": 2.0 },
+      { "x": 920, "y": 384, "w": 75,  "h": 52,  "type": "ruin_step", "renderScaleY": 2.0 },
+      { "x": 1010,"y": 422, "w": 75,  "h": 52,  "type": "ruin_step", "renderScaleY": 2.0 },
+      { "x": 1100,"y": 460, "w": 75,  "h": 52,  "type": "ruin_step", "renderScaleY": 2.0 },
+      { "x": 1190,"y": 490, "w": 40,  "h": 120, "type": "sandstone_pillar", "renderScaleY": 2.0 },
+      { "x": 1250,"y": 460, "w": 40,  "h": 180, "type": "sandstone_pillar", "renderScaleY": 2.0 },
+      { "x": 1310,"y": 490, "w": 40,  "h": 120, "type": "sandstone_pillar", "renderScaleY": 2.0 },
+      { "x": 1370,"y": 490, "w": 180, "h": 60,  "type": "sand_floor", "renderScaleY": 2.0 },
+      { "x": 1570,"y": 460, "w": 60,  "h": 44,  "type": "stone_slab", "renderScaleY": 2.0 },
+      { "x": 1650,"y": 430, "w": 60,  "h": 44,  "type": "stone_slab", "renderScaleY": 2.0 },
+      { "x": 1730,"y": 400, "w": 60,  "h": 44,  "type": "stone_slab", "renderScaleY": 2.0 },
+      { "x": 1810,"y": 430, "w": 60,  "h": 44,  "type": "stone_slab", "renderScaleY": 2.0 },
+      { "x": 1890,"y": 460, "w": 60,  "h": 44,  "type": "stone_slab", "renderScaleY": 2.0 },
+      { "x": 1930,"y": 490, "w": 70,  "h": 60,  "type": "sand_floor", "renderScaleY": 2.0 }
     ],
     "portals": [
-      { "x": 10, "y": 438, "w": 50, "h": 60, "targetMap": "huoDomain", "targetX": 1800, "targetY": 438, "label": "返回·火之域" },
-      { "x": 1940, "y": 388, "w": 50, "h": 60, "targetMap": "wuxingVillage", "targetX": 400, "targetY": 410, "label": "轮回·五行村" }
+      { "x": 10, "y": 428, "w": 50, "h": 60, "targetMap": "huoDomain", "targetX": 1800, "targetY": 372, "label": "返回·火之域" },
+      { "x": 1950, "y": 428, "w": 40, "h": 60, "targetMap": "wuxingVillage", "targetX": 400, "targetY": 410, "label": "轮回·五行村" }
     ]
   }
 }
