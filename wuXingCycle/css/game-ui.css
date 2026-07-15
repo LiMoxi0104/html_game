@@ -82,16 +82,22 @@
 .wx-dialog-close:hover { background: #a31515; }
 .wx-dialog-close:active { transform: scale(0.97); }
 
-/* === Loading 进度遮罩层 === */
+/* === Loading 全屏遮罩层 ===
+ *  position:fixed 确保覆盖 100% 视口，不受 16:9 game-container 限制。
+ *  cover 模式保持图片比例，居中裁切填充。 */
 .loading-overlay {
-  position: absolute;
+  position: fixed;
   inset: 0;
   display: none;
   align-items: center;
   justify-content: center;
-  background: url("../assets/img/loading_bg.jpg") center/cover no-repeat;
+  background-color: #1a1a1a;                             /* 图片加载前 / 失败时回退色 */
+  background-image: url("../assets/img/loading_bg.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   z-index: 100;
-  transition: opacity 0.4s ease;
+  transition: opacity 0.5s ease;
   opacity: 1;
 }
 .loading-overlay.show { display: flex; }
