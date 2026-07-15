@@ -39,9 +39,10 @@ class GameMain {
     this._mapConfigs = null;        // 缓存地图配置 JSON
 
     // ★ v4 重生系统
-    this._respawnState = null;      // null | "delay" | "fadeOut" | "resetting" | "fadeIn"
+    this._respawnState = null;      // null | "fadeOut" | "fadeIn"
     this._respawnTimer = 0;
     this._respawnAlpha = 0;
+    this._respawnPending = false;   // 防重复触发
   }
 
   /**
@@ -423,8 +424,9 @@ class GameMain {
     // ==================== 2. 玩家更新 ====================
     this.player.update(dt, this.input, this.map);
 
-    // ★ v4 死亡检测 → 触发重生流程
-    if (this.player.state === "dead" && this.player._deathRemoved) {
+    // ★ v4 死亡检测 → 触发重生流程（单次触发，防重复）
+    if (this.player.state === "dead" && this.player._deathRemoved && !this._respawnPending) {
+      this._respawnPending = true;
       this._startRespawn();
     }
 
@@ -712,26 +714,18 @@ class GameMain {
 
   /** 触发重生流程 */
   _startRespawn() {
-    if (this._respawnState) return;  // 防止重复触发
+    if (this._respawnState) return;
     console.log("[GameMain] 角色死亡，启动重生...");
-    this._respawnState = "delay";
-    this._respawnTimer = 600;   // 死亡后等待 600ms
+    this._respawnState = "fadeOut";
+    this._respawnTimer = 0;
     this._respawnAlpha = 0;
   }
 
-  /** 重生状态机：delay → fadeOut → resetting → fadeIn → done */
+  /** 重生状态机：fadeOut → fadeIn → done */
   _updateRespawn(dt) {
-    const STAGE_MS = 400;  // 淡入/淡出各 400ms
+    const STAGE_MS = 500;  // 淡入/淡出各 500ms
 
     switch (this._respawnState) {
-      case "delay":
-        this._respawnTimer -= dt;
-        if (this._respawnTimer <= 0) {
-          this._respawnState = "fadeOut";
-          this._respawnTimer = 0;
-        }
-        break;
-
       case "fadeOut":
         this._respawnTimer += dt;
         this._respawnAlpha = Math.min(1, this._respawnTimer / STAGE_MS);
@@ -747,18 +741,16 @@ class GameMain {
         this._respawnTimer += dt;
         this._respawnAlpha = Math.max(0, 1 - this._respawnTimer / STAGE_MS);
         if (this._respawnAlpha <= 0) {
-          // 重生完成
           this._respawnState = null;
           this._respawnAlpha = 0;
+          this._respawnPending = false;  // 允许下次复活
           if (this.input) this.input.reset();
-          this.inputFreezeTimer = 300;  // 短暂输入冻结
+          this.inputFreezeTimer = 400;
           console.log("[GameMain] 重生完成");
         }
         break;
 
-      case "resetting":
       default:
-        // 不应停留在此状态，强制结束
         this._respawnState = "fadeIn";
         this._respawnTimer = 0;
         break;
@@ -822,7 +814,11 @@ class GameMain {
       timer: 2000, duration: 2000
     });
 
-    // —— 6. 保存状态 ——
+    // —— 6. 同步存档中的 HP/MP ——
+    this.data.hp = this.player.hp;
+    this.data.mp = this.player.mp;
+
+    // —— 7. 保存状态 ——
     GameData.save(this.data);
 
     console.log("[GameMain] 复活完成：HP已满，敌人已重生，陷阱已重置");

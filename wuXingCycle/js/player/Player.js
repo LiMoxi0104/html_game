@@ -532,7 +532,10 @@ class Player {
     // ★ 坠落死亡检测：掉出所有平台 + 超过底部地面
     if (this.y > map.height) {
       this.hp = 0;
+      this.vx = 0;
+      this.vy = 0;
       this.state = "dead";
+      this._deathTimer = this._deathCorpseMs;
     }
 
     // —— ★ 跳跃序列帧推进 ——
