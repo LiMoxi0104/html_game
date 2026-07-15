@@ -25,18 +25,30 @@ const DEFAULT_SAVE = {
   mp: 50,
   maxMp: 50,
 
-  // —— 动态招式系统（v2）——
-  ownedSkills: ["water_slash", "parry_dagger"],       // 技能池：已学会的全部招式ID
+  // —— 动态招式系统（v2 ★ v3 初始化发放全部非锁定技能）——
+  ownedSkills: [
+    "water_slash", "water_vortex",           // 水行
+    "wood_vine", "wood_thorn",               // 木行
+    "metal_sword",                            // 金行（metal_blade 锁定中）
+    "fire_dragon",                            // 火行（fire_inferno 锁定中）
+    "earth_meteor",                           // 土行（earthquake 锁定中）
+    "parry_dagger"                            // 弹反
+  ],
   equippedSkills: {                                    // 技能槽：当前装配到各键位的招式ID
     light1: "water_slash",      // J
-    light2: null,               // S+J
-    heavy1: null,               // W+K
-    heavy2: null,               // A/D+K
-    heavy3: null,               // S+K
-    parry: "parry_dagger"       // L（固定不可更换）
+    light2: "water_vortex",     // S+J
+    light3: "wood_thorn",       // W+J
+    heavy1: "metal_sword",      // W+K
+    heavy2: "fire_dragon",      // A/D+K
+    heavy3: "earth_meteor",     // S+K
+    parry:  "parry_dagger"      // L（固定不可更换）
   },
   skillMastery: {                                        // 熟练度记录：skillId → 当前等级（0~maxMastery）
-    water_slash: 0,
+    water_slash: 0, water_vortex: 0,
+    wood_vine: 0, wood_thorn: 0,
+    metal_sword: 0,
+    fire_dragon: 0,
+    earth_meteor: 0,
     parry_dagger: 0
   },
 
@@ -147,6 +159,40 @@ class GameData {
         data.currentMap = "wuxingVillage";
         this.save(data);
         console.log("[GameData] currentMap 已修正为五行村");
+      }
+      // ★ v3 存量存档迁移：补齐全部非锁定技能（不含 metal_blade / fire_inferno / earthquake）
+      const ALL_UNLOCKED_SKILLS = [
+        "water_slash", "water_vortex",
+        "wood_vine", "wood_thorn",
+        "metal_sword",
+        "fire_dragon",
+        "earth_meteor",
+        "parry_dagger"
+      ];
+      let skillsAdded = 0;
+      for (const sid of ALL_UNLOCKED_SKILLS) {
+        if (!data.ownedSkills.includes(sid)) {
+          data.ownedSkills.push(sid);
+          skillsAdded++;
+        }
+        if (data.skillMastery[sid] === undefined) {
+          data.skillMastery[sid] = 0;
+        }
+      }
+      // 自动装备尚未分配的技能到空槽
+      const skillToSlot = {
+        "water_slash":  "light1", "water_vortex": "light2", "wood_thorn": "light3",
+        "metal_sword":  "heavy1", "fire_dragon":  "heavy2", "earth_meteor": "heavy3",
+        "parry_dagger": "parry"
+      };
+      for (const [sid, slot] of Object.entries(skillToSlot)) {
+        if (data.ownedSkills.includes(sid) && !data.equippedSkills[slot]) {
+          data.equippedSkills[slot] = sid;
+        }
+      }
+      if (skillsAdded > 0) {
+        this.save(data);
+        console.log("[GameData] 存量存档已补齐 " + skillsAdded + " 个技能");
       }
       return data;
     } catch (e) {
