@@ -264,42 +264,4 @@ class Entity {
     // 每帧必须更新碰撞体世界坐标（确保跟随实体移动/旋转）
     this.updateColliders();
   }
-
-  // ==================== 渲染辅助（调试用）====================
-
-  /**
-   * 绘制所有碰撞体边界（调试可视化，建议通过开关控制显示）
-   * @param {CanvasRenderingContext2D} ctx
-   * @param {Object} colorMap - 按标签映射颜色，如 { player: "#00ff00", enemy: "#ff0000" }
-   */
-  debugDrawColliders(ctx, colorMap = {}) {
-    for (const id in this._colliders) {
-      const c = this._colliders[id];
-      if (!c.enabled) continue;
-
-      const color = colorMap[c.tag] || "rgba(255,255,255,0.5)";
-      ctx.save();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([4, 3]);
-      ctx.beginPath();
-      ctx.arc(c.worldX, c.worldY, c.radius, 0, Math.PI * 2);
-      ctx.stroke();
-
-      // 绘制圆心十字
-      ctx.setLineDash([]);
-      ctx.globalAlpha = 0.6;
-      ctx.fillStyle = color;
-      ctx.fillRect(c.worldX - 1.5, c.worldY - 6, 3, 12);   // 竖线
-      ctx.fillRect(c.worldX - 6, c.worldY - 1.5, 12, 3);   // 横线
-
-      // 标签文字
-      ctx.globalAlpha = 0.8;
-      ctx.font = '10px monospace';
-      ctx.textAlign = "left";
-      ctx.fillText(`${c.id}[${c.tag}]`, c.worldX + c.radius + 3, c.worldY - 4);
-
-      ctx.restore();
-    }
-  }
 }

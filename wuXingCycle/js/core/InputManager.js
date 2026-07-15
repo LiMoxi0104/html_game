@@ -84,9 +84,6 @@ class InputManager {
   // ==================== 闪避 ====================
   dodgePressed() { return this.isPressed("shift"); }         // Shift 闪避
 
-  // ★ DEBUG 飞行模式切换（Q 键，后续可直接删除此行及 Player 中的飞行逻辑）
-  flyTogglePressed() { return this.isPressed("q"); }
-
   // ==================== 组合键：方向修饰符 + 攻击键 ====================
 
   // J 单独按下（无方向修饰）→ 对应 light1

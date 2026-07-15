@@ -1,20 +1,9 @@
 // HitboxSystem：逐帧动态碰撞箱引擎（v1）。
 //
 // 核心设计：
-//   - 将招式拆分为独立帧，每帧配置专属位置、尺寸、伤害与击退值
-//   - 支持数组逐帧取值（perFrameHitboxes[i]）与单数全帧沿用（hitbox）的向后兼容
-//   - 实现 hitFrames + damage 的双重过滤机制，区分蓄力帧(windup)与伤害帧(active)
-//
-// 数据流：
-//   skillConfig.json → HitboxSystem.resolveFrame() → { x, y, w, h, damage, knockback, element }
-//   VFXRenderer 读取同一帧数据渲染视觉 → 判定区域与视觉呈现严格同步
-//
-// 调试模式：
-//   按 H 键切换可视化，绘制半透明判定盒 + 帧编号 + 伤害数值
 
 class HitboxSystem {
   constructor() {
-    this.debugMode = false;          // 碰撞箱调试可视化
     this.frameCache = {};            // 技能ID → 解析后的逐帧配置缓存
   }
 
@@ -163,73 +152,6 @@ class HitboxSystem {
     const config = this.resolveSkillConfig(skill);
     if (!config) return null;
     return config.frames.find(f => f.frameIndex === cast.frameIndex) || null;
-  }
-
-  // ==================== 调试可视化 ====================
-
-  toggleDebug() {
-    this.debugMode = !this.debugMode;
-    console.log(`[HitboxSystem] 调试模式 ${this.debugMode ? "开启" : "关闭"}`);
-    return this.debugMode;
-  }
-
-  // 在画布上绘制碰撞箱（调试用）
-  drawDebug(ctx, hitbox, player, frameInfo) {
-    if (!this.debugMode || !hitbox) return;
-
-    ctx.save();
-
-    // 命中帧：红色半透明；蓄力帧/收招帧：黄色半透明
-    const isHit = !!hitbox.isHitFrame;
-    ctx.fillStyle = isHit ? "rgba(220,38,38,0.28)" : "rgba(202,166,74,0.22)";
-    ctx.strokeStyle = isHit ? "rgba(220,38,38,0.85)" : "rgba(202,166,74,0.7)";
-    ctx.lineWidth = 1.5;
-    ctx.fillRect(hitbox.x, hitbox.y, hitbox.w, hitbox.h);
-    ctx.strokeRect(hitbox.x, hitbox.y, hitbox.w, hitbox.h);
-
-    // 帧编号标签
-    ctx.fillStyle = "#fff";
-    ctx.font = 'bold 11px Consolas, monospace';
-    ctx.textAlign = "left";
-    ctx.textBaseline = "top";
-    const label = `F${hitbox.frameIndex}`;
-    ctx.fillText(label, hitbox.x + 2, hitbox.y + 2);
-
-    // 伤害/击退数值（仅在命中帧显示）
-    if (isHit) {
-      ctx.fillStyle = "#ff6b6b";
-      ctx.font = '10px Consolas';
-      ctx.fillText(`DMG:${hitbox.damage} KB:${hitbox.knockback}`, hitbox.x + 2, hitbox.y + 15);
-      // 尺寸标注
-      ctx.fillStyle = "#aaa";
-      ctx.fillText(`${hitbox.w}×${hitbox.h}`, hitbox.x + 2, hitbox.y + hitbox.h - 12);
-    }
-
-    // 元素标识
-    const elemColors = {
-      water: "#3a7bd5", wood: "#2e8b57", metal: "#9ca3af",
-      fire: "#d9480f", earth: "#8a6d3b", none: "#666"
-    };
-    const ec = elemColors[hitbox.element] || "#666";
-    ctx.fillStyle = ec;
-    ctx.fillRect(hitbox.x + hitbox.w - 14, hitbox.y + 2, 10, 10);
-
-    ctx.restore();
-  }
-
-  // 绘制玩家基准点（调试参考）
-  drawPlayerAnchor(ctx, player) {
-    if (!this.debugMode || !player) return;
-    ctx.save();
-    ctx.fillStyle = "rgba(0,200,100,0.7)";
-    ctx.beginPath();
-    ctx.arc(player.x + player.w / 2, player.y + player.h / 2, 3, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#00c864";
-    ctx.font = "9px monospace";
-    ctx.textAlign = "center";
-    ctx.fillText(player.facing === "right" ? "→" : "←", player.x + player.w / 2, player.y + player.h / 2 - 8);
-    ctx.restore();
   }
 
   // 清除缓存（技能配置变更后调用）

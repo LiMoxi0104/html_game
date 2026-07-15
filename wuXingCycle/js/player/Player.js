@@ -99,10 +99,6 @@ class Player {
     this._idleAnimActive = false;
     this._idleFrameIdx = 0;           // 浮点索引，循环推进
 
-    // ★ DEBUG 飞行模式（Tab 切换，后续可整块删除）——
-    this.isFlying = false;
-    this.flySpeed = 300;               // 飞行速度 px/s
-
     // 状态效果计时器
     this.slowTimer = 0;               // 减速剩余 ms
     this.blindTimer = 0;              // 致盲剩余 ms
@@ -148,40 +144,16 @@ class Player {
   /** ★ 注入天剑坠 角色替换精灵 */
   setSkillJianImage(img) { this._skillJianImage = img; }
 
-  // ★ DEBUG 飞行模式切换
-  toggleFly() {
-    this.isFlying = !this.isFlying;
-    if (this.isFlying) {
-      this.vy = 0;
-      this.vx = 0;
-      this.onGround = false;
-      this.jumpCount = 0;
-      this.state = "idle";
-    }
-    console.log(`[Player] 飞行模式: ${this.isFlying ? "ON" : "OFF"}`);
-  }
+  /** ★ 注入弹反精灵图（单帧静态） */
 
   setAnimFrames(frames) { this.animFSM.setFrames(frames); }
-
   setJumpFrames(frames) { this._jumpFrames = frames || []; }
-
   setRunStartupFrames(frames) { this.runFSM.setStartupFrames(frames); }
   setRunLoopFrames(frames)    { this.runFSM.setRunFrames(frames); }
-
-  /** ★ 设置轻攻击动画帧（attack1/ 目录，默认朝左） */
   setAttackFrames(frames) { this._attackFrames = frames || []; }
-
-  /** ★ 设置荆棘牢笼攻击动画帧（attack3/ 目录） */
   setAttack3Frames(frames) { this._attack3Frames = frames || []; }
-
-  /** ★ 设置空闲动画帧（stop/ 目录） */
   setStopFrames(frames) { this._stopFrames = frames || []; }
 
-  /**
-   * ★ 启动轻攻击动画：指定总时长，帧速率 = totalMs / frameCount。
-   *    仅在 state="attack" 期间推进，动画不循环，播完定格末帧。
-   * @param {number} totalMs - 技能总时长(ms)，用于计算帧间隔
-   */
   startAttackAnim(totalMs) {
     if (!this._attackFrames || this._attackFrames.length === 0) return;
     this._attackFrameIdx    = 0;
@@ -189,10 +161,6 @@ class Player {
     this._attackFrameCount   = this._attackFrames.length;
   }
 
-  /**
-   * ★ 启动荆棘牢笼攻击动画（attack3/ 序列帧）
-   * @param {number} totalMs - 动画总时长(ms)
-   */
   startAttack3Anim(totalMs) {
     if (!this._attack3Frames || this._attack3Frames.length === 0) return;
     this._attack3Active      = true;
@@ -200,11 +168,7 @@ class Player {
     this._attack3TotalMs     = totalMs;
     this._attack3FrameCount  = this._attack3Frames.length;
   }
-
-  /** ★ 获取当前 attack3 帧索引 */
   getAttack3FrameIdx() { return Math.floor(this._attack3FrameIdx); }
-
-  /** ★ 结束 attack3 动画 */
   stopAttack3Anim() {
     this._attack3Active = false;
     this._attack3FrameIdx = 0;
@@ -246,7 +210,6 @@ class Player {
     }
 
     AudioManager.play && AudioManager.play("jump");
-    console.log(`[Player] ${this.jumpCount === 1 ? "一段跳" : "二段跳"}！`);
     return true;
   }
 
@@ -294,7 +257,6 @@ class Player {
     this.invuln         = this.dodgeDuration;
     this.dodgeCooldown  = this.dodgeCooldownMax;
 
-    console.log(`[Player] 闪避！方向:${dir > 0 ? "右" : "左"} 起点:${this.dodgeStartX.toFixed(0)} → 终点:${this.dodgeTargetX.toFixed(0)} 速度:${this.dodgeSpeed.toFixed(0)}px/s`);
     return true;
   }
 
@@ -355,31 +317,6 @@ class Player {
         this._deathRemoved = true;
       }
       return;
-    }
-
-    // ★ DEBUG 飞行模式（Tab 切换，后续可整块删除）——
-    if (this.isFlying) {
-      const ds = this.flySpeed * (dt / 1000);   // 本帧位移
-      this.vx = 0;
-      this.vy = 0;
-      if (input.moveLeft())  { this.vx = -ds; this.facing = "left"; }
-      if (input.moveRight()) { this.vx =  ds; this.facing = "right"; }
-      if (input.moveUp())    { this.vy = -ds; }
-      if (input.moveDown())  { this.vy =  ds; }
-      // 同时按相邻方向时归一化（斜飞不加速）
-      if (this.vx !== 0 && this.vy !== 0) {
-        this.vx *= 0.7071;
-        this.vy *= 0.7071;
-      }
-      this.x += this.vx;
-      this.y += this.vy;
-      // 限制在地图边界内
-      const pad = c.world.boundaryPadding;
-      this.x = Math.max(pad, Math.min(this.x, map.width - this.w - pad));
-      this.y = Math.max(0, Math.min(this.y, map.height - this.h));
-      this.state = "idle";
-      this.onGround = false;
-      return;  // 跳过所有正常物理逻辑
     }
 
     // —— 计时器递减 ——
@@ -699,7 +636,6 @@ class Player {
     if (this.parrySystem && this.parrySystem.active) {
       const parried = this.parrySystem.checkParryHit(attacker);
       if (parried) {
-        console.log("[Player] 伤害被弹反拦截！");
         return false;
       }
     }
@@ -717,7 +653,6 @@ class Player {
       this.vx = 0;
       this.vy = 0;
       this._deathTimer = this._deathCorpseMs;  // ★ 启动死亡视觉计时
-      console.log(`[Player] 死亡！尸体${this._deathCorpseMs}ms + 淡出${this._deathFadeMs}ms`);
     }
     return true;
   }
@@ -1015,22 +950,6 @@ class Player {
       ctx.fillRect(this.x - 40, this.y - 40, this.w + 80, this.h + 80);
     }
 
-    // ★ DEBUG 飞行模式视觉标识（蓝色辉光环）——
-    if (this.isFlying) {
-      ctx.globalAlpha = 0.25 + Math.sin(performance.now() / 200) * 0.1;
-      ctx.strokeStyle = "#66ccff";
-      ctx.lineWidth = 2;
-      ctx.strokeRect(this.x - 1, this.y - 1, this.w + 2, this.h + 2);
-      // 头顶小三角
-      ctx.fillStyle = "#66ccff";
-      ctx.beginPath();
-      ctx.moveTo(this.x + this.w / 2, this.y - 12);
-      ctx.lineTo(this.x + this.w / 2 - 6, this.y - 2);
-      ctx.lineTo(this.x + this.w / 2 + 6, this.y - 2);
-      ctx.closePath();
-      ctx.fill();
-    }
-
     // —— ★ 多残影拖尾渲染（按寿命从旧到新绘制，越旧越透明）——
     if (this._ghostSnapshots.length > 0) {
       for (const ghost of this._ghostSnapshots) {
@@ -1194,141 +1113,4 @@ class Player {
     ctx.fillRect(eyeX, this.y + 12, 6, 6);
   }
 
-  // ════════════════════ ★ 像素级验证：受击变色仅影响非透明像素 ════════════════════
-
-  /**
-   * ★ 受击变色验证：确认 source-atop 红色叠加仅作用于精灵的非透明像素，
-   *   透明背景区域完全不被污染。
-   *
-   * 用法（浏览器控制台）：
-   *   // 使用当前玩家精灵帧测试：
-   *   Player.verifyHitTint()
-   *
-   *   // 使用指定 Image/Canvas 测试：
-   *   Player.verifyHitTint(someImage)
-   *
-   * @param {HTMLImageElement|HTMLCanvasElement} [testFrame]
-   * @returns {{pass:boolean, totalPixels:number, transparentOk:number, transparentFail:number, ...}}
-   */
-  static verifyHitTint(testFrame) {
-    // ★ 获取测试帧：优先使用传入参数，其次从全局 _player 获取当前帧
-    if (!testFrame) {
-      if (typeof window !== 'undefined' && window._player
-          && window._player.animFSM && window._player.animFSM.hasFrames) {
-        testFrame = window._player.animFSM.getCurrentFrame();
-      }
-    }
-    if (!testFrame) {
-      console.error('[TintVerify] ❌ 缺少测试帧。请在游戏运行后调用，或传入 Image/Canvas 参数。');
-      console.error('[TintVerify]    示例: Player.verifyHitTint(document.querySelector("img"))');
-      return { pass: false, details: '缺少测试帧' };
-    }
-
-    const W = testFrame.width  || testFrame.naturalWidth  || 80;
-    const H = testFrame.height || testFrame.naturalHeight || 124;
-
-    console.log(`[TintVerify] 测试帧尺寸: ${W}×${H}`);
-
-    // 1) 创建离屏 canvas，绘制原始精灵
-    const canvas = document.createElement('canvas');
-    canvas.width  = W;
-    canvas.height = H;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(testFrame, 0, 0, W, H);
-
-    // 读取原始像素数据
-    const origImg  = ctx.getImageData(0, 0, W, H);
-    const origData = origImg.data;
-
-    // 2) 应用与 Player.draw() 完全一致的红色 source-atop 叠加
-    ctx.save();
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.globalCompositeOperation = 'source-atop';
-    ctx.fillStyle = 'rgba(180, 25, 25, 0.50)';
-    ctx.fillRect(0, 0, W, H);
-    ctx.restore();
-
-    // 读取叠加后像素数据
-    const tintImg  = ctx.getImageData(0, 0, W, H);
-    const tintData = tintImg.data;
-
-    // 3) 逐像素比对
-    const total = W * H;
-    let pureTransparent = 0, transparentOk = 0, transparentFail = 0;
-    let nonTransparent   = 0, opaqueOk = 0, opaqueFail = 0;
-    const failSamples = [];
-
-    for (let i = 0; i < total; i++) {
-      const idx = i * 4;
-      const r0 = origData[idx], g0 = origData[idx+1], b0 = origData[idx+2], a0 = origData[idx+3];
-      const r1 = tintData[idx], g1 = tintData[idx+1], b1 = tintData[idx+2], a1 = tintData[idx+3];
-
-      if (a0 === 0) {
-        // 原始完全透明像素 → 叠加后必须仍完全透明
-        pureTransparent++;
-        if (a1 === 0) {
-          transparentOk++;
-        } else {
-          transparentFail++;
-          if (failSamples.length < 5) {
-            failSamples.push(
-              `❌ 透明像素[${i}]: rgba(${r0},${g0},${b0},${a0}) → rgba(${r1},${g1},${b1},${a1})`
-            );
-          }
-        }
-      } else {
-        // 原始非透明像素 → 应被红色覆盖（r1 与 r0 不同即可）
-        nonTransparent++;
-        if (a1 === a0) {
-          opaqueOk++;
-        } else {
-          opaqueFail++;
-          if (failSamples.length < 5) {
-            failSamples.push(
-              `⚠ 非透明像素[${i}]: rgba(${r0},${g0},${b0},${a0}) → rgba(${r1},${g1},${b1},${a1})`
-            );
-          }
-        }
-      }
-    }
-
-    // 4) 输出报告
-    const pass = transparentFail === 0;
-    const lines = [
-      `========================================`,
-      `  受击变色像素级验证报告`,
-      `========================================`,
-      `总像素数:       ${total.toLocaleString()}`,
-      `原始透明像素:   ${pureTransparent.toLocaleString()}`,
-      `  ✅ 仍透明:    ${transparentOk.toLocaleString()}`,
-      `  ❌ 被污染:    ${transparentFail.toLocaleString()}`,
-      `原始非透明像素: ${nonTransparent.toLocaleString()}`,
-      `  ✅ 正确变色:  ${opaqueOk.toLocaleString()}`,
-      `  ⚠ 异常:      ${opaqueFail.toLocaleString()}`,
-      ``,
-      pass
-        ? '✅ 验证通过：透明背景像素完全未被污染！'
-        : '❌ 验证失败：透明区域被红色调覆盖！请检查 source-atop 实现。',
-    ];
-    if (failSamples.length > 0) {
-      lines.push('--- 异常样本（前5个）---');
-      lines.push(...failSamples);
-    }
-    lines.push('========================================');
-
-    const report = lines.join('\n');
-    console.log(report);
-
-    return {
-      pass,
-      totalPixels: total,
-      transparentPixels: pureTransparent,
-      transparentOk,
-      transparentFail,
-      nonTransparentPixels: nonTransparent,
-      opaqueOk,
-      opaqueFail,
-      details: report
-    };
-  }
 }
