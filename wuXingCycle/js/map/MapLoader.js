@@ -48,7 +48,7 @@ class MapLoader {
 
     // 地图 → 背景 key 映射
     const BG_MAP = {
-      woodValley: "bg_zhuling",
+      wuxingVillage: "bg_zhuling",
       jinDomain:  "bg_metal",
       muDomain:   "bg_wood",
       shuiDomain: "bg_water",
@@ -57,10 +57,14 @@ class MapLoader {
     };
     map.bgKey = BG_MAP[mapId] || "bg_zhuling";
 
+    // ★ v5 建筑/装饰物（房屋、中心柱等）—— 背景之上、角色之下
+    map.structures = (cfg.structures || []).map(s => Object.assign({}, s));
+
     map.drawBackground = (ctx, camX) => MapLoader.drawZhulingBg(ctx, consts, camX, map, asset);
-    map.drawGround    = (ctx, camX) => MapLoader.drawGround(ctx, consts, map, camX, asset);
-    map.drawPlatforms = (ctx)       => MapLoader.renderPlatforms(ctx, consts, map, asset);
-    map.drawPortals   = (ctx, t)    => MapLoader.renderPortals(ctx, map, t);  // ★ v4
+    map.drawGround     = (ctx, camX) => MapLoader.drawGround(ctx, consts, map, camX, asset);
+    map.drawPlatforms  = (ctx)       => MapLoader.renderPlatforms(ctx, consts, map, asset);
+    map.drawPortals    = (ctx, t)    => MapLoader.renderPortals(ctx, map, t);
+    map.drawStructures = (ctx)       => MapLoader.drawStructures(ctx, map, asset);  // ★ v5
     return map;
   }
 
@@ -156,7 +160,7 @@ class MapLoader {
     ctx.globalAlpha = this._bgFadeAlpha;
 
     if (map.bgKey === "bg_zhuling") {
-      // 木幽谷竹林图：保持平铺
+      // 五行村竹林图：保持平铺
       const tileH = H;
       const tileW = tileH * (img.naturalWidth / img.naturalHeight);
       if (tileW <= 0) { ctx.restore(); return; }
@@ -307,6 +311,39 @@ class MapLoader {
       ctx.font = "bold 11px 'Microsoft YaHei', sans-serif";
       ctx.textAlign = "center";
       ctx.fillText(p.label || "传送门", cx, labelY);
+
+      ctx.restore();
+    }
+  }
+
+  // ★ v5 建筑/装饰物渲染：房屋（基于矩形）+ 中心装饰（基于中心点）
+  //   渲染层级：背景 → 地面 → 平台 → 传送门 → 建筑/装饰 → 敌人 → 角色
+  //   满足：建筑在背景之上、角色之下、不遮盖角色
+  static drawStructures(ctx, map, asset) {
+    if (!map.structures || map.structures.length === 0) return;
+
+    for (const s of map.structures) {
+      const img = asset ? asset.getImage(s.type) : null;
+      if (!img || !img.complete || img.naturalWidth <= 0) continue;
+
+      ctx.save();
+
+      if (s.type === "zhu") {
+        // ★ 中心点定位：以 (cx, cy) 为视觉中心，保持原始宽高比
+        const iw = img.naturalWidth;
+        const ih = img.naturalHeight;
+        const cy = s.cy;
+        const cx = s.cx;
+        // 默认渲染尺寸：高度 400px（2倍），宽度按比例
+        const renderH = 400;
+        const renderW = renderH * (iw / ih);
+        const dx = cx - renderW / 2;
+        const dy = cy - renderH;
+        ctx.drawImage(img, dx, dy, renderW, renderH);
+      } else {
+        // ★ 房屋/矩形装饰：按配置的 (x, y, w, h) 渲染
+        ctx.drawImage(img, s.x, s.y, s.w, s.h);
+      }
 
       ctx.restore();
     }

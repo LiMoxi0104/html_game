@@ -53,6 +53,18 @@ class EnemyThornSeed extends EnemyBase {
   }
   get hasFrames() { return this._shakeFrames.length > 0; }
 
+  // ═══════════════ 地面吸附 ═══════════════
+
+  /** 持续吸附至地面：防止受击击退导致浮空（荆棘藤种为固定位置敌人） */
+  _snapToGround() {
+    if (!this._map) return;
+    const groundY = this._map.groundY;
+    const correctY = groundY - this.h;
+    if (Math.abs(this.y - correctY) > 1) {
+      this.y += (correctY - this.y) * 0.6;  // 渐进快速吸附
+    }
+  }
+
   // ═══════════════ 碰撞 ═══════════════
 
   getRect() {
@@ -76,8 +88,10 @@ class EnemyThornSeed extends EnemyBase {
   // ═══════════════ 主更新 ═══════════════
 
   update(dt) {
+    super.update(dt);
     if (this.flash > 0) this.flash -= dt;
     if (!this.alive || this._state === "dead") return;
+    if (this._imprisoned) return;      // ★ 禁锢中跳过行为逻辑
 
     // 攻击冷却递减
     if (this._attackCooldown > 0) this._attackCooldown -= dt;
@@ -86,6 +100,9 @@ class EnemyThornSeed extends EnemyBase {
       case "shake": this._updateShake(dt); break;
       case "hit":   this._updateHit(dt);   break;
     }
+
+    // ★ 持续地面吸附：防止受击击退导致浮空
+    this._snapToGround();
   }
 
   // ─── shake：循环摆动，检测碰撞触发攻击 ───
@@ -164,7 +181,15 @@ class EnemyThornSeed extends EnemyBase {
 
     ctx.save();
 
-    // —— 闪白 ——
+    // —— 精灵渲染（默认朝左）——
+    const currentFrame = this._getCurrentFrame();
+    if (currentFrame) {
+      ctx.drawImage(currentFrame, this.x, this.y, this._renderW, this._renderH);
+    } else {
+      this._drawFallback(ctx);
+    }
+
+    // —— 闪白（精灵之后叠加，确保 source-atop 有效）——
     if (this.flash > 0) {
       ctx.save();
       ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -173,14 +198,6 @@ class EnemyThornSeed extends EnemyBase {
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(this.x, this.y, this.w, this.h);
       ctx.restore();
-    }
-
-    // —— 精灵渲染（默认朝左）——
-    const currentFrame = this._getCurrentFrame();
-    if (currentFrame) {
-      ctx.drawImage(currentFrame, this.x, this.y, this._renderW, this._renderH);
-    } else {
-      this._drawFallback(ctx);
     }
 
     ctx.restore();

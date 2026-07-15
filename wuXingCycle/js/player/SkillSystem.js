@@ -43,7 +43,16 @@ class SkillManager {
 
     // ★ 墨龙冲三段式动画状态机（fire_dragon 专属）
     this.molong = null;
+
+    // ★ 金行·天剑坠 旋转动画状态机
+    this.jianren = null;
+
+    // ★ 荆棘牢笼草对象帧（hit/ 序列）
+    this._thornTrapFrames = [];
   }
+
+  /** ★ 设置荆棘牢笼草对象动画帧 */
+  setThornTrapFrames(frames) { this._thornTrapFrames = frames || []; }
 
   // ======================== 初始化 ========================
 
@@ -92,7 +101,11 @@ class SkillManager {
 
   // ======================== 施放控制（继承原 SkillSystem）========================
 
-  isCasting() { return !!this.active || !!(this.chargeState && this.chargeState.active); }
+  isCasting() {
+    // ★ 荆棘牢笼：attack3 播完后玩家已释放，草独立运行期间不计为施法中
+    if (this.active && this.active._playerReleased) return false;
+    return !!this.active || !!(this.chargeState && this.chargeState.active);
+  }
 
   // ★ 蓄力状态查询
   isCharging() { return !!(this.chargeState && this.chargeState.active); }
@@ -114,10 +127,17 @@ class SkillManager {
     this.molong = molong;
   }
 
+  // ★ 注入金行·天剑坠 旋转动画状态机
+  setJianrenAnim(jianren) {
+    this.jianren = jianren;
+  }
+
   canCast(skillId) {
     const s = this.skills[skillId];
     if (!s) return false;
+    if (s.unlockMode === "locked") return false;
     if (this.active) return false;
+    if (this.player._hardRecovery > 0) return false;  // ★ 硬直中不可施放
     if (this.chargeState && this.chargeState.active) return false;  // ★ 蓄力中不可施放其他技能
     if (this.player.state === "hurt" || this.player.state === "dead" || this.player.state === "dodge") return false;
     if ((this.cooldowns[skillId] || 0) > 0) return false;
@@ -184,6 +204,19 @@ class SkillManager {
       this.molong.startCharge();
     }
 
+    // ★ metal_sword 专属：启动天剑坠蓄力动画
+    if (skillId === 'metal_sword' && this.jianren) {
+      this.jianren.startCharge();
+      this.player.useSkillJianSprite = true;
+    }
+
+    // ★ earth_meteor 专属：启动 attack3 蓄力动画（完整播放 55 帧）
+    if (skillId === 'earth_meteor') {
+      const chargeMs = ch.maxMs || 2000;
+      this.player.startAttack3Anim(chargeMs);
+      console.log(`[SkillManager] 陨星震蓄力动画启动, ${chargeMs}ms`);
+    }
+
     console.log(`[SkillManager] 开始蓄力: ${s.name} 最大 ${this.chargeState.maxMs}ms`);
     return true;
   }
@@ -197,6 +230,12 @@ class SkillManager {
       const ratio = this.chargeState.timer / this.chargeState.maxMs;
       this.molong.setChargeProgress(ratio);
     }
+
+    // ★ 天剑坠蓄力缩放：ratio 0→1 映射剑身高度 1x→2x
+    if (this.chargeState.skillId === 'metal_sword' && this.jianren) {
+      const ratio = this.chargeState.timer / this.chargeState.maxMs;
+      this.jianren.setChargeProgress(ratio);
+    }
   }
 
   releaseCharge() {
@@ -207,6 +246,32 @@ class SkillManager {
 
     // 计算蓄力比例
     const ratio = Math.min(1, cs.timer / cs.maxMs);
+
+    // ★ metal_sword 走专属旋转攻击（不进相位移驱动）
+    if (cs.skillId === 'metal_sword' && this.jianren) {
+      this.active = {
+        id: 'metal_sword',
+        phaseIndex: 0,
+        phaseTimer: 0,
+        frameIndex: 0,
+        hasHit: true,
+        _metalSwordMode: true     // ★ 标志位：update() 会路由到 jianren
+      };
+      this.player.state = "attack";
+      this.player.facingLock = true;
+      this.player.vx = 0;
+      this.player.vy = 0;
+      this.player.useSkillJianSprite = true;
+      this.jianren.startSpinPhase1();
+      this.chargeState = null;
+      console.log(`[SkillManager] 释放天剑坠: 蓄力比=${ratio.toFixed(2)}`);
+      return true;
+    }
+
+    // ★ earth_meteor 释放蓄力：停止 attack3 动画，切换到 windup VFX
+    if (cs.skillId === 'earth_meteor') {
+      this.player.stopAttack3Anim();
+    }
 
     const activePhase = s.phases.find(p => p.id === "active");
     const baseDash = activePhase ? (activePhase.dashDistance || 0) : 0;
@@ -227,7 +292,7 @@ class SkillManager {
       console.log(`[SkillManager] 释放蓄力: ${s.name} 蓄力比=${ratio.toFixed(2)} 伤害倍率=${chargeDmgMult.toFixed(2)}x`);
     }
     if (s.groundLock) {
-      // 锁定类（earth_meteor / metal_sword / fire_inferno / earthquake）：缩放冲击半径 + 伤害
+      // earth_meteor / fire_inferno / earthquake：缩放冲击半径 + 伤害
       impactScale = ratio;
       chargeDmgMult = 1 + ratio * 0.3;  // 1x→1.3x（地面锁定技蓄力伤害加成略低，以半径为主）
       console.log(`[SkillManager] 释放蓄力: ${s.name} 蓄力比=${ratio.toFixed(2)} 冲击波缩放=${(1+impactScale).toFixed(2)}x 伤害=${chargeDmgMult.toFixed(2)}x`);
@@ -260,9 +325,242 @@ class SkillManager {
     if (this.molong && this.molong.isActive) {
       this.molong.reset();
     }
+    // ★ 取消天剑坠动画
+    if (this.jianren && this.jianren.isActive) {
+      this.jianren.reset();
+    }
+    // ★ 取消陨星震 attack3 蓄力动画
+    if (this.chargeState.skillId === 'earth_meteor') {
+      this.player.stopAttack3Anim();
+    }
+    this.player.useSkillJianSprite = false;
     this.chargeState = null;
     this.player.state = "idle";
     this.player.facingLock = false;
+  }
+
+  // ★★★ 荆棘牢笼逐帧更新 ★★★
+  _updateWoodTrap(dtMs) {
+    const cast = this.active;
+    if (!cast || !cast._woodTrapMode) return;
+
+    const skill = this.skills['wood_thorn'];
+    if (!skill) { this.active = null; return; }
+
+    // 攻击期间禁止移动
+    this.player.vx = 0;
+    this.player.vy = 0;
+
+    // 推进 attack3 动画时间（帧推进在 Player.update 中完成）
+    cast.phaseTimer += dtMs;
+
+    // ★ 到达触发帧 → 启动草生长动画
+    if (!cast._trapTriggered) {
+      const triggerTime = (cast._triggerFrame / (skill.attack3Frames || 55)) * cast._totalMs;
+      if (cast.phaseTimer >= triggerTime) {
+        cast._trapTriggered = true;
+        cast._grassActive = true;
+        cast._grassTimer = 0;
+        cast._grassFrameIdx = 0;
+        console.log(`[SkillManager] 荆棘牢笼 → 草生长动画触发 (t=${cast.phaseTimer.toFixed(0)}ms)`);
+      }
+    }
+
+    // ★ 推进草生长动画（hit/ 帧序列）
+    if (cast._grassActive && this._thornTrapFrames.length > 0) {
+      cast._grassTimer += dtMs;
+      const grassTotal = skill.grassTotalMs || 2000;
+      const grassCount = skill.grassFrames || 121;
+      const interval = grassTotal / grassCount;
+      cast._grassFrameIdx = Math.min(grassCount - 1, Math.floor(cast._grassTimer / interval));
+
+      // 草动画播完 → 进入驻留阶段（保留显示2秒）
+      if (cast._grassTimer >= grassTotal) {
+        cast._grassActive = false;
+        cast._grassDwell = true;
+        cast._grassDwellTimer = 0;
+        cast._grassFrameIdx = grassCount - 1;  // 定格在最后一帧
+        console.log(`[SkillManager] 荆棘牢笼 → 草生长完成, 进入驻留 ${skill.grassDwellMs || 2000}ms`);
+      }
+    }
+
+    // ★ 驻留阶段：草保留显示不动，倒计时2秒
+    if (cast._grassDwell) {
+      const dwellMs = skill.grassDwellMs || 2000;
+      cast._grassDwellTimer += dtMs;
+      if (cast._grassDwellTimer >= dwellMs) {
+        cast._grassDwell = false;
+        cast._trapDone = true;
+        // 对目标敌人造成伤害（可控制时才造成伤害）
+        if (!cast._damageDealt) {
+          cast._damageDealt = true;
+          const target = cast._trapTarget;
+          if (target && target.alive && typeof target.takeDamage === 'function' && cast._canControl) {
+            const dmg = skill.trapDamage || 20;
+            target.takeDamage(dmg);
+            console.log(`[SkillManager] 荆棘牢笼 → 造成 ${dmg} 点伤害`);
+          } else if (!cast._canControl) {
+            console.log(`[SkillManager] 荆棘牢笼 → 敌人悬空, 跳过伤害`);
+          }
+        }
+        console.log(`[SkillManager] 荆棘牢笼 → 驻留完成, 草消失`);
+      }
+    }
+
+    // ★ attack3 动画播完 → 立即释放玩家自由移动（草继续独立运行）
+    if (!cast._playerReleased && cast.phaseTimer >= cast._totalMs) {
+      cast._playerReleased = true;
+      this.player.state = "idle";
+      this.player.facingLock = false;
+      this.player.stopAttack3Anim();
+      console.log(`[SkillManager] 荆棘牢笼 → attack3 完成, 玩家恢复自由移动 (草持续中)`);
+    }
+
+    // ★ attack3 播完且草已完毕 → 结束技能
+    if (cast.phaseTimer >= cast._totalMs && cast._trapDone) {
+      this._finishWoodThorn(cast, skill);
+      return;
+    }
+
+    // ★ 边界：目标已死亡 → 提前结束（跳过驻留）
+    const target = cast._trapTarget;
+    if (target && !target.alive && cast._trapTriggered && !cast._trapDone) {
+      cast._grassActive = false;
+      cast._grassDwell = false;
+      cast._trapDone = true;
+      if (typeof target.releaseImprison === 'function') {
+        target.releaseImprison();
+      }
+    }
+  }
+
+  _finishWoodThorn(cast, skill) {
+    // 解除目标禁锢（仅当施加过禁锢时）
+    const target = cast._trapTarget;
+    if (cast._canControl && target && typeof target.releaseImprison === 'function') {
+      target.releaseImprison();
+    }
+
+    // 冷却、扣蓝、熟练度
+    this.cooldowns['wood_thorn'] = skill.cooldownMs || 0;
+    if (skill.mpCost) this.player.mp = Math.max(0, this.player.mp - skill.mpCost);
+    this.addMastery('wood_thorn', 1);
+    this._checkMasteryUnlock('wood_thorn');
+
+    // 清理状态
+    this.active = null;
+    // ★ attack3 播完时已释放玩家，此处仅做最终清理
+    if (!cast._playerReleased) {
+      this.player.state = "idle";
+      this.player.facingLock = false;
+      this.player.stopAttack3Anim();
+    }
+    console.log(`[SkillManager] 荆棘牢笼 → 技能结束`);
+  }
+
+  // ★★★ 荆棘牢笼专属启动逻辑 ★★★
+  _startWoodThorn(s, enemies, map) {
+    // 1. 搜索最近敌人
+    const nearest = this._findNearestEnemy(s, enemies);
+    if (!nearest) {
+      console.warn("[SkillManager] 荆棘牢笼：范围内无目标，技能取消");
+      return false;
+    }
+
+    // 2. 寻找敌人引用（用于后续禁锢/伤害）
+    let targetEnemy = null;
+    for (const e of enemies) {
+      if (!e.alive) continue;
+      const ecx = e.x + e.w / 2;
+      const ecy = e.y + e.h / 2;
+      if (MathTool.dist(nearest.x, nearest.y, ecx, ecy) < 20) {
+        targetEnemy = e;
+        break;
+      }
+    }
+    if (!targetEnemy) {
+      // 回退：取与锁定坐标最接近的敌人
+      let minD = Infinity;
+      for (const e of enemies) {
+        if (!e.alive) continue;
+        const ecx = e.x + e.w / 2;
+        const ecy = e.y + e.h / 2;
+        const d = MathTool.dist(nearest.x, nearest.y, ecx, ecy);
+        if (d < minD) { minD = d; targetEnemy = e; }
+      }
+    }
+
+    // 3. 转向锁定目标
+    const ecx = targetEnemy.x + targetEnemy.w / 2;
+    this.player.facing = (ecx > this.player.x + this.player.w / 2) ? "right" : "left";
+
+    // 4. ★ 计算草对象位置：严格基于地面网格
+    //    groundY：地图地表 Y 坐标（权威地面线）
+    //    footY：  敌人脚底碰撞体 Y 坐标（仅用于悬空检测，不做草定位）
+    const footY = targetEnemy.y + targetEnemy.h;
+    // ★ 草底部 = 地图地面；无地图时回退用敌人脚底
+    const groundY = (map && map.groundY != null) ? map.groundY : footY;
+    const groundOffset = s.groundOffset || 0;  // 微调（正=下沉）
+
+    // ★ 悬空检测：敌人脚底离地面过高 → 草无法接触敌人 → 无控制效果
+    const floatGap = footY - groundY;
+    const floatThreshold = s.floatThreshold || 30;
+    const canControl = floatGap <= floatThreshold;
+    console.log(`[SkillManager] 荆棘牢笼 → 悬空检测: gap=${floatGap.toFixed(0)}px ` +
+      `(阈值${floatThreshold}px) → ${canControl ? "可控制" : "敌人悬空, 无禁锢效果"}`);
+
+    const trapX = targetEnemy.x + targetEnemy.w / 2;   // 水平居中于敌人
+    const trapY = groundY + (groundOffset || 0);        // ★ 草底部紧贴地面 + 偏移
+    const grassW = s.grassWidth || 120;
+    const grassH = s.grassHeight || 120;
+
+    // 5. 设置玩家状态，启动 attack3 动画
+    this.player.state = "attack";
+    this.player.facingLock = true;
+    this.player.vx = 0;
+    this.player.vy = 0;
+    this.player.startAttack3Anim(s.attack3TotalMs || 2800);
+
+    // 6. 创建荆棘牢笼专属 active 状态
+    this.active = {
+      _woodTrapMode: true,
+      id: "wood_thorn",
+      phaseIndex: 0,
+      phaseTimer: 0,
+      frameIndex: 0,
+      hasHit: false,
+      _trapTarget: targetEnemy,
+      _trapX: trapX,
+      _trapY: trapY,
+      _trapW: grassW,
+      _trapH: grassH,
+      _grassTimer: 0,
+      _grassFrameIdx: 0,
+      _grassActive: false,
+      _grassDwell: false,
+      _grassDwellTimer: 0,
+      _canControl: canControl,
+      _playerReleased: false,
+      _trapTriggered: false,
+      _trapDone: false,
+      _damageDealt: false,
+      _totalMs: s.attack3TotalMs || 2800,
+      _triggerFrame: s.attack3TriggerFrame || 21,
+      _hitEnemies: new Set()
+    };
+
+    // 7. 施加禁锢（仅当草可接触敌人时）控制时间 = 技能总时长 + 额外2秒
+    if (canControl && typeof targetEnemy.imprison === 'function') {
+      const controlMs = (s.attack3TotalMs || 2800) + (s.grassTotalMs || 2000)
+        + (s.grassDwellMs || 2000) + (s.controlExtraMs || 2000);
+      targetEnemy.imprison(controlMs);
+    }
+
+    if (s.element && s.element !== "none") {
+      AudioManager.play("skill_" + s.element);
+    }
+    console.log(`[SkillManager] 荆棘牢笼 → 锁定目标(${trapX.toFixed(0)},${trapY.toFixed(0)})`);
+    return true;
   }
 
   // ★ 搜索范围内最近敌人（返回 {x, y} 或 null）
@@ -353,6 +651,11 @@ class SkillManager {
     const s = this.skills[skillId];
     if (!s || !this.canCast(skillId)) return false;
 
+    // ★★★ 荆棘牢笼专属路径 ★★★
+    if (skillId === "wood_thorn") {
+      return this._startWoodThorn(s, enemies, map);
+    }
+
     // ★ 检测是否有冲刺位移（fire_dragon 等）
     const activePhase = s.phases.find(p => p.id === "active");
     const dashDist = activePhase ? (activePhase.dashDistance || 0) : 0;
@@ -429,6 +732,8 @@ class SkillManager {
       this.molong.update(dtMs);
     }
 
+    // ★ 金行·天剑坠 旋转驱动（由 GameMain 调用 jianren.update 传入 enemies）
+
     // ★ 墨龙冲收尾阶段：技能 phases 已结束但 END 动画还在播
     if (this.active && this.active._molongEndPhase) {
       if (this.molong && this.molong.state === MolongAnimState.END) {
@@ -446,6 +751,33 @@ class SkillManager {
     if (this.chargeState && this.chargeState.active) return;
 
     if (!this.active) return;
+
+    // ★★★ 荆棘牢笼模式 ★★★
+    if (this.active._woodTrapMode) {
+      return this._updateWoodTrap(dtMs);
+    }
+
+    // ★ 天剑坠收尾：active 已建立但 jianren 已 DONE
+    if (this.active._metalSwordMode) {
+      if (this.jianren && this.jianren.isDone) {
+        // 清理：扣蓝、冷却、熟练度
+        const skill = this.skills['metal_sword'];
+        if (skill) {
+          this.cooldowns['metal_sword'] = skill.cooldownMs || 0;
+          if (skill.mpCost) this.player.mp = Math.max(0, this.player.mp - skill.mpCost);
+          this.addMastery('metal_sword', 1);
+          this._checkMasteryUnlock('metal_sword');
+        }
+        this.active = null;
+        this.player.state = "idle";
+        this.player.facingLock = false;
+        this.player.useSkillJianSprite = false;  // 恢复原精灵
+        return;
+      }
+      // 攻击期间：禁止移动、阻止相位移推进
+      this.player.vx = 0;
+      return;
+    }
 
     const cast = this.active;
     const skill = this.skills[cast.id];
@@ -719,6 +1051,11 @@ class SkillManager {
     let skipped = 0;
 
     for (const skillId of allSkillIds) {
+      const skillCfg = this.skills[skillId];
+      if (skillCfg && skillCfg.unlockMode === "locked") {
+        skipped++;
+        continue;                    // ★ 锁定技能不可解锁，跳过
+      }
       if (this.isOwned(skillId)) {
         skipped++;
         continue;                    // 已拥有，跳过避免重复操作
@@ -745,6 +1082,10 @@ class SkillManager {
     if (this.isOwned(skillId)) return false;           // 已学会
     const s = this.skills[skillId];
     if (!s) return false;                              // 配置不存在
+    if (s.unlockMode === "locked") {
+      console.warn(`[SkillManager] 技能 ${s.name}(${skillId}) 处于锁定状态，不可学习`);
+      return false;                                    // ★ 锁定技能永久不可学
+    }
 
     // 加入技能池
     this.data.ownedSkills.push(skillId);
@@ -867,10 +1208,11 @@ class SkillManager {
     // ★ v6 蓄力条 UI（角色头顶）
     if (this.chargeState && this.chargeState.active) {
       this._drawChargeBar(ctx);
-      // ★ 蓄力 VFX：墨龙冲跳过程序化火焰（精灵图已替代）
+      // ★ 蓄力 VFX：墨龙冲/天剑坠跳过（精灵图已替代）
       const chargeSkill = this.skills[this.chargeState.skillId];
       const isMolongCharge = chargeSkill && chargeSkill.id === 'fire_dragon' && this.molong && this.molong.isActive;
-      if (this.vfxRenderer && !isMolongCharge) {
+      const isJianrenCharge = chargeSkill && chargeSkill.id === 'metal_sword' && this.jianren && this.jianren.isActive;
+      if (this.vfxRenderer && !isMolongCharge && !isJianrenCharge) {
         const cs = this.chargeState;
         const elem = chargeSkill ? chargeSkill.element : null;
         this.vfxRenderer.renderCharge(ctx, this.player, elem, this.getChargeProgress(),
@@ -883,14 +1225,15 @@ class SkillManager {
       const cast = this.active;
       const skill = this.skills[cast.id];
 
-      // ★ 墨龙冲动画播放期间跳过程序化 VFX（精灵图已替代）
+      // ★ 墨龙冲/天剑坠动画播放期间跳过程序化 VFX（精灵图已替代）
       const isMolongActive = cast.id === 'fire_dragon' && this.molong && this.molong.isActive;
+      const isJianrenActive = cast._metalSwordMode && this.jianren && this.jianren.isActive;
 
       if (skill && skill.phases) {
         const phase = skill.phases[cast.phaseIndex];
         const progress = phase ? (cast.phaseTimer / phase.durationMs || 0) : 0;
 
-        if (phase && this.vfxRenderer && skill.element && skill.element !== "none" && !isMolongActive) {
+        if (phase && this.vfxRenderer && skill.element && skill.element !== "none" && !isMolongActive && !isJianrenActive) {
           // ★ v4：优先使用 VFXRenderer 绘制水墨特效
           this.vfxRenderer.render(ctx, skill, cast, this.player, progress);
 
@@ -912,10 +1255,16 @@ class SkillManager {
 
           // 渲染粒子效果
           this.vfxRenderer.renderParticles(ctx);
-        } else if (phase && !isMolongActive) {
+        } else if (phase && !isMolongActive && !isJianrenActive) {
           // 向后兼容：旧版占位符渲染（非墨龙冲）
           this._drawPlaceholderLegacy(ctx, phase);
         }
+      }
+
+      // ★★★ 荆棘牢笼草对象渲染（在敌人之上）★★★
+      //     生长阶段 + 驻留阶段均显示
+      if (cast._woodTrapMode && (cast._grassActive || cast._grassDwell)) {
+        this._drawThornGrass(ctx, cast);
       }
     }
 
@@ -954,6 +1303,27 @@ class SkillManager {
     if (typeof this.player.startAttackAnim !== 'function') return;
     const totalMs = s.phases.reduce((sum, p) => sum + (p.durationMs || 0), 0);
     this.player.startAttackAnim(totalMs);
+  }
+
+  // ★★★ 荆棘牢笼草对象渲染 ★★★
+  _drawThornGrass(ctx, cast) {
+    if (!this._thornTrapFrames || this._thornTrapFrames.length === 0) return;
+    const idx = Math.min(cast._grassFrameIdx, this._thornTrapFrames.length - 1);
+    const frame = this._thornTrapFrames[idx];
+    if (!frame) return;
+
+    const gw = cast._trapW;
+    const gh = cast._trapH;
+    // ★ 水平居中，垂直：草底部 = trapY（地面），向上绘制
+    const gx = cast._trapX - gw / 2;
+    const gy = cast._trapY - gh;
+
+    ctx.save();
+    // 半透明 + 淡入效果（前200ms渐显）
+    const fadeProgress = Math.min(1, cast._grassTimer / 200);
+    ctx.globalAlpha = 0.85 * fadeProgress;
+    ctx.drawImage(frame, gx, gy, gw, gh);
+    ctx.restore();
   }
 
   // —— 水墨风解锁提示 Toast ——

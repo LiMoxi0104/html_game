@@ -1,7 +1,7 @@
 // AudioList：音效资源配置表。AudioManager 按 key 读取对应路径文件。
 const AUDIO_LIST = {
   bgm: {
-    woodValley: "assets/audio/bgm/wood_valley.mp3"
+    wuxingVillage: "assets/audio/bgm/wood_valley.mp3"
   },
   sfx: {
     jump:        "assets/audio/hit_sound/jump.mp3",

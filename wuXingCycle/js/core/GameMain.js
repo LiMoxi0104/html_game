@@ -37,6 +37,7 @@ class GameMain {
     this.transitionAlpha = 0;       // 0=透明 1=全黑
     this.transitionTimer = 0;
     this.portalCooldown = 0;        // 传送冷却 ms（防重复触发）
+    this.inputFreezeTimer = 0;      // ★ 传送后输入冻结计时器 ms
     this.transitionTarget = null;   // { mapId, targetX, targetY }
     this._mapConfigs = null;        // 缓存地图配置 JSON
   }
@@ -75,7 +76,7 @@ class GameMain {
     // 地图加载
     const mapConfigs = await fetch("config/mapConfig.json").then(r => r.json());
     this._mapConfigs = mapConfigs;  // ★ v4 缓存用于转场
-    const mapCfg = mapConfigs[this.data.currentMap] || mapConfigs.woodValley;
+    const mapCfg = mapConfigs[this.data.currentMap] || mapConfigs.wuxingVillage;
     this.map = MapLoader.load(this.data.currentMap, consts, mapCfg, this.asset);
 
     // ■ 加载岩甲蛰序列帧（assets/img/xiaoguai/5/）
@@ -163,6 +164,11 @@ class GameMain {
       "assets/img/player/attack1", "frame_", 135, "_nobg.png"
     );
 
+    // ■ ★ 加载荆棘牢笼攻击序列帧（assets/img/player/attack3/attack3/）
+    const attack3Frames = await this.asset.loadFrameSequence(
+      "assets/img/player/attack3/attack3", "frame_", 54, "_nobg.png"
+    );
+
     // ★ 加载墨龙冲三段式动画帧（molong/xuli + molong/weiyi）
     this._molongAnim = new MolongAnimState(this.asset);
     await this._molongAnim.load();
@@ -175,7 +181,15 @@ class GameMain {
     this.player.setRunStartupFrames(seqFrames);    // move_frames = 起跑帧
     this.player.setRunLoopFrames(runFrames);
     this.player.setAttackFrames(attackFrames);     // ★ 轻攻击动画帧（attack1/）
+    this.player.setAttack3Frames(attack3Frames);   // ★ 荆棘牢笼攻击动画帧（attack3/）
     this.player.setMolongAnim(this._molongAnim);   // ★ 墨龙冲动画引用
+    this.player.setParryImage(this.asset.getImage("player_parry")); // ★ 弹反精灵图
+
+    // ■ 加载空闲动画序列帧（assets/img/player/stop/）
+    const stopFrames = await this.asset.loadFrameSequence(
+      "assets/img/player/stop", "frame_", 105, "_nobg.png"
+    );
+    this.player.setStopFrames(stopFrames);         // ★ 空闲动画帧
 
     // —— 动态招式管理器（v2）——
     this.skill = new SkillManager(this.player, this.asset, this.data);
@@ -184,6 +198,28 @@ class GameMain {
     this.skill.initFromSave();
     this.player.setSkillSystem(this.skill);
     this.skill.setMolongAnim(this._molongAnim);   // ★ 注入墨龙冲动画状态机
+
+    // ★ 加载荆棘牢笼草对象序列帧（assets/img/player/attack3/hit/）
+    this._thornTrapHitFrames = await this.asset.loadFrameSequence(
+      "assets/img/player/attack3/hit", "frame_", 120, "_nobg.png"
+    );
+    this.skill.setThornTrapFrames(this._thornTrapHitFrames);
+
+    // ★ 加载金行·天剑坠 动画资源
+    this._jianrenAnim = new JianrenAnimState(
+      this.asset,
+      this.player,
+      (enemy) => {
+        const skill = this.skill.skills['metal_sword'];
+        const dmg = skill ? (skill.baseDamage || 38) : 38;
+        enemy.takeDamage(dmg);
+        if (this.vfxRenderer) this.vfxRenderer.spawnHitSpark?.(enemy.x + enemy.w / 2, enemy.y + enemy.h / 2);
+      }
+    );
+    this._jianrenAnim.load();
+    this.skill.setJianrenAnim(this._jianrenAnim);
+    this.player.setJianrenAnim(this._jianrenAnim);
+    this.player.setSkillJianImage(this.asset.getImage('player_jian'));
 
     // 弹反系统
     this.parry = new ParrySystem(this.player, consts);
@@ -266,8 +302,14 @@ class GameMain {
       return;  // 转场期间暂停游戏逻辑
     }
 
+    // ★ 输入冻结计时器递减
+    if (this.inputFreezeTimer > 0) {
+      this.inputFreezeTimer = Math.max(0, this.inputFreezeTimer - dt);
+    }
+    const inputFrozen = this.inputFreezeTimer > 0;
+
     // ==================== 0. 碰撞箱可视化切换（H 键） ====================
-    if (this.input) {
+    if (!inputFrozen && this.input) {
       const hNow = this.input.isDown("h");
       if (hNow && !this._wasHDown) {
         this.showHitboxes = !this.showHitboxes;
@@ -277,18 +319,17 @@ class GameMain {
     }
 
     // ★ DEBUG 飞行模式（Q 键切换，后续整块可删除）——
-    if (this.player && this.input.flyTogglePressed()) {
+    if (!inputFrozen && this.player && this.input.flyTogglePressed()) {
       this.player.toggleFly();
       this.addFloatText(this.player.isFlying ? "飞行 ON" : "飞行 OFF", "#88ddff");
     }
 
     // ★ v5 调试：U 键解锁全部技能
-    if (this.input && this.input._wasUDown === undefined) this.input._wasUDown = false;
-    const uDown = !!(this.input.down && this.input.down["u"]);
+    if (!inputFrozen && this.input && this.input._wasUDown === undefined) this.input._wasUDown = false;
+    const uDown = !inputFrozen && !!(this.input && this.input.down && this.input.down["u"]);
     if (this.skill && uDown && !this.input._wasUDown) {
       const result = this.skill.unlockAllSkills();
       if (result.unlocked > 0) {
-        // ★ 刷新 SkillPanel 过滤缓存，确保背包立即显示新解锁的技能
         if (this.ui && this.ui.skillPanel) {
           this.ui.skillPanel._invalidateFilterCache();
         }
@@ -307,10 +348,15 @@ class GameMain {
     // ★ v4 VFX 粒子更新（每帧驱动）
     if (this.vfxRenderer) this.vfxRenderer.update(dt);
 
+    // ★ 金行·天剑坠 旋转驱动（在玩家 update 之前，确保碰撞检测帧同步）
+    if (this._jianrenAnim && this._jianrenAnim.isActive) {
+      this._jianrenAnim.update(dt, this.map.enemies);
+    }
+
     // ==================== 0.1 闪避触发（Shift，优先于攻击）====================
-    if (this.input.dodgePressed()) {
+    if (!inputFrozen && this.input.dodgePressed()) {
       if (this.player.startDodge(this.input, this.map.width)) {
-        AudioManager.play && AudioManager.play("dodge");   // 闪避音效（如有）
+        AudioManager.play && AudioManager.play("dodge");
       }
     }
 
@@ -318,7 +364,7 @@ class GameMain {
     const slotKeys = ["light1", "light2", "light3", "heavy1", "heavy2", "heavy3", "parry"];
 
     // ★ v6 蓄力技能释放检测（松开按键时触发）
-    if (this._chargeSlot) {
+    if (!inputFrozen && this._chargeSlot) {
       // 蓄力中断保护：受伤/死亡/闪避时取消蓄力
       if (this.player.state !== "charge") {
         this.skill.cancelCharge();
@@ -326,18 +372,20 @@ class GameMain {
       } else if (this.skill.isCharging()) {
         this.skill.updateCharge(dt);
         if (!this.input.isSlotDown(this._chargeSlot)) {
-          // 按键松开 → 释放蓄力技
           this.skill.releaseCharge();
           this._chargeSlot = null;
         }
       } else {
-        // 蓄力已结束（可能被 cancel）
         this._chargeSlot = null;
       }
+    } else if (inputFrozen && this._chargeSlot) {
+      // ★ 冻结期强制取消残存蓄力
+      this.skill.cancelCharge();
+      this._chargeSlot = null;
     }
 
     // 非蓄力中的槽位检测
-    if (!this._chargeSlot) {
+    if (!inputFrozen && !this._chargeSlot) {
       for (const sk of slotKeys) {
         if (this.input.isSlotPressed(sk)) {
           const skillId = this.skill.getSlotSkillId(sk);
@@ -345,15 +393,12 @@ class GameMain {
             if (sk === "parry") {
               this.parry.trigger();
             } else {
-              // ★ 检查是否为蓄力技能
               const s = this.skill.skills[skillId];
               if (s && s.charge && s.charge.enabled) {
-                // 蓄力技能：开始蓄力
                 if (this.skill.startCharge(skillId, this.map.enemies, this.map)) {
                   this._chargeSlot = sk;
                 }
               } else {
-                // 非蓄力技能：即时施放
                 this.skill.startCast(skillId, this.map.enemies, this.map);
               }
             }
@@ -449,6 +494,7 @@ class GameMain {
     this.map.drawGround(ctx, this.cameraX);
     this.map.drawPlatforms(ctx);
     this.map.drawPortals(ctx);
+    this.map.drawStructures(ctx);   // ★ 建筑/装饰（背景之上、角色之下）
     this.trap.draw(ctx);
     for (const e of this.map.enemies) e.draw(ctx);
     this.player.draw(ctx);
@@ -506,7 +552,19 @@ class GameMain {
     this.transitionAlpha = 0;
     this.transitionTimer = 0;
 
-    // 暂停玩家输入
+    // ★ 强制清除闪避/攻击状态，防止位移残留跨地图
+    if (this.player.state === "dodge") {
+      this.player.dodgeTimer = 0;
+      this.player.state = "idle";
+    }
+    if (this.player.state === "attack" || this.player.state === "charge") {
+      if (this.skill) this.skill.cancelCharge();
+      if (this.skill && this.skill.active) {
+        this.skill.active = null;
+      }
+      this.player.state = "idle";
+      this.player.facingLock = false;
+    }
     this.player.vx = 0;
     this.player.vy = 0;
   }
@@ -536,7 +594,11 @@ class GameMain {
         this.transitionState = null;
         this.transitionAlpha = 0;
         this.transitionTarget = null;
-        console.log("[GameMain] 转场完成");
+        // ★ 清空传送期间积压的输入操作
+        if (this.input) this.input.reset();
+        // ★ 启动 0.5 秒操作冻结期，避免动作残留
+        this.inputFreezeTimer = 500;
+        console.log("[GameMain] 转场完成，输入已重置 + 冻结 1s");
       }
     }
   }
@@ -605,9 +667,10 @@ class GameMain {
       }
     }
 
-    // 3. 重设玩家位置（传送至目标坐标）
+    // 3. 重设玩家位置（传送至目标坐标，Y 轴上浮 40px 防止卡入地形）
+    const SPAWN_LIFT_Y = 40;
     this.player.x = t.targetX;
-    this.player.y = t.targetY;
+    this.player.y = t.targetY - SPAWN_LIFT_Y;
     this.player.vx = 0;
     this.player.vy = 0;
     this.player.onGround = false;

@@ -211,6 +211,7 @@ class EnemyRockArmor extends EnemyBase {
       return;
     }
     super.update(dt);
+    if (this._imprisoned) return;      // ★ 禁锢中跳过行为逻辑
 
     switch (this._state) {
       case "patrol":   this._updatePatrol(dt);   break;
@@ -223,6 +224,8 @@ class EnemyRockArmor extends EnemyBase {
       const pad = 4;
       if (this.x < pad) this.x = pad;
       if (this.x > this._map.width - this.w - pad) this.x = this._map.width - this.w - pad;
+      // ★ 持续地面吸附（非飞扑态）：防止受击击退导致浮空
+      if (this._state !== "attack") this._snapToGround();
     }
   }
 

@@ -14,7 +14,7 @@
 const DEFAULT_SAVE = {
   cycle: 1,
   awakening: 0,
-  currentMap: "woodValley",
+  currentMap: "wuxingVillage",
   level: 1,
   exp: 0,
   expNeed: 100,
@@ -41,7 +41,7 @@ const DEFAULT_SAVE = {
   },
 
   mapExplore: {
-    woodValley: { unlock: true, box: [false, false] }
+    wuxingVillage: { unlock: true, box: [false, false] }
   },
   timeScale: 1,
   freezeTimer: 0
@@ -54,7 +54,7 @@ function migrateSaveV1(oldData) {
   const data = JSON.parse(JSON.stringify(DEFAULT_SAVE));
   data.cycle = oldData.cycle ?? 1;
   data.awakening = oldData.awakening ?? 0;
-  data.currentMap = oldData.currentMap ?? "woodValley";
+  data.currentMap = oldData.currentMap ?? "wuxingVillage";
   data.level = oldData.level ?? 1;
   data.exp = oldData.exp ?? 0;
   data.expNeed = oldData.expNeed ?? 100;
@@ -137,16 +137,16 @@ class GameData {
       }
       // 补全 mapExplore 中缺失的条目（全部五行地图）
       if (!data.mapExplore) data.mapExplore = {};
-      if (!data.mapExplore.woodValley) data.mapExplore.woodValley = { unlock: true, box: [false, false] };
+      if (!data.mapExplore.wuxingVillage) data.mapExplore.wuxingVillage = { unlock: true, box: [false, false] };
       const allMaps = ["jinDomain","muDomain","shuiDomain","huoDomain","tuDomain"];
       for (const m of allMaps) {
         if (!data.mapExplore[m]) data.mapExplore[m] = { unlock: true, box: [] };
       }
-      // ★ 确保始终从木幽谷（最原始地图）开始
-      if (data.currentMap !== "woodValley") {
-        data.currentMap = "woodValley";
+      // ★ 确保始终从五行村（最原始地图）开始
+      if (data.currentMap !== "wuxingVillage") {
+        data.currentMap = "wuxingVillage";
         this.save(data);
-        console.log("[GameData] currentMap 已修正为木幽谷");
+        console.log("[GameData] currentMap 已修正为五行村");
       }
       return data;
     } catch (e) {

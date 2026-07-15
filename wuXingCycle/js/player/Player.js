@@ -76,6 +76,13 @@ class Player {
     this._attackFrameTotalMs = 0;     // 动画总时长(ms)，>0 表示正在播放
     this._attackFrameCount   = 0;     // 帧总数（帧间间隔 = totalMs / count）
 
+    // —— ★ 荆棘牢笼专用攻击动画（attack3/）——
+    this._attack3Frames      = [];    // HTMLImageElement[]，attack3/ 序列帧
+    this._attack3Active      = false; // 是否使用 attack3 帧集
+    this._attack3FrameIdx    = 0;
+    this._attack3TotalMs     = 0;
+    this._attack3FrameCount  = 0;
+
     // —— 战斗标记 ——
     this.canCounter = false;
     this.canExecute = false;
@@ -85,6 +92,12 @@ class Player {
 
     // —— 墨龙冲动画引用（由 GameMain 注入）——
     this._molongAnim = null;
+
+    // —— 空闲动画（stop/ 文件夹，106 帧，2 秒无操作后循环播放）——
+    this._stopFrames = [];
+    this._idleTimer = 0;
+    this._idleAnimActive = false;
+    this._idleFrameIdx = 0;           // 浮点索引，循环推进
 
     // ★ DEBUG 飞行模式（Tab 切换，后续可整块删除）——
     this.isFlying = false;
@@ -100,6 +113,19 @@ class Player {
     this._deathCorpseMs = 2000;       // 尸体存留时长
     this._deathFadeMs = 500;          // 淡出时长
     this._deathRemoved = false;       // 是否已从场景移除
+
+    // —— 弹反精灵图（单帧，由 GameMain 注入）——
+    this._parryImage = null;
+
+    // —— 天剑坠专用：jian.png 替换精灵图 ——
+    this._skillJianImage = null;
+    this.useSkillJianSprite = false;
+
+    // —— 天剑坠 旋转动画状态机（由 GameMain 注入）——
+    this._jianrenAnim = null;
+
+    // —— ★ 技能后硬直（荆棘牢笼等，ms）——
+    this._hardRecovery = 0;
   }
 
   // ═══════ 依赖注入 ═══════
@@ -112,6 +138,15 @@ class Player {
 
   /** ★ 注入墨龙冲动画状态机 */
   setMolongAnim(molong) { this._molongAnim = molong; }
+
+  /** ★ 注入弹反精灵图（单帧静态） */
+  setParryImage(img) { this._parryImage = img; }
+
+  /** ★ 注入天剑坠 旋转状态机 */
+  setJianrenAnim(anim) { this._jianrenAnim = anim; }
+
+  /** ★ 注入天剑坠 角色替换精灵 */
+  setSkillJianImage(img) { this._skillJianImage = img; }
 
   // ★ DEBUG 飞行模式切换
   toggleFly() {
@@ -136,6 +171,12 @@ class Player {
   /** ★ 设置轻攻击动画帧（attack1/ 目录，默认朝左） */
   setAttackFrames(frames) { this._attackFrames = frames || []; }
 
+  /** ★ 设置荆棘牢笼攻击动画帧（attack3/ 目录） */
+  setAttack3Frames(frames) { this._attack3Frames = frames || []; }
+
+  /** ★ 设置空闲动画帧（stop/ 目录） */
+  setStopFrames(frames) { this._stopFrames = frames || []; }
+
   /**
    * ★ 启动轻攻击动画：指定总时长，帧速率 = totalMs / frameCount。
    *    仅在 state="attack" 期间推进，动画不循环，播完定格末帧。
@@ -146,6 +187,29 @@ class Player {
     this._attackFrameIdx    = 0;
     this._attackFrameTotalMs = totalMs;
     this._attackFrameCount   = this._attackFrames.length;
+  }
+
+  /**
+   * ★ 启动荆棘牢笼攻击动画（attack3/ 序列帧）
+   * @param {number} totalMs - 动画总时长(ms)
+   */
+  startAttack3Anim(totalMs) {
+    if (!this._attack3Frames || this._attack3Frames.length === 0) return;
+    this._attack3Active      = true;
+    this._attack3FrameIdx    = 0;
+    this._attack3TotalMs     = totalMs;
+    this._attack3FrameCount  = this._attack3Frames.length;
+  }
+
+  /** ★ 获取当前 attack3 帧索引 */
+  getAttack3FrameIdx() { return Math.floor(this._attack3FrameIdx); }
+
+  /** ★ 结束 attack3 动画 */
+  stopAttack3Anim() {
+    this._attack3Active = false;
+    this._attack3FrameIdx = 0;
+    this._attack3TotalMs = 0;
+    this._attack3FrameCount = 0;
   }
 
   getRect() { return { x: this.x, y: this.y, w: this.w, h: this.h }; }
@@ -191,6 +255,7 @@ class Player {
   startDodge(input, mapWidth) {
     if (this.state === "dead" || this.state === "hurt" || this.state === "attack" || this.state === "parry" || this.state === "charge") return false;
     if (this.dodgeCooldown > 0) return false;
+    if (this._hardRecovery > 0) return false;  // ★ 技能后硬直中不可闪避
 
     // ■ 闪避方向判定
     //   D+Shift → 向右闪避；A+Shift → 向左闪避；原地站立 → 向朝向反方向闪避
@@ -321,6 +386,7 @@ class Player {
     if (this.invuln > 0)        this.invuln -= dt;
     if (this.dodgeCooldown > 0) this.dodgeCooldown -= dt;
     if (this.ghostTimer > 0)    this.ghostTimer -= dt;
+    if (this._hardRecovery > 0) this._hardRecovery -= dt;  // ★ 技能后硬直
     else this.ghostRect = null;
 
     // ★ 残影寿命递减（过期的自动清除）
@@ -349,10 +415,20 @@ class Player {
         this._attackFrameIdx = this._attackFrameCount - 1;
       }
     }
-    // 非攻击状态时重置动画状态，避免下次误播
-    if (this.state !== "attack") {
+    // ★ attack3 动画帧推进（荆棘牢笼专用）
+    if (this._attack3Active && this._attack3TotalMs > 0 && this._attack3FrameCount > 0) {
+      const interval = this._attack3TotalMs / this._attack3FrameCount;
+      this._attack3FrameIdx += dt / interval;
+      if (this._attack3FrameIdx >= this._attack3FrameCount) {
+        this._attack3FrameIdx = this._attack3FrameCount - 1;
+      }
+    }
+    // 非攻击/蓄力状态时重置动画状态，避免下次误播
+    if (this.state !== "attack" && this.state !== "charge") {
       this._attackFrameTotalMs = 0;
       this._attackFrameIdx = 0;
+      this._attack3Active = false;
+      this._attack3FrameIdx = 0;
     }
 
     // —— FSM 动画更新 ——
@@ -416,10 +492,11 @@ class Player {
     const hurt     = this.state === "hurt";
     const dodging  = this.state === "dodge";
     const parrying = this.state === "parry";
+    const recovery = this._hardRecovery > 0;   // ★ 技能后硬直
 
     // —— 水平移动（地面上用腿奔跑）——
     let mx = 0;
-    if (!casting && !hurt && !dodging && !parrying) {
+    if (!casting && !hurt && !dodging && !parrying && !recovery) {
       if (input.moveLeft())  mx -= 1;
       if (input.moveRight()) mx += 1;
       if (mx > 0)      this.facing = "right";
@@ -430,11 +507,11 @@ class Player {
       const f = this.animFSM.getFacing();
       if (f) this.facing = f;
     }
-    this.vx = (casting || hurt || dodging || parrying) ? 0 : mx * c.player.moveSpeed * this.speedMultiplier;
+    this.vx = (casting || hurt || dodging || parrying || recovery) ? 0 : mx * c.player.moveSpeed * this.speedMultiplier;
 
     // —— 跳跃 ——
     if (input.jumpPressed()) {
-      if (this.jumpCount < this.maxJumps && !casting && !hurt && !dodging && !parrying) {
+      if (this.jumpCount < this.maxJumps && !casting && !hurt && !dodging && !parrying && !recovery) {
         this.startJump();
       }
     }
@@ -533,6 +610,37 @@ class Player {
       } else {
         this.state = "idle";
       }
+    }
+
+    // ★ 空闲动画检测：state="idle" 且无任何按键 → 2 秒后循环播放 stop/ 帧
+    //   任何输入（方向/跳跃/攻击/闪避/弹反）立即中断并重置计时
+    if (this.state === "idle" && this._stopFrames.length > 0) {
+      const hasInput = mx !== 0
+        || input.moveUp() || input.moveDown()
+        || input.jumpDown()
+        || input.isDown("j") || input.isDown("k") || input.isDown("l")
+        || input.isDown("shift");
+      if (!hasInput) {
+        this._idleTimer += dt;
+        if (this._idleTimer >= 2000) {
+          if (!this._idleAnimActive) {
+            this._idleFrameIdx = 0;
+            this._idleAnimActive = true;
+          }
+          // 循环推进帧索引
+          const IDLE_INTERVAL = 50;  // 50ms/帧 ≈ 5.3s 循环一次
+          this._idleFrameIdx += dt / IDLE_INTERVAL;
+          while (this._idleFrameIdx >= this._stopFrames.length) {
+            this._idleFrameIdx -= this._stopFrames.length;
+          }
+        }
+      } else {
+        this._idleTimer = 0;
+        this._idleAnimActive = false;
+      }
+    } else if (this.state !== "idle") {
+      this._idleTimer = 0;
+      this._idleAnimActive = false;
     }
 
     // —— 攻击推进 + 命中判定 ——
@@ -680,6 +788,23 @@ class Player {
     // —— ★ 死亡视觉：已完全移除 → 不绘制 ——
     if (this._deathRemoved) return;
 
+    // ★ 天剑坠期间：替换角色精灵为 jian.png
+    if (this.useSkillJianSprite && this._skillJianImage) {
+      ctx.save();
+      this._drawSkillJianSprite(ctx);
+      // 蓄力/旋转期间仍绘制闪避残影
+      if (this._ghostSnapshots.length > 0) {
+        this._drawGhostSnapshots(ctx);
+      }
+      // ★ 在角色精灵之上叠加绘制剑身
+      if (this._jianrenAnim && this._jianrenAnim.isActive) {
+        this._jianrenAnim.drawBlade(ctx, this);
+      }
+      ctx.globalAlpha = 1;
+      ctx.restore();
+      return;
+    }
+
     // ★ 墨龙冲动画渲染（优先级最高，替换角色精灵）
     if (this._molongAnim && this._molongAnim.isActive) {
       ctx.save();
@@ -751,18 +876,46 @@ class Player {
         }
       // ★ idle：用 Player.facing 翻转（保持最后运动方向），非 FSM 内部状态
       } else if (this.state === "idle") {
-        const frame = this.animFSM.getCurrentFrame();
-        if (frame) {
-          if (this.facing === "right") {
-            ctx.translate(this.x + this.w, this.y);
-            ctx.scale(-1, 1);
-            ctx.drawImage(frame, 0, 0, this.w, this.h);
-          } else {
-            ctx.drawImage(frame, this.x, this.y, this.w, this.h);
+        // ★ 空闲动画优先：2 秒无操作后循环播放 stop/ 帧
+        if (this._idleAnimActive && this._stopFrames.length > 0) {
+          const idx = Math.floor(this._idleFrameIdx);
+          const frame = this._stopFrames[idx];
+          if (frame) {
+            if (this.facing === "right") {
+              ctx.translate(this.x + this.w, this.y);
+              ctx.scale(-1, 1);
+              ctx.drawImage(frame, 0, 0, this.w, this.h);
+            } else {
+              ctx.drawImage(frame, this.x, this.y, this.w, this.h);
+            }
+          }
+        } else {
+          const frame = this.animFSM.getCurrentFrame();
+          if (frame) {
+            if (this.facing === "right") {
+              ctx.translate(this.x + this.w, this.y);
+              ctx.scale(-1, 1);
+              ctx.drawImage(frame, 0, 0, this.w, this.h);
+            } else {
+              ctx.drawImage(frame, this.x, this.y, this.w, this.h);
+            }
           }
         }
       } else {
         this.animFSM.draw(ctx, this.x, this.y, this.w, this.h);
+      }
+    } else if (this.state === "attack" && this._attack3Active && this._attack3Frames.length > 0) {
+      // ★ 荆棘牢笼攻击动画（attack3/）：按 facing 翻转
+      const idx = Math.min(Math.floor(this._attack3FrameIdx), this._attack3Frames.length - 1);
+      const frame = this._attack3Frames[idx];
+      if (frame) {
+        if (this.facing === "right") {
+          ctx.translate(this.x + this.w, this.y);
+          ctx.scale(-1, 1);
+          ctx.drawImage(frame, 0, 0, this.w, this.h);
+        } else {
+          ctx.drawImage(frame, this.x, this.y, this.w, this.h);
+        }
       }
     } else if (this.state === "attack" && this._attackFrames.length > 0) {
       // ★ 轻攻击帧动画：默认朝左，右朝向时镜像翻转
@@ -803,6 +956,24 @@ class Player {
         }
       } else {
         this._drawFallback(ctx, c);
+      }
+    } else if (this.state === "parry" && this._parryImage) {
+      // ★ 弹反：单帧静态精灵图，按 facing 翻转，保持视觉中心
+      this._drawParryFrame(ctx);
+    } else if (this.state === "charge" && this._attack3Active && this._attack3Frames.length > 0) {
+      // ★ 陨星震蓄力动画（attack3/ 序列帧）：按 facing 翻转
+      const idx = Math.min(Math.floor(this._attack3FrameIdx), this._attack3Frames.length - 1);
+      const frame = this._attack3Frames[idx];
+      if (frame) {
+        ctx.save();
+        if (this.facing === "right") {
+          ctx.translate(this.x + this.w, this.y);
+          ctx.scale(-1, 1);
+          ctx.drawImage(frame, 0, 0, this.w, this.h);
+        } else {
+          ctx.drawImage(frame, this.x, this.y, this.w, this.h);
+        }
+        ctx.restore();
       }
     } else {
       const sprite = this._getCurrentSprite();
@@ -924,6 +1095,56 @@ class Player {
       ctx.globalAlpha = ghostAlpha;
       ctx.drawImage(ghost.image, ghost.x, ghost.y, this.w, this.h);
     }
+  }
+
+  /**
+   * ★ 绘制弹反精灵图（单帧静态）。
+   *    帧图默认朝右（匕首向右伸展），左朝向时水平翻转。
+   *    按比例缩放适应角色碰撞箱，保持视觉中心与脚底锚点。
+   */
+  _drawParryFrame(ctx) {
+    const img = this._parryImage;
+    if (!img) return;
+
+    const frameW = img.width;
+    const frameH = img.height;
+    // ★ 等比缩放适应角色框
+    const scale = Math.min(this.w / frameW, this.h / frameH);
+    const drawW = frameW * scale;
+    const drawH = frameH * scale;
+    // ★ 脚底锚点：脚底水平居中（避免浮空）
+    const drawX = this.x + (this.w - drawW) / 2;
+    const drawY = this.y + this.h - drawH;
+
+    if (this.facing === "left") {
+      ctx.translate(drawX + drawW, drawY);
+      ctx.scale(-1, 1);
+      ctx.drawImage(img, 0, 0, drawW, drawH);
+    } else {
+      ctx.drawImage(img, drawX, drawY, drawW, drawH);
+    }
+  }
+
+  /**
+   * ★ 天剑坠期间绘制 jian.png 替换精灵（双手合十祈祷姿势）。
+   *   - 绘制区域 = 角色碰撞箱 (this.x, this.y, this.w, this.h)，零偏移、零变形
+   *   - 图片自动拉伸填充，与原 idle/walk 帧渲染方式完全一致
+   *   - 角色 x / y / w / h 属性不变，碰撞边界严格对齐
+   */
+  _drawSkillJianSprite(ctx) {
+    const img = this._skillJianImage;
+    if (!img) return;
+
+    // ★ 隔离变换，避免污染后续 drawBlade 的 CTM
+    ctx.save();
+    if (this.facing === "right") {
+      ctx.translate(this.x + this.w, this.y);
+      ctx.scale(-1, 1);
+      ctx.drawImage(img, 0, 0, this.w, this.h);
+    } else {
+      ctx.drawImage(img, this.x, this.y, this.w, this.h);
+    }
+    ctx.restore();
   }
 
   // 根据当前状态获取精灵图与源裁剪区域

@@ -55,6 +55,18 @@ class InputManager {
     this._wasJumpDown = nowDown;
   }
 
+  /**
+   * ★ 强制清空全部输入状态。
+   *    传送后调用：清除按键残留 + 重置组合键时序。
+   */
+  reset() {
+    this.down = {};
+    this.pressed = {};
+    this._jumpReleased = false;
+    this._wasJumpDown = false;
+    this._wPressTime = 0;
+  }
+
   // ==================== 方向与移动 ====================
   moveLeft() { return this.isDown("a") || this.isDown("arrowleft"); }
   moveRight() { return this.isDown("d") || this.isDown("arrowright"); }

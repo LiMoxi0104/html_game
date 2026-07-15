@@ -207,7 +207,7 @@
       "description": "从地面召唤苍绿藤蔓向上抬升，攻击近身目标",
       "unlockMode": "chest",
       "unlockCondition": {
-        "mapId": "woodValley",
+        "mapId": "wuxingVillage",
         "boxIndex": 0
       },
       "mpCost": 0,
@@ -303,122 +303,43 @@
       "name": "木行·荆棘牢笼",
       "type": "light",
       "element": "wood",
-      "description": "进阶木招，召唤环形荆棘包围自身，对近身敌人造成持续伤害",
+      "description": "进阶木招，自动锁定最近敌人，在目标脚底召唤荆棘牢笼禁锢并造成伤害",
       "unlockMode": "secret",
       "unlockCondition": {
-        "mapId": "woodValley"
+        "mapId": "wuxingVillage"
       },
       "mpCost": 8,
       "cooldownMs": 480,
-      "baseDamage": 24,
+      "baseDamage": 30,
       "maxMastery": 5,
-      "masteryBonus": 0.09,
-      "phases": [
-        {
-          "id": "windup",
-          "name": "扎根",
-          "sheet": "player_attack",
-          "frameStart": 0,
-          "frameCount": 6,
-          "durationMs": 240,
-          "hit": false
-        },
-        {
-          "id": "active",
-          "name": "荆棘绽放",
-          "sheet": "skill_wood_light",
-          "frameStart": 6,
-          "frameCount": 8,
-          "durationMs": 320,
-          "hit": true,
-          "hitFrames": [
-            6,
-            7,
-            8,
-            9,
-            10,
-            11,
-            12
-          ],
-          "hitbox": {
-            "offsetX": -40,
-            "offsetY": -48,
-            "width": 168,
-            "height": 168
-          },
-          "perFrameHitboxes": [
-            {
-              "offsetX": -24,
-              "offsetY": -20,
-              "width": 104,
-              "height": 88
-            },
-            {
-              "offsetX": -28,
-              "offsetY": -28,
-              "width": 120,
-              "height": 112
-            },
-            {
-              "offsetX": -32,
-              "offsetY": -36,
-              "width": 136,
-              "height": 132
-            },
-            {
-              "offsetX": -36,
-              "offsetY": -40,
-              "width": 152,
-              "height": 148
-            },
-            {
-              "offsetX": -40,
-              "offsetY": -44,
-              "width": 164,
-              "height": 160
-            },
-            {
-              "offsetX": -40,
-              "offsetY": -48,
-              "width": 168,
-              "height": 168
-            },
-            {
-              "offsetX": -36,
-              "offsetY": -44,
-              "width": 160,
-              "height": 164
-            },
-            {
-              "offsetX": -32,
-              "offsetY": -40,
-              "width": 148,
-              "height": 152
-            }
-          ],
-          "damage": 24,
-          "knockback": 4
-        },
-        {
-          "id": "recovery",
-          "name": "收招",
-          "sheet": "player_attack",
-          "frameStart": 12,
-          "frameCount": 5,
-          "durationMs": 200,
-          "hit": false
-        }
-      ]
+      "masteryBonus": 0.13,
+      "attack3Frames": 55,
+      "attack3TotalMs": 500,
+      "attack3TriggerFrame": 21,
+      "grassFrames": 121,
+      "grassTotalMs": 500,
+      "grassWidth": 120,
+      "grassHeight": 120,
+      "groundOffset": 0,
+      "trapDamage": 20,
+      "grassDwellMs": 2000,
+      "controlExtraMs": 2000,
+      "floatThreshold": 30,
+      "targetSearch": {
+        "enabled": true,
+        "radius": 400
+      },
+      "phases": []
     },
     "metal_sword": {
       "id": "metal_sword",
-      "name": "金行·天剑坠",
+      "name": "金行·万刃旋",
       "type": "heavy",
       "element": "metal",
       "description": "在空中凝聚巨型鎏金长剑，自上而下劈砍，力道刚猛",
       "unlockMode": "chest",
       "unlockCondition": {
-        "mapId": "woodValley",
+        "mapId": "wuxingVillage",
         "boxIndex": 1
       },
       "mpCost": 10,
@@ -429,106 +350,17 @@
       "charge": {
         "enabled": true,
         "maxMs": 2000,
-        "description": "按住蓄力，松开释放巨剑；蓄力越长威力越大"
-      },
-      "groundLock": true,
-      "targetSearch": {
-        "enabled": true,
-        "radius": 350,
-        "lockAtPhase": "windup",
-        "description": "自动锁定范围内最近敌人，天剑精准劈落"
-      },
-      "phases": [
-        {
-          "id": "windup",
-          "name": "聚剑",
-          "sheet": "player_attack",
-          "frameStart": 0,
-          "frameCount": 8,
-          "durationMs": 340,
-          "hit": false
-        },
-        {
-          "id": "active",
-          "name": "天剑劈落",
-          "sheet": "skill_wood_light",
-          "frameStart": 0,
-          "frameCount": 6,
-          "durationMs": 260,
-          "hit": true,
-          "hitFrames": [
-            2,
-            3,
-            4
-          ],
-          "hitbox": {
-            "offsetX": 16,
-            "offsetY": -80,
-            "width": 112,
-            "height": 180
-          },
-          "perFrameHitboxes": [
-            {
-              "offsetX": 8,
-              "offsetY": -40,
-              "width": 72,
-              "height": 80
-            },
-            {
-              "offsetX": 8,
-              "offsetY": -60,
-              "width": 84,
-              "height": 116
-            },
-            {
-              "offsetX": 12,
-              "offsetY": -76,
-              "width": 96,
-              "height": 156
-            },
-            {
-              "offsetX": 16,
-              "offsetY": -88,
-              "width": 108,
-              "height": 184
-            },
-            {
-              "offsetX": 20,
-              "offsetY": -76,
-              "width": 104,
-              "height": 172
-            },
-            {
-              "offsetX": 16,
-              "offsetY": -64,
-              "width": 96,
-              "height": 148
-            }
-          ],
-          "damage": 38,
-          "knockback": 18
-        },
-        {
-          "id": "recovery",
-          "name": "收招",
-          "sheet": "player_attack",
-          "frameStart": 12,
-          "frameCount": 6,
-          "durationMs": 260,
-          "hit": false
-        }
-      ]
+        "description": "按住蓄力，旋转剑身劈砍周围敌人；蓄力越长剑身越大"
+      }
     },
     "metal_blade": {
       "id": "metal_blade",
-      "name": "金行·万刃旋",
+      "name": "金行·天剑坠",
       "type": "heavy",
       "element": "metal",
       "description": "进阶金招，以自身为中心释放环形刀刃风暴，覆盖全方位",
-      "unlockMode": "boss",
-      "unlockCondition": {
-        "bossId": "woodGuardian"
-      },
+      "unlockMode": "locked",
+      "unlockCondition": null,
       "mpCost": 16,
       "cooldownMs": 900,
       "baseDamage": 52,
@@ -713,10 +545,8 @@
       "type": "heavy",
       "element": "fire",
       "description": "进阶火招，引发大范围烈焰爆炸，灼烧范围内所有敌人",
-      "unlockMode": "boss",
-      "unlockCondition": {
-        "bossId": "fireLord"
-      },
+      "unlockMode": "locked",
+      "unlockCondition": null,
       "mpCost": 20,
       "cooldownMs": 1100,
       "baseDamage": 60,
@@ -956,10 +786,8 @@
       "type": "heavy",
       "element": "earth",
       "description": "进阶土招，以重击震撼大地，触发连锁裂隙波及全屏敌人",
-      "unlockMode": "secret",
-      "unlockCondition": {
-        "mapId": "earthRuin"
-      },
+      "unlockMode": "locked",
+      "unlockCondition": null,
       "mpCost": 24,
       "cooldownMs": 1300,
       "baseDamage": 70,

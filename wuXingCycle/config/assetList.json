@@ -3,6 +3,9 @@
     "player_idle": "assets/img/player/idle.png",
     "player_walk": "assets/img/player/walk.png",
     "player_attack": "assets/img/player/attack.png",
+    "player_parry": "assets/img/player/parry.png",
+    "player_jian": "assets/img/player/jian.png",
+    "sword_blade": "assets/img/jinren.png",
     "skill_water_light": "assets/img/skill_effect/water_light.png",
     "skill_wood_light": "assets/img/skill_effect/wood_light.png",
     "water_flow_effect": "assets/img/water_flow_effect.png",
@@ -30,7 +33,11 @@
     "plat_sand_floor": "assets/img/basic map/sand_floor.png",
     "plat_sandstone_pillar": "assets/img/basic map/sandstone_pillar.png",
     "plat_ruin_step": "assets/img/basic map/ruin_step.png",
-    "plat_stone_slab": "assets/img/basic map/stone_slab.png"
+    "plat_stone_slab": "assets/img/basic map/stone_slab.png",
+    "player_attack3": "assets/img/player/attack3/attack3",
+    "thorn_trap_hit": "assets/img/player/attack3/hit",
+    "house": "assets/img/house.png",
+    "zhu": "assets/img/zhu.png"
   },
   "audio": {}
 }

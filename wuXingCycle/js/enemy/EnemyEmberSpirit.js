@@ -103,8 +103,10 @@ class EnemyEmberSpirit extends EnemyBase {
   // ═══════════════ 主更新 ═══════════════
 
   update(dt) {
+    super.update(dt);
     if (this.flash > 0) this.flash -= dt;
     if (!this.alive || this._state === "dead") return;
+    if (this._imprisoned) return;      // ★ 禁锢中跳过行为逻辑
 
     switch (this._state) {
       case "float":  this._updateFloat(dt);  break;
@@ -275,16 +277,6 @@ class EnemyEmberSpirit extends EnemyBase {
 
     ctx.save();
 
-    // —— 闪白（受击反馈）——
-    if (this.flash > 0) {
-      ctx.globalCompositeOperation = "source-atop";
-      ctx.globalAlpha = Math.min(0.6, this.flash / 120);
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(this.x, this.y, this.w, this.h);
-      ctx.globalAlpha = 1;
-      ctx.globalCompositeOperation = "source-over";
-    }
-
     // —— 精灵渲染 ——
     const currentFrame = this._getCurrentFrame();
     if (currentFrame) {
@@ -299,6 +291,17 @@ class EnemyEmberSpirit extends EnemyBase {
     } else {
       // 回退：程序化火焰精灵
       this._drawFallback(ctx);
+    }
+
+    // —— 闪白（精灵之后叠加，确保 source-atop 有效）——
+    if (this.flash > 0) {
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalCompositeOperation = "source-atop";
+      ctx.globalAlpha = Math.min(0.6, this.flash / 120);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(this.x, this.y, this.w, this.h);
+      ctx.restore();
     }
 
     ctx.restore();

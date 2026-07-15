@@ -142,7 +142,7 @@ class SaveManager {
       summary: {
         cycle: data.cycle ?? 1,
         level: data.level ?? 1,
-        map: data.currentMap ?? "woodValley",
+        map: data.currentMap ?? "wuxingVillage",
         skillCount: (data.ownedSkills && data.ownedSkills.length) || 0
       },
       // 标记为有效存档

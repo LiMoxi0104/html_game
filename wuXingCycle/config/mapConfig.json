@@ -1,20 +1,16 @@
 {
-  "woodValley": {
-    "name": "木幽谷",
+  "wuxingVillage": {
+    "name": "五行村",
     "width": 2400,
     "height": 540,
     "groundY": 472,
     "spawn": { "x": 120, "y": 410 },
-    "enemies": [
-      { "id": "iron_1", "type": "ironSoldier", "x": 560, "y": 410, "w": 60, "h": 80, "hp": 200, "modelScale": 2.5, "chaseSpeed": 0.5, "detectRadius": 180, "damage": 15, "cooldownMs": 500 },
-      { "id": "rock_1", "type": "rockArmor", "x": 1200, "y": 410, "w": 50, "h": 55, "hp": 150, "patrolSpeed": 1.0, "detectRadius": 250, "damage": 18, "cooldownMs": 800 }
-    ],
-    "traps": [
-      {
-        "id": "spike_1", "type": "spike", "variant": "thorn",
-        "x": 820, "y": 442, "width": 46, "height": 30,
-        "damage": 12, "intervalMs": 1600, "activeMs": 520, "knockback": 16
-      }
+    "enemies": [],
+    "traps": [],
+    "structures": [
+      { "id": "house_left",  "type": "house", "x": 100,  "y": 72, "w": 600, "h": 400 },
+      { "id": "house_right", "type": "house", "x": 1850, "y": 72, "w": 600, "h": 400 },
+      { "id": "zhu_center",  "type": "zhu",   "cx": 1200, "cy": 472 }
     ],
     "portals": [
       { "x": 2250, "y": 412, "w": 50, "h": 60, "targetMap": "jinDomain", "targetX": 150, "targetY": 436, "label": "金之域" }
@@ -27,7 +23,11 @@
     "height": 540,
     "groundY": 520,
     "spawn": { "x": 150, "y": 436 },
-    "enemies": [],
+    "enemies": [
+      { "id": "iron_0", "type": "ironSoldier", "x": 120, "y": 440, "w": 40, "h": 62, "hp": 150, "renderW": 120, "renderH": 186, "chaseSpeed": 0.4, "detectRadius": 60, "damage": 14 },
+      { "id": "iron_1", "type": "ironSoldier", "x": 580, "y": 440, "w": 40, "h": 62, "hp": 180, "renderW": 120, "renderH": 186, "chaseSpeed": 0.45, "detectRadius": 60, "damage": 16 },
+      { "id": "iron_2", "type": "ironSoldier", "x": 1750, "y": 440, "w": 40, "h": 62, "hp": 220, "renderW": 120, "renderH": 186, "chaseSpeed": 0.5, "detectRadius": 65, "damage": 20 }
+    ],
     "traps": [],
     "platforms": [
       { "x": 0, "y": 500, "w": 320, "h": 20, "type": "metal_floor" },
@@ -49,7 +49,7 @@
       { "x": 1670, "y": 500, "w": 330, "h": 20, "type": "metal_floor" }
     ],
     "portals": [
-      { "x": 10, "y": 438, "w": 50, "h": 60, "targetMap": "woodValley", "targetX": 2000, "targetY": 410, "label": "返回·木幽谷" },
+      { "x": 10, "y": 438, "w": 50, "h": 60, "targetMap": "wuxingVillage", "targetX": 2000, "targetY": 410, "label": "返回·五行村" },
       { "x": 1930, "y": 438, "w": 50, "h": 60, "targetMap": "muDomain", "targetX": 150, "targetY": 436, "label": "木之域" }
     ]
   },
@@ -209,7 +209,11 @@
     "height": 540,
     "groundY": 520,
     "spawn": { "x": 200, "y": 436 },
-    "enemies": [],
+    "enemies": [
+      { "id": "rock_0", "type": "rockArmor", "x": 150, "y": 440, "w": 44, "h": 62, "hp": 100, "renderW": 72, "renderH": 72, "patrolSpeed": 1.0, "detectRadius": 280, "damage": 18 },
+      { "id": "rock_1", "type": "rockArmor", "x": 780, "y": 330, "w": 44, "h": 62, "hp": 130, "renderW": 72, "renderH": 72, "patrolSpeed": 1.2, "detectRadius": 280, "damage": 22 },
+      { "id": "rock_2", "type": "rockArmor", "x": 1280, "y": 320, "w": 44, "h": 62, "hp": 160, "renderW": 72, "renderH": 72, "patrolSpeed": 1.4, "detectRadius": 300, "damage": 26 }
+    ],
     "traps": [
       { "id":"rb_1","type":"spike","variant":"boulder","x":630,"y":420,"width":40,"height":20,"damage":30,"intervalMs":3000,"activeMs":800,"knockback":24 },
       { "id":"rb_2","type":"spike","variant":"boulder","x":1220,"y":380,"width":80,"height":15,"damage":30,"intervalMs":3000,"activeMs":800,"knockback":24 }
@@ -242,7 +246,7 @@
     ],
     "portals": [
       { "x": 10, "y": 438, "w": 50, "h": 60, "targetMap": "huoDomain", "targetX": 1800, "targetY": 438, "label": "返回·火之域" },
-      { "x": 1940, "y": 388, "w": 50, "h": 60, "targetMap": "woodValley", "targetX": 400, "targetY": 410, "label": "轮回·木幽谷" }
+      { "x": 1940, "y": 388, "w": 50, "h": 60, "targetMap": "wuxingVillage", "targetX": 400, "targetY": 410, "label": "轮回·五行村" }
     ]
   }
 }

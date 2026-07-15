@@ -12,7 +12,30 @@ class EnemyBase {
     this.maxHp = this.hp;
     this.alive = true;
     this.flash = 0;        // 受击闪白计时 ms
+
+    // ★ 荆棘牢笼禁锢状态
+    this._imprisoned = false;
+    this._imprisonTimer = 0;
   }
+
+  /** ★ 施加禁锢效果（荆棘牢笼专用，仅对敌人有效） */
+  imprison(ms) {
+    // ★ 敌我判定守卫：仅 EnemyBase 子类实例可被禁锢
+    if (!(this instanceof EnemyBase)) return;
+    this._imprisoned = true;
+    this._imprisonTimer = ms || 0;
+    this.vx = 0;
+    this.vy = 0;
+  }
+
+  /** ★ 解除禁锢 */
+  releaseImprison() {
+    this._imprisoned = false;
+    this._imprisonTimer = 0;
+  }
+
+  /** ★ 是否处于禁锢状态 */
+  isImprisoned() { return this._imprisoned; }
 
   getRect() { return { x: this.x, y: this.y, w: this.w, h: this.h }; }
 
@@ -25,6 +48,19 @@ class EnemyBase {
 
   update(dt) {
     if (this.flash > 0) this.flash -= dt;
+    // ★ 禁锢计时器倒计时
+    if (this._imprisonTimer > 0) {
+      this._imprisonTimer -= dt;
+      if (this._imprisonTimer <= 0) {
+        this._imprisoned = false;
+        this._imprisonTimer = 0;
+      }
+    }
+    // ★ 被禁锢时强制静止
+    if (this._imprisoned) {
+      this.vx = 0;
+      this.vy = 0;
+    }
   }
 
   draw(ctx) {

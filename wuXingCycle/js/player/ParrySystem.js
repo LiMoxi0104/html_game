@@ -152,28 +152,23 @@ class ParrySystem {
       ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     }
 
-    // 匕首格挡动画
+    // ★ 判定窗口进度条（保留：玩家需要视觉反馈 200ms 窗口剩余时长）
     if (this.active) {
       const p = this.player;
-      ctx.strokeStyle = "#c0c0c0";
-      ctx.lineWidth = 3;
-      ctx.globalAlpha = 0.85;
       const dir = p.facing === "right" ? 1 : -1;
-      const cx = p.x + p.w / 2;
-      const cy = p.y + p.h * 0.38;
-      ctx.beginPath();
-      ctx.moveTo(cx - 44 * dir, cy - 12);
-      ctx.lineTo(cx + 52 * dir, cy + 8);
-      ctx.stroke();
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(cx + 40 * dir, cy + 4);
-      ctx.lineTo(cx + 60 * dir, cy + 16);
-      ctx.stroke();
-      // 进度条
       const progress = this.timer / this.windowMs;
-      ctx.fillStyle = "rgba(192,192,192,0.4)";
-      ctx.fillRect(p.x - 4, p.y - 12, p.w + 8 * (dir === 1 ? progress : (1 - progress)), 3);
+      // 头顶细长进度条
+      const barW = 40;
+      const barH = 3;
+      const barX = p.x + p.w / 2 - barW / 2;
+      const barY = p.y - 10;
+      // 底
+      ctx.fillStyle = "rgba(60,60,60,0.5)";
+      ctx.fillRect(barX, barY, barW, barH);
+      // 填充（朝向变化时方向反转）
+      const fillW = barW * (dir === 1 ? progress : (1 - progress));
+      ctx.fillStyle = "rgba(220,220,235,0.85)";
+      ctx.fillRect(barX, barY, fillW, barH);
     }
 
     // 银白火花

@@ -167,6 +167,7 @@ class EnemyIronSoldier extends EnemyBase {
       return;
     }
     super.update(dt);
+    if (this._imprisoned) return;      // ★ 禁锢中跳过行为逻辑
 
     switch (this._state) {
       case "chase":    this._updateChase(dt);    break;
@@ -180,6 +181,8 @@ class EnemyIronSoldier extends EnemyBase {
       if (this.x < pad) this.x = pad;
       if (this.x > this._map.width - this._scaledW() - pad)
         this.x = this._map.width - this._scaledW() - pad;
+      // ★ 持续地面吸附：防止受击击退导致浮空
+      this._snapToGround();
     }
   }
 
